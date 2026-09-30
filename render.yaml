@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: lavi-5a
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: LAVI_DATA_DIR
+        value: /var/data
+      - key: LAVI_JWT_SECRET
+        generateValue: true
+      - key: LAVI_TEACHER_PASSWORD
+        sync: false
+    disk:
+      name: lavi-data
+      mountPath: /var/data
+      sizeGB: 1

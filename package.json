@@ -1,0 +1,18 @@
+{
+  "name": "lavi-5a-online-v3",
+  "version": "4.0.0",
+  "private": true,
+  "description": "LAVI 5A Online - production-ready Render deployment",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
