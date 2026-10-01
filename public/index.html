@@ -859,7 +859,7 @@ function makeQuestions(lesson,group,count,note=""){
   return q;
  }
  const checked=qs.map(qualityGate);
- return qs.slice(0,count).map((q,i)=>({...q,id:i+1}));
+ return checked.slice(0,count).map((q,i)=>({...q,id:i+1}));
 }
 function safeGifUrl(v){
  try{const u=new URL(String(v||"").trim());return /^https?:$/.test(u.protocol)?u.href:""}catch(e){return""}
