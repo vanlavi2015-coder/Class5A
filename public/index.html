@@ -20,7 +20,6 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
 .loginBox{width:min(430px,100%);background:#fff;border:1px solid #e4e7ec;border-radius:24px;box-shadow:0 20px 60px rgba(15,23,42,.14);padding:28px}.loginBox h1{margin:0 0 6px}.loginBox .sub{margin-bottom:18px}.loginBox input{width:100%;padding:13px 14px;border:1px solid #d0d5dd;border-radius:12px;margin:6px 0 12px;font-size:16px}.loginBox button{width:100%;margin-top:6px}.loginErr{color:#dc2626;min-height:22px;margin:8px 0;font-size:14px}.onlineBadge{display:inline-flex;gap:6px;align-items:center;background:#ecfdf3;color:#067647;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700}.logoutBtn{margin-left:8px}
 .studentOnly{display:none}
 </style>
-</style>
 <style id="laviStudentCSS">
 .student-app{display:none;min-height:100vh;background:linear-gradient(180deg,#eef2ff 0%,#f8fafc 42%,#f8fafc 100%);color:#172033}
 .student-shell{max-width:980px;margin:0 auto;padding:18px 16px 40px}
@@ -185,7 +184,7 @@ const GROUPS=["Tốt","Khá","Trung bình","Yếu"];
 let state=JSON.parse(localStorage.getItem("lavi5a_real")||'{"assignments":[],"submissions":{},"stars":{},"awards":[],"schedules":[]}');
 let draft=null, currentStudentGroup="Tất cả";
 
-async async function save(){
+async function save(){
  localStorage.setItem("lavi5a_real",JSON.stringify(state));renderAll();
  if(window.LAVI?.token&&window.LAVI.user?.role==='teacher'){
   try{await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({state})});}
