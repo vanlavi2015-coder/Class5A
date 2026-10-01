@@ -121,8 +121,21 @@ function recordScoreHistory(studentId,source,assignmentId,score,stars,payload){
  db.prepare('INSERT INTO score_history(student_id,month,source,assignment_id,score,stars,payload,recorded_at) VALUES(?,?,?,?,?,?,?,?)').run(Number(studentId),month,String(source),assignmentId==null?null:String(assignmentId),score==null?null:Number(score),Number(stars)||0,payload?JSON.stringify(payload):null,now());
 }
 function monthScores(studentId,month){
- const rows=db.prepare('SELECT * FROM score_history WHERE student_id=? AND month=? ORDER BY id').all(Number(studentId),String(month));
- return {studentId:Number(studentId),month:String(month),records:rows,total:rows.reduce((s,r)=>s+(Number(r.score)||0),0)};
+  const rows=db.prepare("SELECT * FROM score_history WHERE student_id=? AND month=? AND source<>? ORDER BY id").all(Number(studentId),String(month),'award');
+  // Một bài có thể được ghi khi học sinh nộp và ghi lại lần nữa khi cô chấm.
+  // Chỉ lấy bản ghi mới nhất của cùng một assignment để không tính đôi.
+  const latestByAssignment=new Map();
+  const games=[];
+  for(const r of rows){
+    if(r.source==='game'){ games.push(r); continue; }
+    const key=r.assignment_id==null?('record:'+r.id):('assignment:'+String(r.assignment_id));
+    latestByAssignment.set(key,r);
+  }
+  const records=[...latestByAssignment.values(),...games].sort((a,b)=>Number(a.id)-Number(b.id));
+  const scores=records.map(r=>Number(r.score)).filter(Number.isFinite);
+  const average=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:0;
+  const classification=scores.length?(average>=90?'Tốt':average>=80?'Khá':average>=65?'Trung bình':'Yếu'):'Chưa có dữ liệu';
+  return {studentId:Number(studentId),month:String(month),records,total:scores.reduce((a,b)=>a+b,0),average,classification};
 }
 function stateForTeacher(){
   const assignments=db.prepare('SELECT payload FROM assignments ORDER BY created_at DESC').all().map(x=>JSON.parse(x.payload));
