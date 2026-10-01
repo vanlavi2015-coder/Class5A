@@ -181,8 +181,9 @@ function teacher(req,res){if(req.user.role!=='teacher'){res.status(403).json({er
 app.get('/api/health',(req,res)=>res.json({ok:true,app:'LAVI 5A Online v3',students:students().length,db:'sqlite',persistentData:DATA_DIR,backup:backupEnabled()}));
 app.post('/api/teacher/backup-now',auth,async(req,res)=>{
  if(!teacher(req,res))return;
- try{await queueBackup();res.json({ok:true,backup:true,backedUpAt:now()});}
- catch(e){res.status(500).json({error:'Không sao lưu được: '+e.message});}
+ if(!backupEnabled())return res.status(503).json({error:'Chưa bật sao lưu GitHub. Kiểm tra các biến LAVI_BACKUP_* trên Render.'});
+ try{await githubBackup();res.json({ok:true,backup:true,backedUpAt:now()});}
+ catch(e){console.error('LAVI MANUAL BACKUP ERROR:',e.message);res.status(500).json({error:'Không sao lưu được: '+e.message});}
 });
 app.post('/api/login',(req,res)=>{const rawUser=String(req.body?.username||'').trim();const username=rawUser.toLowerCase();const password=String(req.body?.password??'');const u=db.prepare('SELECT * FROM users WHERE lower(username)=?').get(username);if(!u)return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});let ok=bcrypt.compareSync(password,u.password_hash);if(!ok){if(u.role==='teacher')ok=password===(process.env.LAVI_TEACHER_PASSWORD||'Lavi@2026');else if(u.role==='student')ok=password==='1234';}if(!ok)return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});const user={username:u.username,role:u.role,studentId:u.student_id||null};res.json({token:tokenFor(user),user,students:students()});});
 app.get('/api/state',auth,(req,res)=>res.json({state:req.user.role==='teacher'?stateForTeacher():stateForStudent(req.user.studentId),students:req.user.role==='teacher'?students():students().filter(s=>s.id===req.user.studentId),user:req.user}));
