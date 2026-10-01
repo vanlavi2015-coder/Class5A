@@ -86,13 +86,28 @@ app.post('/api/teacher/notify',auth,(req,res)=>{if(!teacher(req,res))return;cons
 app.post('/api/student/read-notifications',auth,(req,res)=>{if(req.user.role!=='student')return res.status(403).json({error:'Không có quyền'});const ids=Array.isArray(req.body?.ids)?req.body.ids:[];if(!ids.length)return res.json({ok:true});db.prepare(`UPDATE notifications SET read=1 WHERE student_id=? AND id IN (${ids.map(()=>'?').join(',')})`).run(req.user.studentId,...ids);res.json({ok:true});});
 function normAnswer(v){
  return String(v??'').toLowerCase().normalize('NFD')
-  .replace(/[\\u0300-\\u036f]/g,'')
+  .replace(/[\u0300-\u036f]/g,'')
   .replace(/,/g,'.')
   .replace(/²/g,'2').replace(/³/g,'3')
   .replace(/cm2/g,'cm²').replace(/m2/g,'m²').replace(/cm3/g,'cm³').replace(/m3/g,'m³')
-  .replace(/\\s+/g,' ').trim()
-  .replace(/\\s*(cm²|m²|cm³|m³|kg|g|km|m|cm|mm|l|ml|%)(?=\\s|$)/g,'$1')
-  .replace(/[^a-z0-9\\s./%²³-]/g,'').trim();
+  .replace(/\s+/g,' ').trim()
+  .replace(/\s*(cm²|m²|cm³|m³|kg|g|km|m|cm|mm|l|ml|%)(?=\s|$)/g,'$1')
+  .replace(/[^a-z0-9\s./%²³-]/g,'').trim();
+}
+function answersEqual(a,b){
+ const x=normAnswer(a), y=normAnswer(b);
+ if(x===y)return true;
+ function numeric(v){
+  const s=String(v).trim().replace(/,/g,'.');
+  const unit=(s.match(/(cm²|m²|cm³|m³|kg|g|km|m|cm|mm|l|ml|%)$/i)||[])[1]||"";
+  const core=s.slice(0,s.length-unit.length).trim();
+  const f=core.match(/^(-?\d+)\s*\/\s*(\d+)$/);
+  if(f && Number(f[2])!==0)return {v:Number(f[1])/Number(f[2]),unit};
+  if(/^-?\d+(?:\.\d+)?$/.test(core))return {v:Number(core),unit};
+  return null;
+ }
+ const nx=numeric(x), ny=numeric(y);
+ return !!nx && !!ny && nx.unit===ny.unit && Math.abs(nx.v-ny.v)<1e-9;
 }
 app.post('/api/submit',auth,(req,res)=>{if(req.user.role!=='student')return res.status(403).json({error:'Chỉ tài khoản học sinh được nộp bài'});const {assignmentId,answers}=req.body||{};if(!assignmentId)return res.status(400).json({error:'Thiếu assignmentId'});const arow=db.prepare('SELECT payload,status FROM assignments WHERE id=?').get(String(assignmentId));if(!arow||arow.status!=='Đang giao')return res.status(404).json({error:'Bài không còn được giao'});const a=JSON.parse(arow.payload);const sid=req.user.studentId;const ss=students().find(x=>x.id===sid);const set=(a.sets||[]).find(x=>x.group==='Cả 4 nhóm'||x.group===ss?.group)||(a.sets||[])[0];if(!set?.questions?.length)return res.status(400).json({error:'Bài chưa có câu hỏi'});const qs=set.questions;const aa=answers||{};let correct=0;for(let i=0;i<qs.length;i++){if(normAnswer(aa[i])===normAnswer(qs[i].answer)&&String(aa[i]??'').trim()!=='')correct++;}const total=qs.length;const wrong=total-correct;const correctPercent=Math.round(correct/total*100);const wrongPercent=100-correctPercent;const score=correctPercent;const oldR=db.prepare('SELECT payload FROM submissions WHERE k=?').get(String(assignmentId)+'_'+sid);const old=oldR?JSON.parse(oldR.payload):{};const newStars=Math.max(0,Math.min(10,Number(req.body?.stars)||0));const delta=newStars-(Number(old.stars)||0);const payload={...old,assignmentId:String(assignmentId),studentId:sid,score,correct,total,wrong,correctPercent,wrongPercent,stars:newStars,praise:String(req.body?.praise||''),answers:aa,time:now()};db.prepare('INSERT INTO submissions(k,assignment_id,student_id,payload,submitted_at) VALUES(?,?,?,?,?) ON CONFLICT(k) DO UPDATE SET payload=excluded.payload,submitted_at=excluded.submitted_at').run(String(assignmentId)+'_'+sid,String(assignmentId),sid,JSON.stringify(payload),now());db.prepare('INSERT INTO stars(student_id,total) VALUES(?,?) ON CONFLICT(student_id) DO UPDATE SET total=MAX(0,total+excluded.total)').run(sid,delta);if(delta!==0)db.prepare('INSERT INTO awards(id,student_id,stars,reason,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),sid,delta,'Hoàn thành bài',now());res.json({ok:true,submission:payload,starsTotal:db.prepare('SELECT total FROM stars WHERE student_id=?').get(sid)?.total||0});});
 app.post('/api/teacher/award',auth,(req,res)=>{if(!teacher(req,res))return;const {studentId,stars,reason}=req.body||{};const n=Math.max(-10,Math.min(10,Number(stars)||0));if(!Number(studentId)||!n)return res.status(400).json({error:'Số sao không hợp lệ'});db.prepare('INSERT INTO stars(student_id,total) VALUES(?,?) ON CONFLICT(student_id) DO UPDATE SET total=MAX(0,total+excluded.total)').run(Number(studentId),n);db.prepare('INSERT INTO awards(id,student_id,stars,reason,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),Number(studentId),n,String(reason||'Cô giáo tặng sao'),now());res.json({ok:true});});
