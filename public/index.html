@@ -390,6 +390,88 @@ function gifBlock(url){
  const u=safeGifUrl(url); if(!u)return "";
  return '<div class="gif-card"><img src="'+esc(u)+'" alt="GIF minh họa" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"><div style="display:none" class="sub">Không hiển thị được ảnh trực tiếp; <a href="'+esc(u)+'" target="_blank" rel="noopener">Mở GIF từ Gifhut ↗</a></div><div class="sub">🎞️ GIF minh họa · <a href="'+esc(u)+'" target="_blank" rel="noopener">Mở từ Gifhut ↗</a></div></div>';
 }
+function applyExtraRequirements(questions,lesson,group,note){
+ const req=String(note||"").toLowerCase();
+ const mcMatch=req.match(/(\d+)\s*(?:dạng\s*bài\s*)?(?:trắc nghiệm|câu\s*trắc nghiệm)/);
+ const wordMatch=req.match(/(\d+)\s*(?:bài\s*)?(?:toán\s*)?(?:lời văn|có lời văn|thực tế)/);
+ const mcCount=mcMatch?Number(mcMatch[1]):0;
+ const wordCount=wordMatch?Number(wordMatch[1]):0;
+ const out=questions.map(q=>({...q}));
+ const used=new Set();
+ const title=(lesson?.lesson||"").toLowerCase();
+ function numericValue(v){
+  const m=String(v??"").replace(",",".").match(/-?\d+(?:\.\d+)?/);
+  return m?Number(m[0]):null;
+ }
+ function makeMC(q,index){
+  const correct=String(q.answer??"").trim();
+  let n=numericValue(correct), opts=[];
+  if(n!==null && Number.isFinite(n)){
+   const step=Math.abs(n)>=10?1:0.1;
+   opts=[correct,String(n+step).replace(".",","),String(n-step).replace(".",","),String(n+2*step).replace(".",",")];
+  }else{
+   opts=[correct,"Phương án khác","Cả hai ý trên","Không có đáp án phù hợp"];
+  }
+  opts=[...new Set(opts.map(String))];
+  while(opts.length<4)opts.push("Phương án "+(opts.length+1));
+  const rotate=index%4;
+  const rotated=opts.slice(rotate).concat(opts.slice(0,rotate));
+  const answerLetter=["A","B","C","D"][rotated.indexOf(correct)];
+  q.text=q.text.replace(/\s*Chọn đáp án đúng:.*$/,"")+" Chọn đáp án đúng:";
+  q.text+=" A. "+rotated[0]+"  B. "+rotated[1]+"  C. "+rotated[2]+"  D. "+rotated[3]+".";
+  q.answer=answerLetter;q.type="Trắc nghiệm 4 đáp án";
+ }
+ function makeWord(q,index){
+  let text,answer;
+  if(/số thập phân/.test(title)){
+   const a=3+(index%4), b=1+(index%7);
+   const c=2+(index%3), d=2+(index%5);
+   if(index%2===0){
+    const total=(a+b/10)+(c+d/10);
+    text="Một cửa hàng có "+String(a+ b/10).replace(".",",")+" kg gạo và nhập thêm "+String(c+d/10).replace(".",",")+" kg. Hỏi cửa hàng có tất cả bao nhiêu ki-lô-gam gạo?";
+    answer=String(total).replace(".",",");
+   }else{
+    const total=(a+b/10)-(c+d/10);
+    const big=a+b/10, small=c+d/10;
+    if(total>0){
+     text="Một can có "+String(big).replace(".",",")+" lít nước, người ta đã dùng "+String(small).replace(".",",")+" lít. Hỏi còn lại bao nhiêu lít nước?";
+     answer=String(total).replace(".",",");
+    }else{
+     const big=a+2+b/10, small=c+d/10;
+     text="Một đoạn dây dài "+String(big).replace(".",",")+" m, cắt đi "+String(small).replace(".",",")+" m. Hỏi còn lại bao nhiêu mét?";
+     answer=String(big-small).replace(".",",");
+    }
+   }
+  }else if(/hình thang/.test(title)){
+   const b1=8+index,b2=5+index,h=4+(index%3);
+   text="Một mảnh đất hình thang có đáy lớn "+b1+" m, đáy bé "+b2+" m và chiều cao "+h+" m. Tính diện tích mảnh đất.";
+   answer=String((b1+b2)*h/2)+" m²";
+  }else if(/hình tam giác/.test(title)){
+   const b=8+index,h=4+(index%3);
+   text="Một khu đất hình tam giác có đáy "+b+" m và chiều cao "+h+" m. Tính diện tích khu đất.";
+   answer=String(b*h/2)+" m²";
+  }else if(/thể tích/.test(title)){
+   const a=4+index,b=3+(index%4),h=2+(index%3);
+   text="Một hộp có dạng hình hộp chữ nhật, dài "+a+" cm, rộng "+b+" cm, cao "+h+" cm. Tính thể tích hộp.";
+   answer=String(a*b*h)+" cm³";
+  }else{
+   text="Một cửa hàng có "+(20+index)+" sản phẩm, bán đi "+(5+index)+" sản phẩm. Hỏi cửa hàng còn lại bao nhiêu sản phẩm?";
+   answer=String(15);
+  }
+  q.text=text;q.answer=answer;q.type="Bài toán có lời văn";
+ }
+ if(mcCount>0){
+  for(let i=0;i<out.length&&used.size<mcCount;i++){makeMC(out[i],i);used.add(i);}
+ }
+ if(wordCount>0){
+  let made=0;
+  for(let i=0;i<out.length&&made<wordCount;i++){
+   if(used.has(i))continue;
+   makeWord(out[i],made);used.add(i);made++;
+  }
+ }
+ return out;
+}
 function generate(){
  try{
   const lesson=selectedLesson();
@@ -400,7 +482,7 @@ function generate(){
   const gifUrl=safeGifUrl(document.getElementById("cGifUrl")?.value);
   if(!lesson) return toast("Chưa có bài học để tạo bài.");
   const groups=group==="Cả 4 nhóm"?GROUPS:[group];
-  const sets=groups.map(g=>({group:g,questions:makeQuestions(lesson,g,count,note)}));
+  const sets=groups.map(g=>({group:g,questions:applyExtraRequirements(makeQuestions(lesson,g,count,note),lesson,g,note)}));
   draft={
    id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
    subject:lesson.subject,
@@ -428,7 +510,7 @@ function generate(){
 function renderDraft(){
  if(!draft)return "";
  return `<div class="card"><h2>📝 Bản nháp: ${esc(draft.subject)} – ${esc(draft.lesson)}</h2><p><span class="pill blue">Tuần ${esc(draft.week)}</span> <span class="pill yellow">${esc(draft.group)}</span></p>${gifBlock(draft.gifUrl)}
- ${draft.sets.map(set=>`<div class="assignment"><h3>${esc(set.group)} · ${difficulty(set.group)}</h3>${set.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">Đáp án/gợi ý: ${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}
+ ${draft.note?`<div class="sub" style="margin:8px 0;padding:9px;background:#f5f3ff;border-radius:9px">⚙️ Yêu cầu đã áp dụng: ${esc(draft.note)}</div>`:""}${draft.sets.map(set=>`<div class="assignment"><h3>${esc(set.group)} · ${difficulty(set.group)}</h3>${set.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">Đáp án/gợi ý: ${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}
  <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">💾 Lưu nháp</button></div></div>`
 }
 async function publish(){
