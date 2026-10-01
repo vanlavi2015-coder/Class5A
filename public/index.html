@@ -764,7 +764,7 @@ function renderStars(){
  document.getElementById("badges").innerHTML=badgeDefs.map(x=>`<div class="assignment"><b>${x[0]} ${x[1]}</b><div class="sub">${x[2]}</div></div>`).join("")
 }
 function renderSubmissions(){
- const rows=[];state.assignments.forEach(a=>a.sets.forEach(set=>studentsForGroup(set.group).forEach(s=>{const x=state.submissions[a.id+"_"+s.id];if(x)rows.push(`<tr><td>${esc(a.lesson)}</td><td>${esc(s.name)}</td><td>${s.group}</td><td>${x.score}/100</td><td>${x.stars} ⭐</td><td>${esc(x.praise)}</td></tr>`)})));
+ const rows=[];state.assignments.forEach(a=>a.sets.forEach(set=>studentsForGroup(set.group).forEach(s=>{const x=state.submissions[a.id+"_"+s.id];if(x)rows.push(`<tr><td>${esc(a.lesson)}</td><td>${esc(s.name)}</td><td>${s.group}</td><td>${x.score==null?'Chờ cô chấm':x.score+'/100'}</td><td>${x.stars} ⭐</td><td>${esc(x.praise)}</td></tr>`)})));
  document.getElementById("submissionList").innerHTML=rows.length?`<div class="tablewrap"><table><thead><tr><th>Bài</th><th>Học sinh</th><th>Nhóm</th><th>Điểm</th><th>Sao</th><th>Lời khen</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`:'<div class="empty">Chưa có bài nộp.</div>'
 }
 function addSchedule(){state.schedules.push({day:document.getElementById("sDay").value,time:document.getElementById("sTime").value,subject:document.getElementById("sSubject").value,note:document.getElementById("sNote").value});save();toast("Đã thêm lịch")}
@@ -843,6 +843,7 @@ function openStudentAssignment(aid){
      }
      return '<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<input id="ans'+i+'" class="student-answer" value="'+esc(sub?.answers?.[i]||'')+'" placeholder="Nhập câu trả lời của em..."></div>';
    }
+   if(q.manual||/cô chấm/i.test(String(q.type||''))) return '<div class="student-q" style="border-left:5px solid #d97706"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<div style="margin-top:9px;font-weight:900;color:#b45309">📝 CÔ CHẤM</div><div style="margin-top:5px"><b>Em trả lời:</b> '+(studentAns?esc(studentAns):'<i>Chưa trả lời</i>')+'</div></div>';
    return '<div class="student-q" style="border-left:5px solid '+(correct?'#16a34a':'#dc2626')+'">'+
     '<b>Câu '+(i+1)+'.</b> '+esc(q.text)+
     '<div style="margin-top:9px;font-weight:900;color:'+(correct?'#15803d':'#b91c1c')+'">'+(correct?'✅ ĐÚNG':'❌ SAI')+'</div>'+
@@ -851,7 +852,7 @@ function openStudentAssignment(aid){
     '</div>';
  }).join('');
  document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h2><div class="student-meta">'+esc(s.name)+' · Nhóm '+esc(s.group)+'</div>'+
- (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><div style="font-size:18px;font-weight:900;color:#166534;margin-bottom:7px">💬 '+esc(sub.praise||'Cố gắng lên em nhé!')+'</div><b>KẾT QUẢ:</b> <span class="student-score">'+sub.score+'/100</span> · '+sub.stars+' ⭐'+
+ (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><div style="font-size:18px;font-weight:900;color:#166534;margin-bottom:7px">💬 '+esc(sub.praise||'Cố gắng lên em nhé!')+'</div><b>KẾT QUẢ:</b> <span class="student-score">'+(sub.score==null?'CHỜ CÔ CHẤM':sub.score+'/100')+'</span> · '+sub.stars+' ⭐'+
  '<div style="margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="padding:9px;background:#dcfce7;border-radius:10px"><b>✅ Đúng: '+resultCorrect+'/'+resultTotal+'</b><br>'+resultCorrectPercent+'%</div><div style="padding:9px;background:#fee2e2;border-radius:10px"><b>❌ Sai: '+resultWrong+'/'+resultTotal+'</b><br>'+resultWrongPercent+'%</div></div>'+
  '<div style="margin-top:8px;font-weight:800">📊 '+resultCorrectPercent+'% câu đúng · '+resultWrongPercent+'% câu sai</div><div style="margin-top:5px">'+esc(sub.praise||'')+'</div></div>':'')+
  resultQuestions+
