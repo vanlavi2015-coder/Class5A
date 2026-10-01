@@ -270,7 +270,7 @@ function makeQuestions(lesson,group,count,note=""){
    if(m===0)add("Viết số thập phân "+b[0]+" dưới dạng phân số thập phân.",b[1],"Viết số");
    else if(m===1)add("Trong số "+b[0]+", chữ số "+b[0].slice(-1)+" thuộc hàng nào?",b[2],"Xác định hàng");
    else if(m===2)add("Trong số "+b[0]+", chữ số "+b[0].slice(-1)+" có giá trị là bao nhiêu?",b[3],"Giá trị chữ số");
-   else add("Đọc số thập phân "+b[0]+".",b[0],"Đọc số");
+   else manualAdd("Đọc số thập phân "+b[0]+" thành lời. Cô kiểm tra cách đọc và cách dùng đúng thuật ngữ.");
    return true;
   }
   if(/viết số đo đại lượng dưới dạng số thập phân/.test(title)){
