@@ -247,181 +247,202 @@ function fracText(n,d){const f=frac(n,d);return f[1]===1?String(f[0]):f[0]+"/"+f
 function mixedToImproper(w,n,d){return w*d+n}
 function levelNum(group,base){return group==="Yếu"?base:group==="Trung bình"?base+1:group==="Khá"?base+2:base+3}
 function makeQuestions(lesson,group,count,note=""){
- const title=(lesson?.lesson||"").toLowerCase(), subj=lesson?.subject||"";
- const qs=[], math=subj==="Toán";
- const simple=group==="Yếu";
- for(let i=1;i<=count;i++){
-  let q="",a="",type="Tự luận";
+ const title=String(lesson?.lesson||"").toLowerCase(), subj=lesson?.subject||"";
+ const qs=[], math=subj==="Toán", simple=group==="Yếu";
+ const req=String(note||"").toLowerCase();
+ const wantMC=/trắc nghiệm|chọn đáp án|khoanh/.test(req);
+ const wantFill=/điền|điền từ|điền số/.test(req);
+ const wantWord=/bài toán thực tế|thực tế|có lời văn/.test(req);
+
+ function add(text,answer,type,options){
+  const q={id:qs.length+1,text,answer,type};
+  if(options) q.options=options;
+  qs.push(q);
+ }
+ function dec(v){return String(v).replace(".",",")}
+ function valFor(base,i){return simple?base+(i%2):levelNum(group,base)+(i%3)}
+ function standardMath(i){
   const k=(i-1)%8;
-  const req=String(note||"").toLowerCase();
-  const wantMC=/trắc nghiệm|chọn đáp án|khoanh/.test(req), wantFill=/điền|điền từ|điền số/.test(req), wantWord=/bài toán thực tế|thực tế|có lời văn/.test(req), wantTrueFalse=/đúng ?sai|đúng\/sai/.test(req);
-  if(math && /hỗn số/.test(title)){
-   const w=simple?2+(i%3):levelNum(group,2)+(i%3), d=simple?2+(i%2):4+(i%4), n=1+(i%d);
-   if(k%3===0){q="Viết hỗn số "+w+" "+n+"/"+d+" thành phân số.";a=String(mixedToImproper(w,n,d));type="Điền số";}
-   else if(k%3===1){const nn=w*d+n;q="Viết phân số "+nn+"/"+d+" thành hỗn số.";a=w+" "+n+"/"+d;type="Điền số";}
-   else {const w2=w+(i%2?1:2),n2=1+((i+1)%d);q="So sánh hai hỗn số: "+w+" "+n+"/"+d+" và "+w2+" "+n2+"/"+d+".";a="<";type="So sánh";}
-  } else if(math && /phân số thập phân/.test(title)){
+  if(/hỗn số/.test(title)){
+   const w=simple?2+(i%3):levelNum(group,2)+(i%2), d=simple?2+(i%2):4+(i%3), n=1+(i%d);
+   if(k%3===0) add("Viết hỗn số "+w+" "+n+"/"+d+" thành phân số.",String(mixedToImproper(w,n,d)),"Viết hỗn số thành phân số");
+   else if(k%3===1) add("Viết phân số "+(w*d+n)+"/"+d+" thành hỗn số.",w+" "+n+"/"+d,"Viết phân số thành hỗn số");
+   else {const w2=w+1,n2=1+((i+1)%d),x=mixedToImproper(w,n,d),y=mixedToImproper(w2,n2,d);add("So sánh hai hỗn số: "+w+" "+n+"/"+d+" và "+w2+" "+n2+"/"+d+".",x===y?"=":x>y?">":"<","So sánh hỗn số");}
+   return true;
+  }
+  if(/phân số thập phân/.test(title)){
    const den=[10,100,1000][(i-1)%3], num=Math.min(den-1,(i+2)*(den===10?1:den===100?3:7));
-   if(k%2===0){q="Viết phân số thập phân "+num+"/"+den+" dưới dạng số thập phân.";a=(num/den).toString().replace(".",",");type="Đổi dạng";}
-   else {q="Viết số thập phân "+(num/den).toString().replace(".",",")+" dưới dạng phân số thập phân tối giản.";a=fracText(num,den).replace("/", "/");type="Đổi dạng";}
-  } else if(math && /phân số/.test(title)){
-   const d1=simple?4+(i%3):6+(i%5), d2=simple?d1:4+(i%4), n1=1+(i%d1), n2=1+(i%d2);
-   if(/rút gọn/.test(title)){const mult=2+(i%3),n=n1*mult,d=d1*mult;q="Rút gọn phân số "+n+"/"+d+".";a=fracText(n,d);type="Rút gọn";}
-   else if(/so sánh/.test(title)){q="So sánh hai phân số "+n1+"/"+d1+" và "+n2+"/"+d2+".";const x=n1*d2,y=n2*d1;a=x===y?"=":x>y?">":"<";type="So sánh";}
-   else if(/cộng|trừ/.test(title)){const den=d1*d2;const n=n1*d2+(k%2===0?n2*d1:-n2*d1);q="Tính: "+n1+"/"+d1+(k%2===0?" + ":" − ")+n2+"/"+d2+".";a=fracText(n,den);type="Tính";}
-   else if(/nhân|chia/.test(title)){if(k%2===0){q="Tính: "+n1+"/"+d1+" × "+n2+"/"+d2+".";a=fracText(n1*n2,d1*d2)}else{q="Tính: "+n1+"/"+d1+" : "+n2+"/"+d2+".";a=fracText(n1*d2,d1*n2)}type="Tính";}
-   else if(k%4===0){q="Rút gọn phân số "+(n1*2)+"/"+(d1*2)+".";a=fracText(n1*2,d1*2);type="Rút gọn";}
-   else if(k%4===1){q="So sánh "+n1+"/"+d1+" và "+n2+"/"+d2+".";const x=n1*d2,y=n2*d1;a=x===y?"=":x>y?">":"<";type="So sánh";}
-   else if(k%4===2){q="Tính: "+n1+"/"+d1+" + "+n2+"/"+d2+".";a=fracText(n1*d2+n2*d1,d1*d2);type="Tính";}
-   else {const amount=levelNum(group,12)+i*2;q="Tính "+n1+"/"+d1+" của "+amount+".";a=String(amount*n1/d1);type="Tính giá trị phân số";}
-  } else if(math && /số thập phân/.test(title)){
-   // Bài 10: Khái niệm số thập phân — phủ đủ hàng phần mười, phần trăm, phần nghìn.
+   if(k%2===0) add("Viết phân số thập phân "+num+"/"+den+" dưới dạng số thập phân.",dec(num/den),"Viết phân số thập phân");
+   else add("Viết số thập phân "+dec(num/den)+" dưới dạng phân số thập phân.",fracText(num,den),"Viết số thập phân");
+   return true;
+  }
+  if(/khái niệm.*số thập phân|số thập phân/.test(title)){
    const bank=[
-    {n:"3,7", frac:"7/10", place:"hàng phần mười", value:"7 phần mười"},
-    {n:"4,25", frac:"25/100", place:"hàng phần trăm", value:"5 phần trăm"},
-    {n:"5,306", frac:"306/1000", place:"hàng phần nghìn", value:"6 phần nghìn"},
-    {n:"7,04", frac:"4/100", place:"hàng phần trăm", value:"4 phần trăm"},
-    {n:"8,125", frac:"125/1000", place:"hàng phần nghìn", value:"5 phần nghìn"},
-    {n:"2,509", frac:"509/1000", place:"hàng phần nghìn", value:"9 phần nghìn"},
-    {n:"6,38", frac:"38/100", place:"hàng phần trăm", value:"8 phần trăm"},
-    {n:"9,407", frac:"407/1000", place:"hàng phần nghìn", value:"7 phần nghìn"},
-    {n:"1,6", frac:"6/10", place:"hàng phần mười", value:"6 phần mười"},
-    {n:"3,072", frac:"72/1000", place:"hàng phần nghìn", value:"2 phần nghìn"},
-    {n:"5,40", frac:"40/100", place:"hàng phần trăm", value:"0 phần trăm"},
-    {n:"7,008", frac:"8/1000", place:"hàng phần nghìn", value:"8 phần nghìn"}
+    ["3,7","7/10","hàng phần mười","7 phần mười"],
+    ["4,25","25/100","hàng phần trăm","5 phần trăm"],
+    ["5,306","306/1000","hàng phần nghìn","6 phần nghìn"],
+    ["7,04","4/100","hàng phần trăm","4 phần trăm"],
+    ["8,125","125/1000","hàng phần nghìn","5 phần nghìn"],
+    ["2,509","509/1000","hàng phần nghìn","9 phần nghìn"],
+    ["6,38","38/100","hàng phần trăm","8 phần trăm"],
+    ["9,407","407/1000","hàng phần nghìn","7 phần nghìn"]
    ];
-   const b=bank[(i-1)%bank.length], mode=(i-1)%12;
-   if(/làm tròn/.test(title)){
-    const x=(2+i)+","+(i%10)+((i+1)%10); const digit=Number(x.split(",")[1][0]);
-    q="Làm tròn số "+x+" đến hàng phần mười.";a=String(Number(x.split(",")[0])+(digit>=5?1:0))+",0";type="Làm tròn";
-   } else if(/so sánh/.test(title)){
-    const x=2+(i%6)/10,y=x+0.01;q="So sánh hai số "+x.toFixed(2).replace(".",",")+" và "+y.toFixed(2).replace(".",",")+".";a="<";type="So sánh";
-   } else if(/nhân.*10|chia.*10/.test(title)){
-    const x=2+(i%5)/10;q=i%2?"Tính: "+x.toFixed(1).replace(".",",")+" × 10.":"Tính: "+x.toFixed(1).replace(".",",")+" : 10.";a=(i%2?x*10:x/10).toString().replace(".",",");type="Tính";
-   } else if(mode===0){
-    q="Viết số thập phân "+b.n+" dưới dạng phân số thập phân.";a=b.frac;type="Viết số";
-   } else if(mode===1){
-    q="Viết phân số thập phân "+b.frac+" dưới dạng số thập phân.";a=b.n;type="Viết số";
-   } else if(mode===2){
-    q="Trong số "+b.n+", chữ số "+b.n.slice(-1)+" thuộc hàng nào?";a=b.place;type="Xác định hàng";
-   } else if(mode===3){
-    q="Trong số "+b.n+", chữ số "+b.n.slice(-1)+" có giá trị là bao nhiêu?";a=b.value;type="Giá trị chữ số";
-   } else if(mode===4){
-    q="Đọc số thập phân "+b.n+".";a=b.n;type="Đọc số";
-   } else if(mode===5){
-    const parts=b.n.split(",");
-    q="Viết số thập phân gồm "+parts[0]+" đơn vị và "+(parts[1].length===1?parts[1]+" phần mười":parts[1].length===2?parts[1]+" phần trăm":parts[1]+" phần nghìn")+".";a=b.n;type="Cấu tạo số";
-   } else if(mode===6){
-    q="Điền số thích hợp: "+b.n+" = "+b.frac+".";a="=";type="Điền";
-   } else if(mode===7){
-    q="Chọn số thập phân có chữ số "+b.n.slice(-1)+" ở "+b.place+".";a=b.n;type="Nhận biết";
-   } else if(mode===8){
-    const padded=b.n.split(",")[1].padEnd(3,"0");
-    q="Viết số "+b.n+" với đủ 3 chữ số ở phần thập phân.";a=b.n.split(",")[0]+","+padded;type="Viết số";
-   } else if(mode===9){
-    const equivalent=b.n.split(",")[0]+","+b.n.split(",")[1].padEnd(3,"0");
-    q="Viết một số thập phân bằng "+b.n+" và có 3 chữ số ở phần thập phân.";a=equivalent;type="Số thập phân bằng nhau";
-   } else if(mode===10){
-    q="Phần thập phân của số "+b.n+" có bao nhiêu chữ số?";a=String(b.n.split(",")[1].length);type="Nhận biết";
-   } else {
-    q="Số "+b.n+" gồm "+b.n.split(",")[0]+" đơn vị và bao nhiêu phần của đơn vị?";a=b.frac;type="Cấu tạo số";
-   }
-  } else if(math && /số tự nhiên/.test(title)){
-   const a1=levelNum(group,120)+i*17,b1=levelNum(group,35)+i*8;
-   if(/so sánh/.test(title)){q="So sánh "+a1+" và "+b1+".";a=a1>b1?">":a1<b1?"<":"=";type="So sánh";}
-   else if(/tìm.*x|thành phần chưa biết/.test(title)){const x=20+i, b=35+i; q="Tìm x: x + "+b+" = "+(x+b)+".";a=String(x);type="Tìm x";}
-   else if(k%3===0){q="Đặt tính rồi tính: "+a1+" + "+b1+".";a=String(a1+b1);type="Đặt tính";}
-   else if(k%3===1){q="Tính: "+a1+" × "+(2+(i%3))+".";a=String(a1*(2+(i%3)));type="Tính";}
-   else {q="Tính: "+(a1+b1)+" − "+b1+".";a=String(a1);type="Tính";}
-  } else if(math && /tỉ số phần trăm|phần trăm/.test(title)){
+   const b=bank[(i-1)%bank.length], m=(i-1)%8;
+   if(/làm tròn/.test(title)){const whole=2+(i%7),tenths=i%10,hundred=(i+3)%10,x=whole+","+tenths+hundred;add("Làm tròn số "+x+" đến hàng phần mười.",dec(whole+(hundred>=5?1:0))+",0","Làm tròn số thập phân");}
+   else if(/so sánh/.test(title)){const x=2+(i%6)/10,y=x+0.01;add("So sánh hai số "+dec(x.toFixed(2))+" và "+dec(y.toFixed(2))+".","<","So sánh số thập phân");}
+   else if(m===0) add("Viết số thập phân "+b[0]+" dưới dạng phân số thập phân.",b[1],"Viết số");
+   else if(m===1) add("Viết phân số thập phân "+b[1]+" dưới dạng số thập phân.",b[0],"Viết số");
+   else if(m===2) add("Trong số "+b[0]+", chữ số "+b[0].slice(-1)+" thuộc hàng nào?",b[2],"Xác định hàng");
+   else if(m===3) add("Trong số "+b[0]+", chữ số "+b[0].slice(-1)+" có giá trị là bao nhiêu?",b[3],"Giá trị chữ số");
+   else if(m===4) add("Đọc số thập phân "+b[0]+".",b[0],"Đọc số");
+   else if(m===5){const p=b[0].split(",");add("Viết số thập phân gồm "+p[0]+" đơn vị và "+(p[1].length===1?p[1]+" phần mười":p[1].length===2?p[1]+" phần trăm":p[1]+" phần nghìn")+".",b[0],"Cấu tạo số");}
+   else if(m===6) add("Điền dấu thích hợp: "+b[0]+" "+b[1]+".","=","Điền dấu");
+   else {const p=b[0].split(",")[1];add("Phần thập phân của số "+b[0]+" có bao nhiêu chữ số?",String(p.length),"Nhận biết");}
+   return true;
+  }
+  if(/viết số đo.*số thập phân|số đo.*dạng số thập phân/.test(title)){
+   const bank=[
+    ["1 kg","0,001 tấn"],["564 m","0,564 km"],["3,2 m","3200 mm"],["4,5 kg","4500 g"],
+    ["132 mm","13,2 cm"],["7 m 5 dm","7,5 m"],["3 kg 250 g","3,25 kg"],["2 m 35 cm","2,35 m"]
+   ];
+   const b=bank[(i-1)%bank.length]; add("Viết số đo "+b[0]+" dưới dạng thích hợp.",b[1],"Đổi đơn vị đo");
+   return true;
+  }
+  if(/làm tròn/.test(title)){
+   const whole=10+i, tenth=i%10,hundred=(i+3)%10,x=whole+","+tenth+hundred;
+   add("Làm tròn số "+x+" đến hàng phần mười.",dec(whole+(hundred>=5?1:0))+",0","Làm tròn số thập phân"); return true;
+  }
+  if(/so sánh.*số thập phân/.test(title)){
+   const x=2+(i%6)/10,y=x+0.01; add("So sánh hai số "+dec(x.toFixed(2))+" và "+dec(y.toFixed(2))+".","<","So sánh số thập phân"); return true;
+  }
+  if(/tỉ số phần trăm|phần trăm/.test(title)){
    const p=[10,20,25,30,40][(i-1)%5], amount=levelNum(group,40)+i*10;
-   if(/tìm.*phần trăm|tỉ số phần trăm/.test(title)){const a1=20+i,b1=100; q="Tính tỉ số phần trăm của "+a1+" và "+b1+".";a=a1+"%";type="Tính tỉ số";}
-   else {q="Tính "+p+"% của "+amount+".";a=String(amount*p/100);type="Tính";}
-  } else if(math && /hình thang/.test(title)){
-   const b1=levelNum(group,8)+i,b2=levelNum(group,5)+i,h=levelNum(group,3)+(i%3);
-   q="Một hình thang có đáy lớn "+b1+" cm, đáy bé "+b2+" cm và chiều cao "+h+" cm. Tính diện tích hình thang.";
-   a=String((b1+b2)*h/2)+" cm²";type="Bài toán có lời văn";
-  } else if(math && /diện tích hình tam giác|hình tam giác/.test(title)){
-   const b=levelNum(group,6)+i,h=levelNum(group,4)+(i%3);
-   q="Tính diện tích hình tam giác có đáy "+b+" cm và chiều cao "+h+" cm.";a=String(b*h/2)+" cm²";type="Tính";
-  } else if(math && /thể tích/.test(title)){
-   const a1=levelNum(group,4)+i,b1=3+(i%4),h=2+(i%3);q="Tính thể tích hình hộp chữ nhật có chiều dài "+a1+" cm, chiều rộng "+b1+" cm, chiều cao "+h+" cm.";a=String(a1*b1*h)+" cm³";type="Tính";
-  } else if(subj==="Tiếng Việt" && /danh từ|động từ|tính từ/.test(title)){
+   if(/tỉ số phần trăm/.test(title)){const a1=20+i;add("Tính tỉ số phần trăm của "+a1+" và 100.",a1+"%","Tính tỉ số phần trăm");}
+   else add("Tính "+p+"% của "+amount+".",String(amount*p/100),"Tính phần trăm");
+   return true;
+  }
+  if(/hình thang/.test(title)){
+   const b1=levelNum(group,8)+i,b2=levelNum(group,5)+i,h=levelNum(group,3)+(i%3),area=(b1+b2)*h/2;
+   if(k%3===0) add("Tính diện tích hình thang có đáy lớn "+b1+" cm, đáy bé "+b2+" cm và chiều cao "+h+" cm.",String(area)+" cm²","Tính diện tích hình thang");
+   else if(k%3===1) add("Một hình thang có hai đáy "+b1+" cm và "+b2+" cm, chiều cao "+h+" cm. Tính diện tích hình thang.",String(area)+" cm²","Tính diện tích hình thang");
+   else add("Điền công thức tính diện tích hình thang: S = (a + b) × h : ___.","2","Điền công thức");
+   return true;
+  }
+  if(/hình tam giác/.test(title)){
+   const b=levelNum(group,6)+i,h=levelNum(group,4)+(i%3);add("Tính diện tích hình tam giác có đáy "+b+" cm và chiều cao "+h+" cm.",String(b*h/2)+" cm²","Tính diện tích hình tam giác");return true;
+  }
+  if(/thể tích/.test(title)){
+   const a=levelNum(group,4)+i,b=3+(i%4),h=2+(i%3);add("Tính thể tích hình hộp chữ nhật có chiều dài "+a+" cm, chiều rộng "+b+" cm, chiều cao "+h+" cm.",String(a*b*h)+" cm³","Tính thể tích");return true;
+  }
+  if(/số tự nhiên/.test(title)){
+   const a=levelNum(group,120)+i*17,b=levelNum(group,35)+i*8;
+   if(/so sánh/.test(title)) add("So sánh "+a+" và "+b+".",a>b?">":a<b?"<":"=","So sánh");
+   else if(/tìm.*x|thành phần chưa biết/.test(title)){const x=20+i,y=35+i;add("Tìm x: x + "+y+" = "+(x+y)+".",String(x),"Tìm thành phần chưa biết");}
+   else if(k%3===0) add("Đặt tính rồi tính: "+a+" + "+b+".",String(a+b),"Đặt tính rồi tính");
+   else if(k%3===1) add("Đặt tính rồi tính: "+(a+b)+" − "+b+".",String(a),"Đặt tính rồi tính");
+   else add("Tính: "+a+" × "+(2+(i%3))+".",String(a*(2+(i%3))),"Tính");
+   return true;
+  }
+  if(/phân số/.test(title)){
+   const d1=simple?4+(i%3):6+(i%5),d2=simple?d1:4+(i%4),n1=1+(i%d1),n2=1+(i%d2);
+   if(/rút gọn/.test(title)){const n=n1*(2+(i%2)),d=d1*(2+(i%2));add("Rút gọn phân số "+n+"/"+d+".",fracText(n,d),"Rút gọn phân số");}
+   else if(/so sánh/.test(title)){const x=n1*d2,y=n2*d1;add("So sánh hai phân số "+n1+"/"+d1+" và "+n2+"/"+d2+".",x===y?"=":x>y?">":"<","So sánh phân số");}
+   else if(/cộng|trừ/.test(title)){const n=n1*d2+(k%2?n2*d1:-n2*d1),d=d1*d2;add("Tính: "+n1+"/"+d1+(k%2?" + ":" − ")+n2+"/"+d2+".",fracText(n,d),"Tính phân số");}
+   else if(/nhân|chia/.test(title)){if(k%2===0)add("Tính: "+n1+"/"+d1+" × "+n2+"/"+d2+".",fracText(n1*n2,d1*d2),"Tính phân số");else add("Tính: "+n1+"/"+d1+" : "+n2+"/"+d2+".",fracText(n1*d2,d1*n2),"Tính phân số");}
+   else add("Tính "+n1+"/"+d1+" của "+(levelNum(group,12)+i*2)+".",String((levelNum(group,12)+i*2)*n1/d1),"Tính giá trị phân số");
+   return true;
+  }
+  return false;
+ }
+ function standardVietnamese(i){
+  if(/danh từ|động từ|tính từ/.test(title)){
    const bank=[
     ["Những bông hoa đỏ nở rực rỡ bên sân trường.","hoa","nở","đỏ"],
     ["Các bạn học sinh chăm chỉ đọc sách trong thư viện.","học sinh","đọc","chăm chỉ"],
     ["Buổi sáng, đàn chim nhỏ bay trên bầu trời xanh.","chim","bay","nhỏ"],
-    ["Mẹ nấu bữa cơm thơm ngon cho cả gia đình.","mẹ","nấu","thơm ngon"],
-    ["Dòng sông trong veo chảy qua cánh đồng.","sông","chảy","trong veo"],
-    ["Ông em kể những câu chuyện thú vị vào buổi tối.","ông","kể","thú vị"],
-    ["Cây phượng già tỏa bóng mát dưới sân trường.","cây phượng","tỏa","già"],
-    ["Những chú thỏ trắng chạy nhanh trên bãi cỏ.","thỏ","chạy","trắng"]
+    ["Mẹ nấu bữa cơm thơm ngon cho cả gia đình.","mẹ","nấu","thơm ngon"]
    ];
-   const b=bank[(i-1)%bank.length], mode=(i-1)%8;
-   if(mode===0){q="Trong câu “"+b[0]+"”, tìm một danh từ, một động từ và một tính từ.";a=b[1]+"; "+b[2]+"; "+b[3];type="Xác định từ";}
-   else if(mode===1){q="Tìm danh từ trong câu: “"+b[0]+"”.";a=b[1];type="Xác định danh từ";}
-   else if(mode===2){q="Tìm động từ trong câu: “"+b[0]+"”.";a=b[2];type="Xác định động từ";}
-   else if(mode===3){q="Tìm tính từ trong câu: “"+b[0]+"”.";a=b[3];type="Xác định tính từ";}
-   else if(mode===4){q="Từ “"+b[1]+"” trong câu “"+b[0]+"” thuộc loại từ nào?";a="danh từ";type="Phân loại từ";}
-   else if(mode===5){q="Từ “"+b[2]+"” trong câu “"+b[0]+"” thuộc loại từ nào?";a="động từ";type="Phân loại từ";}
-   else if(mode===6){q="Từ “"+b[3]+"” trong câu “"+b[0]+"” thuộc loại từ nào?";a="tính từ";type="Phân loại từ";}
-   else {q="Đặt một câu có sử dụng từ “"+b[3]+"”.";a="Học sinh đặt câu đúng ngữ pháp và dùng đúng từ.";type="Đặt câu";}
-  } else if(subj==="Tiếng Việt" && /đại từ/.test(title)){
-   const bank=[
-    ["Lan và em cùng làm bài. Chúng em cùng kiểm tra lại bài.","Chúng em"],
-    ["Nam hỏi Mai: “Bạn đã làm xong bài chưa?”","Bạn"],
-    ["Cô giáo gọi Minh và tôi lên bảng. Cô giao cho chúng tôi một bài tập.","tôi"],
-    ["Các bạn trong tổ cùng giúp nhau học tập. Chúng tôi rất vui.","Chúng tôi"],
-    ["Mẹ hỏi: “Con đã chuẩn bị sách vở chưa?”","Con"]
-   ];
-   const b=bank[(i-1)%bank.length];
-   if((i-1)%2===0){q="Tìm đại từ trong câu: “"+b[0]+"”.";a=b[1];}
-   else {q="Từ “"+b[1]+"” trong câu “"+b[0]+"” dùng để xưng hô hoặc thay thế cho ai?";a="Người được nhắc đến trong câu";}
-   type="Xác định đại từ";
-  } else if(subj==="Tiếng Việt" && /từ đồng nghĩa/.test(title)){
-   const bank=[
-    ["chăm chỉ","siêng năng"],["dũng cảm","can đảm"],["vui vẻ","vui tươi"],["to lớn","khổng lồ"],["đẹp","xinh đẹp"],["nhanh","mau"]
-   ];
-   const b=bank[(i-1)%bank.length];
-   if((i-1)%3===0){q="Tìm một từ đồng nghĩa với từ “"+b[0]+"”.";a=b[1];}
-   else if((i-1)%3===1){q="Chọn từ đồng nghĩa với “"+b[0]+"”: A. "+b[1]+"  B. buồn bã  C. chậm chạp.";a="A";type="Trắc nghiệm";}
-   else {q="Điền một từ đồng nghĩa với “"+b[0]+"” vào chỗ trống: “Bạn Lan rất ______ trong học tập.”";a=b[1];type="Điền từ";}
-  } else if(subj==="Tiếng Việt"){
-   const lessonName=lesson?.lesson||"bài học";
-   const reading=[
-    ["Bài học thuộc nội dung nào?","Nội dung của bài học"],
-    ["Em hãy nêu tên nhân vật hoặc đối tượng chính được nhắc đến trong bài.","Nhân vật hoặc đối tượng chính trong bài"],
-    ["Em hãy nêu một chi tiết em nhớ nhất trong bài.","Một chi tiết đúng theo bài đọc"],
-    ["Bài đọc muốn gửi đến người đọc điều gì?","Thông điệp phù hợp với nội dung bài"],
-    ["Em hãy đặt một câu có sử dụng từ ngữ nổi bật trong bài.","Câu đúng và phù hợp với bài"]
-   ];
-   const b=reading[(i-1)%reading.length];
-   q="Bài “"+lessonName+"”: "+b[0];a=b[1];type="Đọc hiểu";
-  } else {
-   q="Khoanh vào đáp án đúng về nội dung bài “"+(lesson?.lesson||"bài học")+"”.";a="Giáo viên duyệt theo bài học.";type="Trắc nghiệm";
+   const b=bank[(i-1)%bank.length],m=(i-1)%6;
+   if(m===0)add("Tìm một danh từ, một động từ và một tính từ trong câu: “"+b[0]+"”.",b[1]+"; "+b[2]+"; "+b[3],"Xác định từ");
+   else if(m===1)add("Tìm danh từ trong câu: “"+b[0]+"”.",b[1],"Tìm danh từ");
+   else if(m===2)add("Tìm động từ trong câu: “"+b[0]+"”.",b[2],"Tìm động từ");
+   else if(m===3)add("Tìm tính từ trong câu: “"+b[0]+"”.",b[3],"Tìm tính từ");
+   else if(m===4)add("Từ “"+b[1]+"” trong câu thuộc loại từ nào?","danh từ","Phân loại từ");
+   else add("Từ “"+b[2]+"” trong câu thuộc loại từ nào?","động từ","Phân loại từ");
+   return true;
   }
-  if(req){
-   if(wantMC && math && i%3===1){
-    const opts=[a,"0","1",String(Number(a||0)+1)].filter((v,idx,arr)=>arr.indexOf(v)===idx);
-    while(opts.length<3)opts.push(String(opts.length));
-    const shuffled=opts.slice(0,3);
-    const letter=shuffled.indexOf(a)===0?"A":shuffled.indexOf(a)===1?"B":"C";
-    q+=" Chọn đáp án đúng: A. "+shuffled[0]+"  B. "+shuffled[1]+"  C. "+shuffled[2]+".";
-    a=letter;type="Trắc nghiệm";
-   } else if(wantFill && i%3===1){
-    q="Điền kết quả thích hợp: "+q.replace(/^Tính:\s*/,"");
-    type="Điền số";
-   } else if(wantTrueFalse && i%3===1){
-    const statement=q;
-    q="Đúng hay sai? "+statement;
-    a="Đúng";type="Đúng/Sai";
-   } else if(wantWord && math && /hình thang|hình tam giác|thể tích/.test(title) && i%2===1){
-    type="Bài toán có lời văn";
+  if(/đại từ/.test(title)){
+   const bank=[["Lan và em cùng làm bài. Chúng em cùng kiểm tra lại bài.","Chúng em"],["Nam hỏi Mai: “Bạn đã làm xong bài chưa?”","Bạn"],["Cô giáo gọi Minh và tôi lên bảng. Cô giao cho chúng tôi một bài tập.","tôi"],["Các bạn trong tổ cùng giúp nhau học tập. Chúng tôi rất vui.","Chúng tôi"]];
+   const b=bank[(i-1)%bank.length];
+   if(i%2) add("Tìm đại từ trong câu: “"+b[0]+"”.",b[1],"Tìm đại từ");
+   else add("Từ “"+b[1]+"” trong câu dùng để xưng hô hoặc thay thế cho ai?","Người được nhắc đến trong câu","Nhận biết đại từ");
+   return true;
+  }
+  if(/từ đồng nghĩa/.test(title)){
+   const bank=[["chăm chỉ","siêng năng"],["dũng cảm","can đảm"],["vui vẻ","vui tươi"],["to lớn","khổng lồ"],["đẹp","xinh đẹp"],["nhanh","mau"]];
+   const b=bank[(i-1)%bank.length];
+   if(i%3===1)add("Tìm một từ đồng nghĩa với từ “"+b[0]+"”.",b[1],"Tìm từ đồng nghĩa");
+   else if(i%3===2)add("Chọn từ đồng nghĩa với “"+b[0]+"”: A. "+b[1]+"  B. buồn bã  C. chậm chạp.","A","Trắc nghiệm");
+   else add("Điền một từ đồng nghĩa với “"+b[0]+"” vào chỗ trống: “Bạn Lan rất ______ trong học tập.”",b[1],"Điền từ");
+   return true;
+  }
+  if(/từ đa nghĩa/.test(title)){
+   const bank=[["chân","Bộ phận cơ thể người hoặc phần dưới của một vật."],["đầu","Bộ phận trên cùng của cơ thể hoặc phần trước của sự vật."],["mắt","Bộ phận dùng để nhìn hoặc phần giống hình mắt."],["lưng","Phần phía sau cơ thể hoặc phần giữa của sự vật."]];
+   const b=bank[(i-1)%bank.length];
+   if(i%2)add("Từ “"+b[0]+"” trong câu được dùng với nghĩa gốc hay nghĩa chuyển?","Học sinh xác định theo câu cụ thể.","Nhận biết từ đa nghĩa");
+   else add("Đặt một câu với từ “"+b[0]+"” theo nghĩa khác với nghĩa thường gặp.","Câu đúng ngữ pháp và thể hiện đúng nghĩa của từ.","Đặt câu");
+   return true;
+  }
+  if(/báo cáo công việc/.test(title)){
+   if(i%3===1)add("Báo cáo công việc thường gồm những phần nào?","Thời gian, người báo cáo, nội dung công việc/kết quả và đề xuất hoặc phương hướng.","Nhận biết cấu tạo báo cáo");
+   else if(i%3===2)add("Chọn vai người viết báo cáo: em là tổ trưởng, hãy báo cáo ngắn gọn kết quả hoạt động của tổ trong tuần.","Bài báo cáo đủ các ý theo yêu cầu.","Viết báo cáo");
+   else add("Điền nội dung phù hợp vào phần “Kết quả công việc” của báo cáo hoạt động tổ.","Nêu việc đã làm và kết quả đạt được.","Điền nội dung báo cáo");
+   return true;
+  }
+  if(/luyện từ và câu|luyện tập/.test(title)){
+   const samples=["Tìm từ chỉ hoạt động trong câu: “Các bạn chăm chỉ đọc sách.”","Tìm từ chỉ đặc điểm trong câu: “Sân trường sạch đẹp.”","Đặt một câu có từ “chăm chỉ”.","Điền từ thích hợp vào chỗ trống trong câu: “Bạn Lan ______ học bài.”"];
+   const s=samples[(i-1)%samples.length];
+   if(s.includes("hoạt động"))add(s,"đọc","Xác định từ");
+   else if(s.includes("đặc điểm"))add(s,"sạch đẹp","Xác định từ");
+   else if(s.includes("Đặt"))add(s,"Câu đúng ngữ pháp và dùng đúng từ.","Đặt câu");
+   else add(s,"chăm chỉ","Điền từ");
+   return true;
+  }
+  return false;
+ }
+
+ for(let i=1;i<=count;i++){
+  const made=math?standardMath(i):standardVietnamese(i);
+  if(!made){
+   if(subj==="Tiếng Việt"){
+    add("Đọc lại bài “"+(lesson?.lesson||"bài học")+"” và trả lời: Nội dung chính của bài là gì?","Cô giáo chấm theo nội dung bài học.","Đọc hiểu - cô chấm");
+   }else{
+    add("Ôn lại bài “"+(lesson?.lesson||"bài học")+"” và trả lời một câu hỏi ngắn về nội dung bài.","Cô giáo chấm theo bài học.","Tự luận - cô chấm");
    }
   }
-  qs.push({id:i,text:q,answer:a,type});
  }
- return qs;
+ if(wantMC){
+  const before=qs.length;
+  for(let i=0;i<before;i++){
+   const q=qs[i]; if(q.options)continue;
+   const a=String(q.answer||"");
+   if(["<",">","=","danh từ","động từ","tính từ","đại từ","Đúng","Sai"].includes(a)){
+    let opts;
+    if(["<",">","="].includes(a))opts=[a,...["<",">","="].filter(x=>x!==a),"≠"];
+    else if(["danh từ","động từ","tính từ","đại từ"].includes(a))opts=[a,...["danh từ","động từ","tính từ","đại từ"].filter(x=>x!==a)];
+    else opts=[a,a==="Đúng"?"Sai":"Đúng","Không đủ thông tin","Cả A và B"];
+    q.options=opts.slice(0,4);q.answer=["A","B","C","D"][q.options.indexOf(a)];q.type="Trắc nghiệm 4 đáp án";
+   }
+  }
+ }
+ if(wantFill){
+  qs.forEach(q=>{if(q.type==="Tự luận")q.type="Điền/Trả lời ngắn"});
+ }
+ if(wantWord && math && /hình thang|hình tam giác|thể tích|số thập phân/.test(title)){
+  const idx=Math.min(qs.length-1,1),q=qs[idx];
+  if(q){q.type="Bài toán có lời văn";q.text=q.text.replace(/^Tính diện tích/,"Một khu đất có dạng hình học tương ứng. "+q.text);}
+ }
+ return qs.slice(0,count).map((q,i)=>({...q,id:i+1}));
 }
 function safeGifUrl(v){
  try{const u=new URL(String(v||"").trim());return /^https?:$/.test(u.protocol)?u.href:""}catch(e){return""}
