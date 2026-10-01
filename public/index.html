@@ -1346,7 +1346,7 @@ function viewSubmission(aid,sid){
  const qs=set?.questions||[],answers=x.answers||{},saved=x.questionGrades||{};
  let auto=0,correct=0,manual=0;
  const items=qs.map((q,qi)=>{
-  const given=answers[qi]??"",isManual=!!q.manual||/cô chấm/i.test(String(q.type||""));
+  const given=answers[qi]??"",isManual=!!q.manual||/cô chấm|tự luận|tự\s*luận|essay/i.test(String(q.type||""));
   const accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];
   const right=!isManual&&accepted.some(v=>answersEqual(given,v));
   if(isManual)manual++;else{auto++;if(right)correct++}
@@ -1371,7 +1371,7 @@ function viewSubmission(aid,sid){
   </div>
   <div class="card" style="padding:12px;margin-bottom:12px;border:2px solid #c7d2fe">
    <h3 style="margin:0 0 10px">✍️ Kết quả giáo viên</h3>
-   <p class="sub">Cô nhập điểm từng câu tự luận theo thang <b>0–10</b>. LAVI sẽ tự cộng cùng các câu tự động để tính điểm cuối cùng.</p>
+   <p class="sub">Cô nhập điểm từng câu tự luận theo thang <b>0–10</b>. Đáp án chuẩn của tất cả câu có thể sửa ở phần bên dưới.</p>
    <div class="grid3">
     <div class="field"><label>Điểm cuối cùng /100</label><input id="gradeScore" type="number" min="0" max="100" step="1" value="${x.score==null?(autoScore??""):x.score}"></div>
     <div class="field"><label>⭐ Số sao</label><input id="gradeStars" type="number" min="0" max="10" step="1" value="${x.stars||0}"></div>
@@ -1379,7 +1379,7 @@ function viewSubmission(aid,sid){
    </div>
    <button class="btn primary" style="margin-top:10px" onclick="saveTeacherGrade('${a.id}',${s.id})">💾 Lưu kết quả chấm</button><button class="btn gold" style="margin-top:10px" onclick="saveTeacherAnswers('${a.id}',${s.id})">🔑 Lưu đáp án & chấm lại</button>
   </div>
-  <h3>📝 Bài làm của học sinh</h3>${items}
+  <div class="card" style="padding:12px;margin-bottom:12px;background:#fffbeb;border:1px solid #fcd34d"><b>🔑 Chỉnh sửa đáp án</b><div class="sub" style="margin-top:5px">Cô có thể sửa <b>đáp án chuẩn và đáp án chấp nhận cho tất cả câu</b>, gồm cả câu tự động và câu tự luận. Sau khi lưu, các bài đã nộp sẽ được chấm lại theo đáp án mới; câu tự luận vẫn giữ quyền chấm điểm của cô.</div></div><h3>📝 Bài làm của học sinh</h3>${items}
   <button class="btn" style="margin-top:10px" onclick="closeModal()">Đóng</button>`;
  document.getElementById("modal").classList.add("show");
 }
@@ -1397,7 +1397,7 @@ async function saveTeacherGrade(aid,sid){
  const x=state.submissions[aid+"_"+sid]||{},a=state.assignments.find(z=>z.id===aid),st=STUDENTS.find(z=>z.id===sid);
  const set=a?.sets?.find(z=>z.group===st?.group)||a?.sets?.find(z=>z.group==="Cả 4 nhóm")||a?.sets?.[0],qs=set?.questions||[];
  const questionGrades={};let hasManual=false;
- qs.forEach((q,i)=>{if(q.manual||/cô chấm/i.test(String(q.type||""))){const el=document.getElementById("gradeQ"+i);if(el&&el.value!==""){questionGrades[i]={score:Math.max(0,Math.min(10,Number(el.value))),max:10};hasManual=true;}}});
+ qs.forEach((q,i)=>{if(q.manual||/cô chấm|tự luận|tự\s*luận|essay/i.test(String(q.type||""))){const el=document.getElementById("gradeQ"+i);if(el&&el.value!==""){questionGrades[i]={score:Math.max(0,Math.min(10,Number(el.value))),max:10};hasManual=true;}}});
  let finalScore=scoreEl&&scoreEl.value!==""?Number(scoreEl.value):Number(x.score)||0;
  if(!Number.isFinite(finalScore))finalScore=Number(x.score)||0;
  const stars=starsEl?Math.max(0,Math.min(10,Number(starsEl.value)||0)):Number(x.stars)||0;
