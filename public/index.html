@@ -1922,13 +1922,39 @@ async function finishGame(){
  const secs=Math.max(1,Math.round((Date.now()-GAME_STATE.started)/1000));
  const score=GAME_STATE.correct*10;
  const stars=GAME_STATE.correct>=9?5:GAME_STATE.correct>=7?4:GAME_STATE.correct>=5?3:GAME_STATE.correct>=3?2:GAME_STATE.correct>0?1:0;
- gameEl().innerHTML=`<div class="game-board game-result"><div style="font-size:52px">${stars?'🌟'.repeat(stars):'💪'}</div><h2>Hoàn thành!</h2><p>Đúng <b>${GAME_STATE.correct}/${GAME_STATE.questions.length}</b> câu · <b>${score}</b> điểm · ${secs} giây</p><p>${stars} ⭐</p><button class="btn primary" onclick="startGameAgain()">🔄 Chơi lại</button> <button class="btn" onclick="gameEl().innerHTML=''">Đóng</button></div>`;
+ gameEl().innerHTML=`<div class="game-board game-result"><div style="font-size:52px">${stars?'🌟'.repeat(stars):'💪'}</div><h2>Hoàn thành!</h2><p>Đúng <b>${GAME_STATE.correct}/${GAME_STATE.questions.length}</b> câu · <b>${score}</b> điểm · ${secs} giây</p><p>${stars} ⭐</p><p id="gameAttemptInfo" class="sub">Đang lưu lượt chơi...</p><button id="gameReplayBtn" class="btn primary" onclick="startGameAgain()">🔄 Chơi lại</button> <button class="btn" onclick="gameEl().innerHTML=''">Đóng</button></div>`;
  if(LAVI.user?.role==='student'&&LAVI.token&&GAME_STATE.type){
-  try{await fetch('/api/game/result',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({gameType:GAME_STATE.type,score,correct:GAME_STATE.correct,total:GAME_STATE.questions.length,stars,timeSeconds:secs})})}catch(e){}
+  try{
+   const rr=await fetch('/api/game/result',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({gameType:GAME_STATE.type,score,correct:GAME_STATE.correct,total:GAME_STATE.questions.length,stars,timeSeconds:secs})});
+   const jj=await rr.json();
+   const info=document.getElementById('gameAttemptInfo'),btn=document.getElementById('gameReplayBtn');
+   if(rr.ok){
+    if(info)info.innerHTML='Lượt <b>'+jj.attempts+'/3</b> · Điểm cao nhất được tính: <b>'+score+'</b> điểm';
+    if(Number(jj.remaining)<=0){if(btn)btn.outerHTML='<button class="btn" onclick="gameEl().innerHTML=\'\'">Đã hết 3 lượt · Đóng</button>';}
+    else if(info)info.innerHTML+=' · Còn <b>'+jj.remaining+'</b> lượt';
+   }else{
+    if(info)info.innerHTML='⚠️ '+esc(jj.error||'Không lưu được lượt chơi');
+    if(btn)btn.disabled=true;
+   }
+  }catch(e){
+   const info=document.getElementById('gameAttemptInfo');if(info)info.textContent='⚠️ Không kết nối được máy chủ để lưu lượt chơi.';
+  }
  }
 }
-function startGame(title,questions,type){
- GAME_STATE.questions=questions;GAME_STATE.index=0;GAME_STATE.correct=0;GAME_STATE.started=Date.now();GAME_STATE.type=type||'';
+async function startGame(title,questions,type){
+ const gameType=type||'';
+ if(LAVI.user?.role==='student'&&LAVI.token&&gameType){
+  try{
+   const sr=await fetch('/api/game/status?gameType='+encodeURIComponent(gameType),{headers:{Authorization:'Bearer '+LAVI.token}});
+   const sj=await sr.json();
+   if(sr.ok&&Number(sj.remaining)<=0){
+    gameShell(title);
+    gameEl().innerHTML='<div class="game-board game-result"><div style="font-size:48px">🔒</div><h2>Đã hết lượt chơi</h2><p>Em đã chơi đủ <b>3 lần</b> trò chơi này.</p><p class="sub">Điểm cao nhất của em: <b>'+(Number(sj.bestScore)||0)+'</b> điểm.</p><button class="btn" onclick="gameEl().innerHTML=\'\'">Đóng</button></div>';
+    return;
+   }
+  }catch(e){}
+ }
+ GAME_STATE.questions=questions;GAME_STATE.index=0;GAME_STATE.correct=0;GAME_STATE.started=Date.now();GAME_STATE.type=gameType;
  gameShell(title);renderGameQuestion();
 }
 function startQuickMathGame(){startGame('⚡ Tính nhanh – 10 câu Toán',Array.from({length:10},makeMathQuestion),'math')}
