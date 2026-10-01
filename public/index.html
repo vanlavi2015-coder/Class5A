@@ -1480,9 +1480,15 @@ function renderSubmissions(){
  if(!all.length){el.innerHTML='<div class="empty">Chưa có bài giao.</div>';return}
  const aid=document.getElementById("submissionAssignmentFilter")?.value||all[0].id;
  const a=all.find(x=>x.id===aid)||all[0];
- const status=document.getElementById("submissionStatusFilter")?.value||"submitted";
+ const status=document.getElementById("submissionStatusFilter")?.value||"all";
+ const group=document.getElementById("submissionGroupFilter")?.value||"Tất cả";
+ const targetGroups=(a.sets||[]).map(x=>x.group).filter(g=>GROUPS.includes(g));
+ const visibleGroups=targetGroups.length?targetGroups:GROUPS;
+ const students=[...STUDENTS].filter(s=>
+   a.sets?.some(set=>set.group==="Tất cả"||set.group==="Cả 4 nhóm"||set.group===s.group) &&
+   (group==="Tất cả"||s.group===group)
+ );
  const rows=[];
- const students=[...STUDENTS].filter(s=>a.sets?.some(set=>set.group==="Cả 4 nhóm"||set.group===s.group));
  students.forEach(s=>{
   const x=state.submissions[a.id+"_"+s.id];
   if(status==="submitted"&&!x)return;
@@ -1490,26 +1496,36 @@ function renderSubmissions(){
   rows.push({s,x});
  });
  const submitted=students.filter(s=>state.submissions[a.id+"_"+s.id]).length;
+ const groupCounts=visibleGroups.map(g=>{
+  const members=STUDENTS.filter(s=>s.group===g&&a.sets?.some(set=>set.group==="Cả 4 nhóm"||set.group==="Tất cả"||set.group===g));
+  return {g,total:members.length,submitted:members.filter(s=>state.submissions[a.id+"_"+s.id]).length};
+ });
  el.innerHTML=`
   <div class="grid3" style="margin-bottom:12px">
    <div class="field"><label>📚 Chọn bài</label><select id="submissionAssignmentFilter" onchange="renderSubmissions()">
     ${all.map(x=>`<option value="${esc(x.id)}" ${x.id===a.id?'selected':''}>${esc((x.subject||'')+' – '+(x.lesson||x.title||'Bài'))}</option>`).join('')}
    </select></div>
+   <div class="field"><label>👥 Nhóm nhận bài</label><select id="submissionGroupFilter" onchange="renderSubmissions()">
+    <option value="Tất cả" ${group==='Tất cả'?'selected':''}>Tất cả 4 nhóm</option>
+    ${GROUPS.map(g=>`<option value="${esc(g)}" ${group===g?'selected':''}>${esc(g)}</option>`).join('')}
+   </select></div>
    <div class="field"><label>👀 Hiển thị</label><select id="submissionStatusFilter" onchange="renderSubmissions()">
+    <option value="all" ${status==='all'?'selected':''}>Tất cả (${students.length})</option>
     <option value="submitted" ${status==='submitted'?'selected':''}>Đã nộp (${submitted})</option>
     <option value="pending" ${status==='pending'?'selected':''}>Chưa nộp (${students.length-submitted})</option>
-    <option value="all" ${status==='all'?'selected':''}>Tất cả (${students.length})</option>
    </select></div>
-   <div class="card" style="padding:12px"><b>📥 Tiến độ</b><div style="font-size:24px;font-weight:900;margin-top:4px">${submitted}/${students.length}</div><div class="sub">Cô có thể mở từng bài để xem và sửa điểm.</div></div>
   </div>
-  <div class="sub" style="margin-bottom:10px">🔐 <b>Quyền giáo viên:</b> xem toàn bộ bài làm, chấm điểm, sửa điểm tự động, chỉnh sao và lời nhận xét.</div>
+  <div class="grid4" style="margin-bottom:12px">
+   ${groupCounts.map(x=>`<div class="card kpi" style="padding:12px"><div>${esc(x.g)}</div><div class="num">${x.submitted}/${x.total}</div><div class="label">đã nộp</div></div>`).join('')}
+  </div>
+  <div class="sub" style="margin-bottom:10px">📥 <b>Nhận bài:</b> hệ thống hiển thị đủ 4 nhóm; cô có thể lọc từng nhóm và xem bài đã nộp/chưa nộp.</div>
   ${rows.length?`<div class="tablewrap"><table><thead><tr><th>Học sinh</th><th>Nhóm</th><th>Trạng thái</th><th>Điểm</th><th>Sao</th><th>Thời gian</th><th></th></tr></thead><tbody>
    ${rows.map(({s,x})=>`<tr>
     <td><b>${esc(s.name)}</b></td><td>${esc(s.group)}</td>
     <td>${x?'<span class="pill good">Đã nộp</span>':'<span class="pill yellow">Chưa nộp</span>'}</td>
     <td>${x?.score==null?'Chờ cô chấm':x.score+'/100'}</td>
     <td>${x?.stars||0} ⭐</td>
-    <td>${x?.time?new Date(x.time).toLocaleString('vi-VN'): '—'}</td>
+    <td>${x?.time?new Date(x.time).toLocaleString('vi-VN'):'—'}</td>
     <td>${x?`<button class="btn primary" onclick="viewSubmission('${esc(a.id)}',${s.id})">🔎 Xem & chấm</button>`:'—'}</td>
    </tr>`).join('')}
   </tbody></table></div>`:'<div class="empty">Không có học sinh phù hợp với bộ lọc.</div>'}`;
