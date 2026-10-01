@@ -417,6 +417,7 @@ function applyExtraRequirements(questions,lesson,group,note){
   const rotate=index%4;
   const rotated=opts.slice(rotate).concat(opts.slice(0,rotate));
   const answerLetter=["A","B","C","D"][rotated.indexOf(correct)];
+  q.options=rotated;
   q.text=q.text.replace(/\s*Chọn đáp án đúng:.*$/,"")+" Chọn đáp án đúng:";
   q.text+=" A. "+rotated[0]+"  B. "+rotated[1]+"  C. "+rotated[2]+"  D. "+rotated[3]+".";
   q.answer=answerLetter;q.type="Trắc nghiệm 4 đáp án";
@@ -611,6 +612,11 @@ function openStudentAssignment(aid){
    const studentAns=String(sub?.answers?.[i]??'').trim();
    const correct=studentAns!==''&&normalize(studentAns)===normalize(q.answer);
    if(!hasResult){
+     if(q.type==="Trắc nghiệm 4 đáp án"&&Array.isArray(q.options)){
+      const prev=String(sub?.answers?.[i]||"").trim().toUpperCase();
+      return '<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text.replace(/\s*Chọn đáp án đúng:.*$/,""))+
+       '<div style="margin-top:10px;display:grid;gap:8px">'+q.options.map((op,oi)=>{const letter=["A","B","C","D"][oi];return '<label style="display:flex;gap:9px;align-items:center;padding:10px 12px;border:1px solid #dbe1f0;border-radius:10px;cursor:pointer;background:#fff"><input type="radio" name="ans'+i+'" value="'+letter+'" '+(prev===letter?'checked':'')+'><b>'+letter+'.</b> '+esc(op)+'</label>';}).join('')+'</div></div>';
+     }
      return '<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<input id="ans'+i+'" class="student-answer" value="'+esc(sub?.answers?.[i]||'')+'" placeholder="Nhập câu trả lời của em..."></div>';
    }
    return '<div class="student-q" style="border-left:5px solid '+(correct?'#16a34a':'#dc2626')+'">'+
@@ -652,7 +658,12 @@ async function submitOnline(aid,sid){
   if(!set?.questions?.length)throw new Error('Bài tập chưa có câu hỏi');
   if(!LAVI.token)throw new Error('Phiên đăng nhập đã hết. Hãy đăng nhập lại');
   const answers={};let correct=0;
-  set.questions.forEach((q,i)=>{const v=(document.getElementById('ans'+i)?.value||'').trim();answers[i]=v;if(v&&normalize(v)===normalize(q.answer))correct++;});
+  set.questions.forEach((q,i)=>{
+   let v="";
+   if(q.type==="Trắc nghiệm 4 đáp án") v=document.querySelector('input[name="ans'+i+'"]:checked')?.value||"";
+   else v=(document.getElementById('ans'+i)?.value||'').trim();
+   answers[i]=v;if(v&&normalize(v)===normalize(q.answer))correct++;
+  });
   const score=Math.round(correct/set.questions.length*100);
   const oldScore=state.submissions[aid+'_'+sid]?.score||0;
   const improved=score-oldScore>=10;
