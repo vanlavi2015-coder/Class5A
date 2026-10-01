@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS stars(student_id INTEGER PRIMARY KEY, total INTEGER N
 CREATE TABLE IF NOT EXISTS awards(id TEXT PRIMARY KEY, student_id INTEGER NOT NULL, stars INTEGER NOT NULL, reason TEXT, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS notifications(id TEXT PRIMARY KEY, student_id INTEGER NOT NULL, message TEXT NOT NULL, read INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS schedules(id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS game_results(student_id INTEGER NOT NULL, game_type TEXT NOT NULL, score INTEGER NOT NULL DEFAULT 0, correct INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL DEFAULT 10, stars INTEGER NOT NULL DEFAULT 0, time_seconds INTEGER NOT NULL DEFAULT 0, played_at TEXT NOT NULL, PRIMARY KEY(student_id,game_type));
 CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `);
 
@@ -81,6 +82,34 @@ app.get('/api/health',(req,res)=>res.json({ok:true,app:'LAVI 5A Online v3',stude
 app.post('/api/login',(req,res)=>{const {username,password}=req.body||{};const u=db.prepare('SELECT * FROM users WHERE username=?').get(String(username||''));if(!u||!bcrypt.compareSync(String(password||''),u.password_hash))return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});const user={username:u.username,role:u.role,studentId:u.student_id||null};res.json({token:tokenFor(user),user,students:students()});});
 app.get('/api/state',auth,(req,res)=>res.json({state:req.user.role==='teacher'?stateForTeacher():stateForStudent(req.user.studentId),students:req.user.role==='teacher'?students():students().filter(s=>s.id===req.user.studentId),user:req.user}));
 app.get('/api/students',auth,(req,res)=>{if(!teacher(req,res))return;res.json({students:students()});});
+app.post('/api/game/result',auth,(req,res)=>{
+  if(req.user.role!=='student')return res.status(403).json({error:'Chỉ học sinh được lưu kết quả trò chơi'});
+  const type=String(req.body?.gameType||'').trim();
+  if(!['math','choice','knowledge'].includes(type))return res.status(400).json({error:'Loại trò chơi không hợp lệ'});
+  const score=Math.max(0,Math.min(100,Number(req.body?.score)||0));
+  const correct=Math.max(0,Number(req.body?.correct)||0);
+  const total=Math.max(1,Number(req.body?.total)||10);
+  const stars=Math.max(0,Math.min(5,Number(req.body?.stars)||0));
+  const timeSeconds=Math.max(0,Number(req.body?.timeSeconds)||0);
+  const old=db.prepare('SELECT score FROM game_results WHERE student_id=? AND game_type=?').get(req.user.studentId,type);
+  if(!old || score>=Number(old.score||0)){
+    db.prepare('INSERT INTO game_results(student_id,game_type,score,correct,total,stars,time_seconds,played_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(student_id,game_type) DO UPDATE SET score=excluded.score,correct=excluded.correct,total=excluded.total,stars=excluded.stars,time_seconds=excluded.time_seconds,played_at=excluded.played_at').run(req.user.studentId,type,score,correct,total,stars,timeSeconds,now());
+  }
+  res.json({ok:true});
+});
+app.get('/api/overall-leaderboard',auth,(req,res)=>{
+  const ss=students();
+  const assignmentRows=db.prepare('SELECT student_id, SUM(CASE WHEN json_extract(payload,\'$.score\') IS NOT NULL THEN CAST(json_extract(payload,\'$.score\') AS REAL) ELSE 0 END) AS points, COUNT(CASE WHEN json_extract(payload,\'$.score\') IS NOT NULL THEN 1 END) AS completed FROM submissions GROUP BY student_id').all();
+  const games=db.prepare('SELECT student_id, game_type, score, stars, correct, total, time_seconds FROM game_results').all();
+  const amap=new Map(assignmentRows.map(x=>[Number(x.student_id),{points:Number(x.points)||0,completed:Number(x.completed)||0}]));
+  const gmap=new Map();
+  for(const g of games){const id=Number(g.student_id);if(!gmap.has(id))gmap.set(id,{points:0,stars:0,games:0,details:[]});const z=gmap.get(id);z.points+=Number(g.score)||0;z.stars+=Number(g.stars)||0;z.games++;z.details.push({type:g.game_type,score:Number(g.score)||0,stars:Number(g.stars)||0,correct:Number(g.correct)||0,total:Number(g.total)||0,timeSeconds:Number(g.time_seconds)||0});}
+  const list=ss.map(s=>{const a=amap.get(s.id)||{points:0,completed:0};const g=gmap.get(s.id)||{points:0,stars:0,games:0,details:[]};return {studentId:s.id,name:s.name,group:s.group,assignmentPoints:a.points,completedAssignments:a.completed,gamePoints:g.points,gameStars:g.stars,playedGames:g.games,totalPoints:a.points+g.points,details:g.details};});
+  list.sort((a,b)=>b.totalPoints-a.totalPoints||b.assignmentPoints-a.assignmentPoints||b.gamePoints-a.gamePoints||a.studentId-b.studentId);
+  list.forEach((x,i)=>x.rank=i+1);
+  const me=list.find(x=>x.studentId===req.user.studentId);
+  res.json({ok:true,leaderboard:list,userRank:me?.rank||null});
+});
 app.get('/api/leaderboard',auth,(req,res)=>{
   const assignmentId=String(req.query.assignmentId||'');
   if(!assignmentId)return res.status(400).json({error:'Thiếu assignmentId'});
