@@ -264,7 +264,7 @@ function makeQuestions(lesson,group,count,note=""){
  function standardMath(i){
   const groupOffset={Yếu:0,"Trung bình":1,Khá:2,Tốt:4}[group]||0;
   const k=(i-1+groupOffset)%8;
-  if(/bài 9\\.\\s*luyện tập chung/.test(title)){
+  if(/bài 9\.\s*luyện tập chung/.test(title)){
    // Bài 9 tiết 3: ước lượng/làm tròn, tính biểu thức thuận tiện và bài toán thực tế.
    const level={Yếu:0,"Trung bình":1,Khá:2,Tốt:3}[group]??1;
    const roundBank={Yếu:[[12020,6915,1000],[36070,23950,10000],[48200,17600,1000],[73500,28400,10000]],"Trung bình":[[18240,7930,1000],[45870,23640,10000],[126500,48700,10000],[384600,151200,100000]],Khá:[[31240,16870,1000],[67580,29430,10000],[248600,119700,100000],[598600,101500,100000]],Tốt:[[412020,196915,1000],[736070,423950,10000],[958600,201500,100000],[4180300,3990700,1000000]]};
