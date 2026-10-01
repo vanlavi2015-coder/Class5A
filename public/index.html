@@ -348,7 +348,7 @@ function makeQuestions(lesson,group,count,note=""){
   if(/tìm giá trị phần trăm của một số/.test(title) && !/luyện tập chung/.test(title)){
    const bank=[[120,70,"m²"],[300,10,"kg"],[350000,10,"đồng"],[15,20,"kg"],[250000,15,"đồng"]],b=bank[(i-1)%bank.length],ans=b[0]*b[1]/100; add("Tìm "+b[1]+"% của "+b[0]+".",dec(ans)+" "+b[2],"Tìm giá trị phần trăm"); return true;
   }
-  if(/luyện tập chung/.test(title) && /tỉ số phần trăm|tìm hai số/.test(title)){
+  if(/bài\s*44.*luyện tập chung/.test(title) || (/luyện tập chung/.test(title) && /tỉ số phần trăm|tìm hai số/.test(title))){
    const m=(i-1)%3;
    if(m===0){const a=49+i,b=70+i;add("Tính tỉ số phần trăm của "+a+" và "+b+".",dec(a/b*100)+"%","Tính tỉ số phần trăm");}
    else if(m===1){const a=200+i*10,p=[10,15,20][(i-1)%3];add("Tìm "+p+"% của "+a+".",dec(a*p/100),"Tìm giá trị phần trăm");}
@@ -366,7 +366,7 @@ function makeQuestions(lesson,group,count,note=""){
    const l=8+i%5,w=4+i%3,h=3+i%2,v=l*w*h;
    if(i%3===1)add("Tính thể tích hình hộp chữ nhật có chiều dài "+l+" cm, chiều rộng "+w+" cm, chiều cao "+h+" cm.",v+" cm³","Tính thể tích"); else if(i%3===2)add("Một hình hộp chữ nhật có thể tích "+v+" cm³, dài "+l+" cm, rộng "+w+" cm. Chiều cao là bao nhiêu?",h+" cm","Tìm chiều cao"); else add("Một khối gồm 6 hình hộp chữ nhật giống nhau, mỗi hình có kích thước "+l+" cm × "+w+" cm × "+h+" cm. Tính thể tích khối.",(v*6)+" cm³","Bài toán thể tích"); return true;
   }
-  if(/luyện tập chung/.test(title) && /hình khai triển|hình lập phương|hình hộp/.test(title)){
+  if(/bài\s*55.*luyện tập chung/.test(title) || (/luyện tập chung/.test(title) && /hình khai triển|hình lập phương|hình hộp/.test(title))){
    const a=3+i%4,sxq=4*a*a,stp=6*a*a;
    if(i%3===1)add("Một hình lập phương có cạnh "+a+" cm. Tính diện tích xung quanh.",sxq+" cm²","Diện tích xung quanh hình lập phương"); else if(i%3===2)add("Một hình lập phương có cạnh "+a+" cm. Tính diện tích toàn phần.",stp+" cm²","Diện tích toàn phần hình lập phương"); else add("Một hình hộp chữ nhật dài "+(a+4)+" cm, rộng "+(a+2)+" cm, cao "+a+" cm. Tính thể tích.",((a+4)*(a+2)*a)+" cm³","Tính thể tích"); return true;
   }
@@ -374,7 +374,7 @@ function makeQuestions(lesson,group,count,note=""){
    const bank=[[19,15,1,30,"+"],[10,30,9,20,"-"],[8,25,2,40,"+"],[12,10,3,45,"-"]],b=bank[(i-1)%bank.length]; let total=b[0]*60+b[1],other=b[2]*60+b[3],ans=b[4]==="+"?total+other:total-other; const hh=Math.floor(ans/60),mm=ans%60; add("Tính: "+b[0]+" giờ "+b[1]+" phút "+b[4]+" "+b[2]+" giờ "+b[3]+" phút.",hh+" giờ "+mm+" phút","Cộng trừ số đo thời gian"); return true;
   }
   if(/vận tốc của một chuyển động đều/.test(title)){
-   const bank=[[210,2,"km","km/giờ"],[500,100,"m","m/giây"],[180,3,"km","km/giờ"],[600,120,"m","m/giây"]],b=bank[(i-1)%bank.length],v=b[0]/b[1]; add("Một chuyển động đi được "+b[0]+" "+b[2]+" trong "+b[1]+" giờ/giây. Tính vận tốc.",dec(v)+" "+b[3],"Tính vận tốc"); return true;
+   const bank=[[210,2,"km","km/giờ"],[500,100,"m","m/giây"],[180,3,"km","km/giờ"],[600,120,"m","m/giây"]],b=bank[(i-1)%bank.length],v=b[0]/b[1]; add("Một chuyển động đi được "+b[0]+" "+b[2]+" trong "+b[1]+" "+(b[3]==="km/giờ"?"giờ":"giây")+". Tính vận tốc.",dec(v)+" "+b[3],"Tính vận tốc"); return true;
   }
   if(/thực hành tính toán và ước lượng về vận tốc, quãng đường, thời gian/.test(title)){
    const m=(i-1)%3; if(m===0){const v=5+i%4,t=20+i*5;add("Một bạn đi với vận tốc "+v+" m/s trong "+t+" giây. Tính quãng đường.",(v*t)+" m","Tính quãng đường");} else if(m===1){const s=400+i*20,v=5;add("Một người đi quãng đường "+s+" m với vận tốc "+v+" m/s. Tính thời gian.",(s/v)+" giây","Tính thời gian");} else {const s=600+i*20,t=120;add("Một người đi "+s+" m trong "+t+" giây. Tính vận tốc.",dec(s/t)+" m/s","Tính vận tốc");} return true;
