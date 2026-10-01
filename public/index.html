@@ -467,7 +467,13 @@ function makeQuestions(lesson,group,count,note="",seed=0){
        ["0,73","0","73","không phẩy bảy mươi ba"],
        ["327,106","327","106","ba trăm hai mươi bảy phẩy một trăm linh sáu"],
        ["49,251","49","251","bốn mươi chín phẩy hai trăm năm mươi mốt"],
-       ["9,362","9","362","chín phẩy ba trăm sáu mươi hai"]
+       ["9,362","9","362","chín phẩy ba trăm sáu mươi hai"],
+       ["15,204","15","204","mười lăm phẩy hai trăm linh bốn"],
+       ["6,507","6","507","sáu phẩy năm trăm linh bảy"],
+       ["48,125","48","125","bốn mươi tám phẩy một trăm hai mươi lăm"],
+       ["103,42","103","42","một trăm linh ba phẩy bốn mươi hai"],
+       ["7,306","7","306","bảy phẩy ba trăm linh sáu"],
+       ["250,018","250","18","hai trăm năm mươi phẩy mười tám"]
       ];
       const b=bank[(i-1)%bank.length];
       if(m%3===0)add("Trong số "+b[0]+", phần nguyên là số nào?",b[1],"Xác định phần nguyên");
@@ -480,7 +486,13 @@ function makeQuestions(lesson,group,count,note="",seed=0){
        ["0,935","không phẩy chín trăm ba mươi lăm"],
        ["3,1416","ba phẩy một nghìn bốn trăm mười sáu"],
        ["4,8","bốn phẩy tám"],
-       ["1,25","một phẩy hai mươi lăm"]
+       ["1,25","một phẩy hai mươi lăm"],
+       ["28,06","hai mươi tám phẩy không sáu"],
+       ["507,304","năm trăm linh bảy phẩy ba trăm linh bốn"],
+       ["63,125","sáu mươi ba phẩy một trăm hai mươi lăm"],
+       ["9,408","chín phẩy bốn trăm linh tám"],
+       ["120,05","một trăm hai mươi phẩy không năm"],
+       ["36,72","ba mươi sáu phẩy bảy mươi hai"]
       ];
       const b=bank[(i-1)%bank.length];
       if(m%3===0)manualAdd("Đọc số thập phân "+b[0]+" thành lời: "+b[1]+". Cô kiểm tra cách đọc.");
@@ -1396,15 +1408,20 @@ function generate(){
     );
     for(const q of pool){if(all.length>=count)break;addUnique(q);}
    });
-   if(all.length<count){
-    for(const lesson of lessons){
-     if(all.length>=count)break;
-     const seed=(lessons.indexOf(lesson)+1)*47+String(lesson?.lesson||"").length*11;
+   // Bảo đảm đủ đúng số câu cô yêu cầu. Nếu vòng đầu chưa đủ,
+   // tiếp tục sinh với nhiều seed khác nhau thay vì dừng ở 4–6 câu.
+   for(let round=0;round<8 && all.length<count;round++){
+    for(let idx=0;idx<lessons.length && all.length<count;idx++){
+     const lesson=lessons[idx];
+     const seed=(idx+1)*47+String(lesson?.lesson||"").length*11+round*997;
      const pool=applyExtraRequirements(
-       makeQuestions(lesson,g,count+18,note,seed),lesson,g,note
+       makeQuestions(lesson,g,count+24,note,seed),lesson,g,note
      );
      for(const q of pool){if(all.length>=count)break;addUnique(q);}
     }
+   }
+   if(all.length<count){
+    throw new Error("LAVI chỉ tạo được "+all.length+"/"+count+" câu khác nhau trong phạm vi các tiết đã chọn. Cô hãy chọn thêm tiết/bài hoặc giảm số câu.");
    }
    return all.slice(0,count).map((q,i)=>({...q,id:i+1}));
   };
