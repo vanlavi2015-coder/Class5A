@@ -193,9 +193,12 @@ let draft=null, currentStudentGroup="Tất cả";
 async function save(){
  localStorage.setItem("lavi5a_real",JSON.stringify(state));renderAll();
  if(window.LAVI?.token&&window.LAVI.user?.role==='teacher'){
-  try{await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({state})});}
-  catch(e){toast('Đã lưu trên máy này; chưa đồng bộ máy chủ')}
+  const r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({state})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||('Máy chủ trả lỗi '+r.status));
+  return j;
  }
+ return {ok:true,local:true};
 }
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function toast(s){let t=document.getElementById("toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",2200)}
@@ -365,7 +368,23 @@ function renderDraft(){
  ${draft.sets.map(set=>`<div class="assignment"><h3>${esc(set.group)} · ${difficulty(set.group)}</h3>${set.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">Đáp án/gợi ý: ${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}
  <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">💾 Lưu nháp</button></div></div>`
 }
-function publish(){if(!draft)return;draft.status="Đang giao";state.assignments.unshift({...draft});draft=null;document.getElementById("draft").innerHTML="";save();toast("Đã giao bài theo nhóm trình độ")}
+async function publish(){
+ if(!draft)return;
+ const item={...draft,status:"Đang giao"};
+ state.assignments.unshift(item);
+ try{
+  await save();
+  draft=null;
+  document.getElementById("draft").innerHTML="";
+  toast("✅ Đã giao bài theo nhóm trình độ");
+ }catch(e){
+  state.assignments=state.assignments.filter(a=>a.id!==item.id);
+  localStorage.setItem("lavi5a_real",JSON.stringify(state));
+  renderAll();
+  toast("❌ Chưa giao được bài: "+e.message);
+  alert("Chưa giao được bài. "+e.message);
+ }
+}
 function saveLibrary(){if(!draft)return;draft.status="Kho bài";state.assignments.unshift({...draft});draft=null;document.getElementById("draft").innerHTML="";save();toast("Đã lưu vào kho")}
 function clearDraft(){draft=null;document.getElementById("draft").innerHTML=""}
 function findSet(a,g){return a.sets.find(x=>x.group===g)||a.sets[0]}
