@@ -1356,7 +1356,7 @@ function viewSubmission(aid,sid){
    <div style="margin-top:6px"><span class="pill ${isManual?'yellow':right?'good':'bad'}">${status}</span></div>
    <div class="sub" style="margin-top:5px"><b>Học sinh trả lời:</b> ${esc(String(given||"(chưa trả lời)"))}</div>
    <div class="sub"><b>Đáp án chuẩn:</b> ${esc(String(q.answer||""))}</div>
-   ${isManual?`<div class="field" style="margin-top:8px"><label>✍️ Điểm câu ${qi+1} (0–10)</label><input id="gradeQ${qi}" type="number" min="0" max="10" step="0.5" value="${saved[qi]?.score??''}" placeholder="Nhập điểm"></div>`:""}<div class="field" style="margin-top:8px"><label>🔑 Đáp án chuẩn — cô có thể sửa</label><input id="answerQ${qi}" value="${esc(String(q.answer??""))}" placeholder="Nhập đáp án đúng"><label class="sub" style="display:block;margin-top:5px">Đáp án khác chấp nhận (ngăn cách bằng ;)</label><input id="acceptedQ${qi}" value="${esc((q.acceptedAnswers||[]).filter(v=>v!==q.answer).join("; "))}" placeholder="Ví dụ: 0,25; 25/100"></div>
+   ${isManual?`<div class="field" style="margin-top:8px"><label>✍️ Điểm câu ${qi+1} (0–10)</label><input id="gradeQ${qi}" type="number" min="0" max="10" step="0.5" value="${saved[qi]?.score??''}" placeholder="Nhập điểm"><button class="btn" style="margin-top:7px" onclick='saveTeacherQuestionGrade(${JSON.stringify(a.id)},${s.id},${qi})'>💾 Lưu điểm Câu ${qi+1}</button></div>`:""}<div class="field" style="margin-top:8px"><label>🔑 Đáp án chuẩn — cô có thể sửa</label><input id="answerQ${qi}" value="${esc(String(q.answer??""))}" placeholder="Nhập đáp án đúng"><label class="sub" style="display:block;margin-top:5px">Đáp án khác chấp nhận (ngăn cách bằng ;)</label><input id="acceptedQ${qi}" value="${esc((q.acceptedAnswers||[]).filter(v=>v!==q.answer).join("; "))}" placeholder="Ví dụ: 0,25; 25/100"></div>
    <button class="btn success" style="margin-top:8px" onclick='saveTeacherAnswerQuestion(${JSON.stringify(a.id)},${JSON.stringify(set.group)},${qi})'>💾 Lưu đáp án Câu ${qi+1}</button>
   </div>`;
  }).join("");
@@ -1423,6 +1423,15 @@ async function saveTeacherAnswers(aid,sid){
  }catch(e){toast(e.message)}
 }
 
+async function saveTeacherQuestionGrade(aid,sid,qi){
+ const el=document.getElementById("gradeQ"+qi); const score=el&&el.value!==""?Math.max(0,Math.min(10,Number(el.value))):null;
+ if(score===null||!Number.isFinite(score))return toast("Cô hãy nhập điểm cho Câu "+(qi+1)+".");
+ const key=aid+"_"+sid,x=state.submissions[key]||{},grades={...(x.questionGrades||{})}; grades[qi]={score,max:10};
+ try{if(!LAVI.token)throw new Error("Chưa đăng nhập tài khoản giáo viên"); const stars=Math.min(5,Number(x.stars)||0),praise=String(x.praise||"").trim()||praiseByStars(stars);
+  const r=await fetch("/api/teacher/grade",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+LAVI.token},body:JSON.stringify({assignmentId:aid,studentId:sid,score:Number(x.score)||0,praise,stars,questionGrades:grades})});
+  const j=await r.json().catch(()=>({})); if(!r.ok)throw new Error(j.error||"Không lưu được điểm câu"); await loadOnlineState(); viewSubmission(aid,sid); toast("✅ Đã lưu điểm Câu "+(qi+1)+": "+score+"/10");
+ }catch(e){toast("❌ "+e.message)}
+}
 async function saveTeacherGrade(aid,sid){
  const scoreEl=document.getElementById("gradeScore"),starsEl=document.getElementById("gradeStars"),praiseEl=document.getElementById("gradePraise");
  const x=state.submissions[aid+"_"+sid]||{},a=state.assignments.find(z=>z.id===aid),st=STUDENTS.find(z=>z.id===sid);
@@ -1431,8 +1440,8 @@ async function saveTeacherGrade(aid,sid){
  qs.forEach((q,i)=>{if(q.manual||/cô chấm|tự luận|tự\s*luận|essay/i.test(String(q.type||""))){const el=document.getElementById("gradeQ"+i);if(el&&el.value!==""){questionGrades[i]={score:Math.max(0,Math.min(10,Number(el.value))),max:10};hasManual=true;}}});
  let finalScore=scoreEl&&scoreEl.value!==""?Number(scoreEl.value):Number(x.score)||0;
  if(!Number.isFinite(finalScore))finalScore=Number(x.score)||0;
- const stars=starsEl?Math.max(0,Math.min(10,Number(starsEl.value)||0)):Number(x.stars)||0;
- const praise=praiseEl?String(praiseEl.value||""):String(x.praise||"");
+ const stars=starsEl?Math.max(0,Math.min(5,Number(starsEl.value)||0)):Math.min(5,Number(x.stars)||0);
+ const praise=praiseEl?String(praiseEl.value||"").trim():String(x.praise||"");
  try{
   if(!LAVI.token)throw new Error("Chưa đăng nhập tài khoản giáo viên");
   const r=await fetch("/api/teacher/grade",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+LAVI.token},body:JSON.stringify({assignmentId:aid,studentId:sid,score:finalScore,praise,stars,questionGrades})});
