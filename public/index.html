@@ -1420,8 +1420,31 @@ function generate(){
      for(const q of pool){if(all.length>=count)break;addUnique(q);}
     }
    }
+   // LAVI SAFETY: luôn đủ đúng số câu cô yêu cầu.
+   // Nếu ngân hàng tự động của một bài/tiết không còn đủ câu khác nhau,
+   // bổ sung câu tự luận bám đúng tên bài để cô chấm, thay vì trả về thiếu câu.
    if(all.length<count){
-    throw new Error("LAVI chỉ tạo được "+all.length+"/"+count+" câu khác nhau trong phạm vi các tiết đã chọn. Cô hãy chọn thêm tiết/bài hoặc giảm số câu.");
+    let k=0;
+    while(all.length<count && k<60){
+     const lesson=lessons[k%lessons.length];
+     const lessonName=String(lesson?.lesson||"bài học").trim();
+     const key=normQ("Tự luận "+lessonName+" "+k);
+     if(!seen.has(key)){
+      seen.add(key);
+      all.push({
+       text:"Câu "+(all.length+1)+": Hoàn thành một nhiệm vụ tự luận bám đúng nội dung bài “"+lessonName+"”. Trình bày rõ cách làm hoặc câu trả lời.",
+       answer:"",
+       acceptedAnswers:[],
+       type:"Tự luận – cô chấm",
+       manual:true,
+       lessonTitle:lessonName
+      });
+     }
+     k++;
+    }
+   }
+   if(all.length<count){
+    throw new Error("LAVI không thể tạo đủ "+count+" câu. Vui lòng kiểm tra lại tiết/bài đã chọn.");
    }
    return all.slice(0,count).map((q,i)=>({...q,id:i+1}));
   };
