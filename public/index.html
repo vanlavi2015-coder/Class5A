@@ -595,8 +595,28 @@ function renderCurriculum(){
  document.getElementById("curriculumList").innerHTML=Object.entries(grouped).map(([sub,arr])=>`<div class="assignment"><h3>${esc(sub)}</h3>${arr.slice(0,80).map(x=>`<div style="padding:5px 0;border-bottom:1px dashed var(--line)"><span class="pill gray">Tuần ${esc(x.week)}</span> ${esc(x.lesson)}</div>`).join("")}${arr.length>80?`<div class="sub">Hiển thị 80 mục đầu trong danh mục; dữ liệu gốc vẫn được lưu trong tool.</div>`:""}</div>`).join("")
 }
 function renderStats(){
- const counts=GROUPS.map(g=>[g,studentsForGroup(g).length]);const totalStars=Object.values(state.stars).reduce((a,b)=>a+b,0);
- document.getElementById("statsBox").innerHTML=`<div class="grid4">${counts.map(x=>`<div class="card kpi"><div>${x[0]}</div><div class="num">${x[1]}</div><div class="label">học sinh</div></div>`).join("")}</div><div class="assignment"><b>⭐ Tổng sao:</b> ${totalStars}<br><b>📤 Bài đang giao:</b> ${state.assignments.filter(a=>a.status==="Đang giao").length}<br><b>📥 Lượt nộp:</b> ${Object.keys(state.submissions).length}</div>`
+ const total=STUDENTS.length;
+ const counts=GROUPS.map(g=>({group:g,total:studentsForGroup(g).length}));
+ const submittedByStudent={};
+ Object.values(state.submissions).forEach(x=>{if(x?.studentId)submittedByStudent[x.studentId]=x;});
+ const classRows=STUDENTS.map(s=>({student:s,sub:submittedByStudent[s.id]}));
+ const avg=Object.values(submittedByStudent).length?Math.round(Object.values(submittedByStudent).reduce((a,x)=>a+(Number(x.score)||0),0)/Object.values(submittedByStudent).length):0;
+ const totalStars=Object.values(state.stars).reduce((a,b)=>a+b,0);
+ const groupHtml=counts.map(x=>{
+   const members=studentsForGroup(x.group), subs=members.map(s=>submittedByStudent[s.id]).filter(Boolean);
+   const gavg=subs.length?Math.round(subs.reduce((a,z)=>a+(Number(z.score)||0),0)/subs.length):0;
+   const good=subs.filter(z=>(Number(z.score)||0)>=80).length;
+   return `<div class="card" style="padding:14px"><div style="font-weight:900;font-size:17px">${x.group}</div><div class="num" style="font-size:28px">${x.total}/${total}</div><div class="label">học sinh · ${x.total/total*100%1===0?x.total/total*100:(x.total/total*100).toFixed(1)}% lớp</div><div style="margin-top:8px">📊 Đã nộp: ${subs.length}/${x.total} · TB: ${gavg}/100 · ≥80: ${good}</div></div>`;
+ }).join("");
+ const classDist=GROUPS.map(g=>{
+   const n=studentsForGroup(g).length;
+   return `<div class="studentcard"><div><b>${g}</b><div class="sub">Phân nhóm hiện tại của lớp</div></div><div><b>${n}/${total}</b> · ${(n/total*100).toFixed(1)}%</div></div>`;
+ }).join("");
+ document.getElementById("statsBox").innerHTML=`
+ <div class="grid4">${counts.map(x=>`<div class="card kpi"><div>${x.group}</div><div class="num">${x.total}/${total}</div><div class="label">học sinh / cả lớp</div></div>`).join("")}</div>
+ <div class="card" style="margin-top:14px"><h3>📊 Xếp loại theo 4 nhóm</h3><div class="grid2">${groupHtml}</div></div>
+ <div class="card" style="margin-top:14px"><h3>🏫 Thống kê theo lớp 5A</h3><div class="assignment"><b>32 học sinh</b> · Đã có kết quả: ${Object.keys(submittedByStudent).length}/${total} · Điểm trung bình các lượt nộp: ${avg}/100</div>${classDist}</div>
+ <div class="assignment" style="margin-top:14px"><b>⭐ Tổng sao:</b> ${totalStars}<br><b>📤 Bài đang giao:</b> ${state.assignments.filter(a=>a.status==="Đang giao").length}<br><b>📥 Lượt nộp:</b> ${Object.keys(state.submissions).length}</div>`;
 }
 function studentMode(){
  const sid=window.LAVI?.user?.studentId;
@@ -651,7 +671,7 @@ function openStudentAssignment(aid){
     '</div>';
  }).join('');
  document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h2><div class="student-meta">'+esc(s.name)+' · Nhóm '+esc(s.group)+'</div>'+
- (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><b>KẾT QUẢ:</b> <span class="student-score">'+sub.score+'/100</span> · '+sub.stars+' ⭐'+
+ (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><div style="font-size:18px;font-weight:900;color:#166534;margin-bottom:7px">💬 '+esc(sub.praise||'Cố gắng lên em nhé!')+'</div><b>KẾT QUẢ:</b> <span class="student-score">'+sub.score+'/100</span> · '+sub.stars+' ⭐'+
  '<div style="margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="padding:9px;background:#dcfce7;border-radius:10px"><b>✅ Đúng: '+resultCorrect+'/'+resultTotal+'</b><br>'+resultCorrectPercent+'%</div><div style="padding:9px;background:#fee2e2;border-radius:10px"><b>❌ Sai: '+resultWrong+'/'+resultTotal+'</b><br>'+resultWrongPercent+'%</div></div>'+
  '<div style="margin-top:8px;font-weight:800">📊 '+resultCorrectPercent+'% câu đúng · '+resultWrongPercent+'% câu sai</div><div style="margin-top:5px">'+esc(sub.praise||'')+'</div></div>':'')+
  resultQuestions+
