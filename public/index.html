@@ -1064,6 +1064,11 @@ if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.t
  while(madeCount<count && attempt<Math.max(60,count*10)){
   const i=madeCount+1+attempt*7+Number(seed||0);
   let made=math?standardMath(i):(subj==="Tiếng Việt"?standardVietnamese(i):standardKnowledge(i));
+  // Tạo bài phải tuyệt đối bám bài/tiết cô đã chọn. Không được rơi sang ngân hàng kiến thức khác.
+  if(!made && math){
+   manualAdd("Câu hỏi bám đúng nội dung bài “"+rawTitle+"”. Cô vui lòng chỉnh/sửa yêu cầu cụ thể trước khi giao.","Tự luận – cô chấm");
+   made=true;
+  }
   if(!made) made=standardKnowledge(i);
   const candidate=qs[qs.length-1];
   const normText=v=>String(v||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\d+(?:[.,]\d+)?/g,"#").replace(/[^a-z0-9#]+/g," ").replace(/\s+/g," ").trim();
@@ -1215,8 +1220,7 @@ function applyExtraRequirements(questions,lesson,group,note){
    text="Một hộp có dạng hình hộp chữ nhật, dài "+a+" cm, rộng "+b+" cm, cao "+h+" cm. Tính thể tích hộp.";
    answer=String(a*b*h)+" cm³";
   }else{
-   text="Một cửa hàng có "+(20+index)+" quyển vở, bán đi "+(5+index)+" quyển. Hỏi cửa hàng còn lại bao nhiêu quyển vở?";
-   answer=String(15);
+   return q;
   }
   q.text=text;q.answer=answer;q.type="Bài toán có lời văn";q.manual=false;
  }
