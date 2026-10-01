@@ -415,10 +415,58 @@ function frac(n,d){if(d<0){n=-n;d=-d}const g=gcd(n,d);return [n/g,d/g]}
 function fracText(n,d){const f=frac(n,d);return f[1]===1?String(f[0]):f[0]+"/"+f[1]}
 function mixedToImproper(w,n,d){return w*d+n}
 function levelNum(group,base){return group==="Yếu"?base:group==="Trung bình"?base+1:group==="Khá"?base+2:base+3}
+const LESSON_QUESTION_BANK={
+ "bài 10. khái niệm số thập phân (tiết 1)":[
+  ["Viết số thập phân gồm 3 đơn vị và 5 phần mười.","3,5","Viết số thập phân"],
+  ["Viết số thập phân gồm 12 đơn vị và 7 phần trăm.","12,07","Viết số thập phân"],
+  ["Trong số 4,25, phần nguyên là số nào?","4","Xác định phần nguyên"],
+  ["Trong số 4,25, phần thập phân là số nào?","25","Xác định phần thập phân"],
+  ["Số 0,8 được đọc như thế nào?","không phẩy tám","Đọc số thập phân"],
+  ["Số 3,06 được đọc như thế nào?","ba phẩy không sáu","Đọc số thập phân"],
+  ["Viết số thập phân gồm 5 đơn vị và 23 phần trăm.","5,23","Viết số thập phân"],
+  ["Trong số 7,305, chữ số 3 thuộc hàng nào?","phần mười","Xác định hàng của chữ số"]
+ ],
+ "bài 10. khái niệm số thập phân (tiết 2)":[
+  ["Trong số 325,431, phần nguyên là số nào?","325","Xác định phần nguyên"],
+  ["Trong số 325,431, phần thập phân là số nào?","431","Xác định phần thập phân"],
+  ["Trong số 325,431, chữ số 4 thuộc hàng nào?","phần mười","Xác định hàng của chữ số"],
+  ["Trong số 325,431, chữ số 3 cuối cùng thuộc hàng nào?","phần nghìn","Xác định hàng của chữ số"],
+  ["Viết số thập phân có 7 đơn vị, 2 phần mười và 5 phần trăm.","7,25","Viết số thập phân"],
+  ["Đọc số thập phân 12,406.","mười hai phẩy bốn trăm linh sáu","Đọc số thập phân"],
+  ["Viết 48/10 thành số thập phân.","4,8","Chuyển phân số thập phân"],
+  ["Viết 125/100 thành số thập phân.","1,25","Chuyển phân số thập phân"],
+  ["Viết 39/1000 thành số thập phân.","0,039","Chuyển phân số thập phân"],
+  ["Viết 35/100 thành số thập phân.","0,35","Chuyển phân số thập phân"]
+ ],
+ "bài 10. khái niệm số thập phân (tiết 3)":[
+  ["Viết 48/10 thành số thập phân.","4,8","Chuyển phân số thập phân"],
+  ["Viết 125/100 thành số thập phân.","1,25","Chuyển phân số thập phân"],
+  ["Viết 39/1000 thành số thập phân.","0,039","Chuyển phân số thập phân"],
+  ["Viết 35/100 thành số thập phân.","0,35","Chuyển phân số thập phân"],
+  ["Từ các thẻ 7, 0, 2 và dấu phẩy, lập một số thập phân có phần nguyên gồm 1 chữ số và phần thập phân gồm 2 chữ số. Viết một số em lập được.","7,02","Lập số thập phân"],
+  ["Từ các thẻ 7, 0, 2 và dấu phẩy, lập một số thập phân có phần nguyên gồm 1 chữ số và phần thập phân gồm 2 chữ số. Viết một số khác.","2,07","Lập số thập phân"],
+  ["Viết một số thập phân em gặp trong thực tế và đọc số đó.","","Tự luận – cô chấm"],
+  ["Từ các thẻ 3, 5, 0 và dấu phẩy, lập một số thập phân có phần nguyên gồm 1 chữ số và phần thập phân gồm 2 chữ số.","3,50","Lập số thập phân"]
+ ]
+};
+
 function makeQuestions(lesson,group,count,note="",seed=0){
  const rawTitle=String(lesson?.lesson||""); const title=rawTitle.toLowerCase().replace(/[\u00a0\u2000-\u200b]/g," ").replace(/\s+/g," ").trim(), subj=String(lesson?.subject||"").trim();
  const qs=[], math=subj==="Toán", simple=group==="Yếu";
  const req=String(note||"").toLowerCase();
+ const exactLesson=title;
+ const bankQuestions=LESSON_QUESTION_BANK[exactLesson];
+ if(bankQuestions&&bankQuestions.length){
+   const shift=Math.abs(Number(seed)||0)%bankQuestions.length;
+   const picked=[];
+   for(let n=0;n<count;n++){
+     const b=bankQuestions[(shift+n)%bankQuestions.length];
+     const q={id:n+1,text:b[0],answer:b[1],type:b[2],lessonTitle:title,manual:b[2].includes("cô chấm")};
+     if(!q.manual)q.acceptedAnswers=[q.answer];
+     picked.push(q);
+   }
+   return picked;
+ }
  const wantMC=/trắc nghiệm|chọn đáp án|khoanh/.test(req);
  const wantFill=/điền|điền từ|điền số/.test(req);
  const wantWord=/bài toán thực tế|thực tế|có lời văn/.test(req);
