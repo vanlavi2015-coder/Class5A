@@ -405,56 +405,66 @@ function applyExtraRequirements(questions,lesson,group,note){
  }
   function makeMC(q,index){
   let correct=String(q.answer??"").trim();
-  // Nếu dữ liệu cũ đã lưu đáp án A/B/C/D, cố gắng khôi phục đáp án thật từ nội dung câu hỏi.
+  // Nếu câu đã là trắc nghiệm cũ, lấy lại phương án đúng thực sự từ options.
+  if(/^[ABCD]$/.test(correct) && Array.isArray(q.options)){
+    const pos=["A","B","C","D"].indexOf(correct);
+    if(pos>=0 && q.options[pos]!=null) correct=String(q.options[pos]).trim();
+  }
+  const txt=String(q.text||"");
   if(/^[ABCD]$/.test(correct)){
-   const txt=String(q.text||"");
-   let m=txt.match(/Viết số thập phân\s+([0-9]+[.,][0-9]+)\s+dưới dạng số thập phân có chữ số 0 ở cuối/i);
-   if(m) correct=m[1].replace(".",",")+"0";
-   else {
-    m=txt.match(/Viết số thập phân có phần nguyên\s+([0-9]+)\s+và phần thập phân\s+([0-9]+)/i);
-    if(m) correct=m[1]+","+m[2];
-   }
+    let m=txt.match(/Viết số thập phân\s+([0-9]+[.,][0-9]+)\s+dưới dạng số thập phân có chữ số 0 ở cuối/i);
+    if(m) correct=m[1].replace(".",",")+"0";
+    else {
+      m=txt.match(/Viết số thập phân có phần nguyên\s+([0-9]+)\s+và phần thập phân\s+([0-9]+)/i);
+      if(m) correct=m[1]+","+m[2];
+    }
   }
   let opts=[];
-  const nMatch=correct.replace(",",".").match(/^(-?\d+(?:\.\d+)?)(\s*(?:cm²|m²|cm³|m³|kg|g|l|ml|%))?$/i);
+  const normNum=v=>{const m=String(v).replace(",",".").match(/^(-?\d+(?:\.\d+)?)/);return m?Number(m[1]):null;};
+  const nMatch=correct.replace(",",".").match(/^(-?\d+(?:\.\d+)?)(\s*(?:cm²|m²|cm³|m³|kg|g|l|ml|%)?)$/i);
   const fracMatch=correct.match(/^(-?\d+)\s*\/\s*(\d+)$/);
   if(nMatch){
-   const n=Number(nMatch[1]),unit=nMatch[2]||"";
-   const step=Math.abs(n)>=10?1:0.1;
-   opts=[correct,(n+step)+unit,(n-step)+unit,(n+2*step)+unit];
+    const n=Number(nMatch[1]),unit=nMatch[2]||"";
+    const candidates=Math.abs(n)<10
+      ? [n+0.01,n-0.01,n+0.11,n-0.11,n+1,n-1,n+0.2,n-0.2]
+      : [n+1,n-1,n+2,n-2,n+10,n-10];
+    opts=[correct];
+    for(const v of candidates){
+      const candidate=String(Number(v.toFixed(2))).replace(".",",")+unit;
+      if(Math.abs(Number(v)-n)>1e-9 && !opts.some(x=>Math.abs((normNum(x)??NaN)-v)<1e-9))opts.push(candidate);
+      if(opts.length===4)break;
+    }
   }else if(fracMatch){
-   const n=Number(fracMatch[1]),d=Number(fracMatch[2]);
-   opts=[correct,((n+1)+"/"+d),((n-1)+"/"+d),((n)+"/"+(d+1))];
+    const n=Number(fracMatch[1]),d=Number(fracMatch[2]);
+    const candidates=[(n+1)+"/"+d,(n-1)+"/"+d,n+"/"+(d+1),(n+1)+"/"+(d+1)];
+    opts=[correct,...candidates.filter(x=>x!==correct)];
   }else if(["<",">","="].includes(correct)){
-   opts=["<",">","=","≠"];
-  }else if(/danh từ|động từ|tính từ/.test(correct)){
-   opts=["danh từ","động từ","tính từ","đại từ"];
-  }else if(/đúng|sai/.test(correct.toLowerCase())){
-   opts=["Đúng","Sai","Không đủ thông tin","Cả A và B"];
-  }else if(/hàng phần|hàng đơn vị|hàng chục|hàng trăm/.test(correct.toLowerCase())){
-   opts=["hàng phần mười","hàng phần trăm","hàng đơn vị","hàng chục"];
-  }else if(q.type==="Tìm từ" || /đồng nghĩa/.test(q.text)){
-   const pool=["siêng năng","can đảm","vui tươi","khổng lồ","xinh đẹp","mau","lười biếng","nhút nhát","buồn bã","nhỏ bé"];
-   opts=[correct,...pool.filter(x=>x!==correct).slice(0,3)];
+    opts=[correct,...["<",">","=","≠"].filter(x=>x!==correct)];
+  }else if(/^(danh từ|động từ|tính từ|đại từ)$/i.test(correct)){
+    opts=[correct,...["danh từ","động từ","tính từ","đại từ"].filter(x=>x.toLowerCase()!==correct.toLowerCase())];
+  }else if(/^(đúng|sai)$/i.test(correct)){
+    opts=[correct,...["Đúng","Sai","Không đủ thông tin","Cả A và B"].filter(x=>x.toLowerCase()!==correct.toLowerCase())];
+  }else if(/hàng phần|hàng đơn vị|hàng chục|hàng trăm/i.test(correct)){
+    const pool=["hàng phần mười","hàng phần trăm","hàng đơn vị","hàng chục","hàng nghìn"];
+    opts=[correct,...pool.filter(x=>x.toLowerCase()!==correct.toLowerCase())];
+  }else if(/đồng nghĩa/i.test(txt) || q.type==="Tìm từ"){
+    const pool=["siêng năng","can đảm","vui tươi","khổng lồ","xinh đẹp","mau","lười biếng","nhút nhát","buồn bã","nhỏ bé"];
+    opts=[correct,...pool.filter(x=>x!==correct)];
   }else{
-   const pool=["Phương án 1","Phương án 2","Phương án 3","Phương án 4"];
-   opts=[correct,...pool];
+    // Không có dữ liệu phù hợp thì không biến câu thành trắc nghiệm giả.
+    // Giữ câu tự luận để tránh xuất hiện "Phương án 1/2/3".
+    return q;
   }
-  opts=[...new Set(opts.map(String))];
-  if(opts.length<4){
-   const fallback=["Không phù hợp","Kết quả khác","Cả hai đều đúng","Không có đáp án"];
-   for(const x of fallback)if(!opts.includes(x)&&opts.length<4)opts.push(x);
-  }
-  opts=opts.slice(0,4);
+  opts=[...new Set(opts.map(String).filter(Boolean))].slice(0,4);
+  if(opts.length!==4 || !opts.includes(correct)) return q;
   const rotate=index%4;
   const rotated=opts.slice(rotate).concat(opts.slice(0,rotate));
   const answerLetter=["A","B","C","D"][rotated.indexOf(correct)];
   q.options=rotated;
-  q.text=q.text.replace(/\s*Chọn đáp án đúng:.*$/,"");
-  q.text+=" Chọn đáp án đúng:";
-  q.text+=" A. "+rotated[0]+"  B. "+rotated[1]+"  C. "+rotated[2]+"  D. "+rotated[3]+".";
+  q.text=txt.replace(/\s*Chọn đáp án đúng:.*$/,"");
   q.answer=answerLetter;
   q.type="Trắc nghiệm 4 đáp án";
+  return q;
  }
  function makeWord(q,index){
   let text,answer;
