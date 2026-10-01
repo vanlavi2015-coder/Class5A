@@ -417,36 +417,47 @@ function makeQuestions(lesson,group,count,note="",seed=0){
   // PHẠM VI ĐÃ HỌC HIỆN TẠI (đầu HKI): chỉ Hỗn số và đổi đơn vị đo.
   // Chưa học hình tam giác/hình thang nên TUYỆT ĐỐI không sinh các dạng này ở Bài 8/Bài 9 hiện tại.
   if(/bài\s*8\b.*ôn tập hình học và đo lường/.test(title)){
-   const bank=[
-    ["3 1/2","7/2","Đổi hỗn số thành phân số"],
-    ["5 3/4","23/4","Đổi hỗn số thành phân số"],
-    ["2 2/5","12/5","Đổi hỗn số thành phân số"],
-    ["17/3","5 2/3","Đổi phân số thành hỗn số"],
-    ["22/5","4 2/5","Đổi phân số thành hỗn số"],
-    ["29/4","7 1/4","Đổi phân số thành hỗn số"]
-   ];
-   const b=bank[(i-1)%bank.length],m=(i-1)%4;
-   if(m===0||m===1)add("Viết hỗn số "+b[0]+" dưới dạng phân số.",b[1],b[2]);
-   else if(m===2){const vals=[["3 m 5 dm","3,5 m"],["4 kg 250 g","4,25 kg"],["2 m 35 cm","2,35 m"],["5 tấn 200 kg","5,2 tấn"]],v=vals[(i-1)%vals.length];add("Viết số đo "+v[0]+" dưới dạng số thập phân.",v[1],"Đổi đơn vị đo");}
-   else add("Viết phân số "+b[0]+" dưới dạng hỗn số.",b[1],"Đổi phân số thành hỗn số");
-   return true;
-  }
-  // Bài 9 Luyện tập chung hiện tại cũng chỉ được dùng kiến thức đã học.
-  if(/bài\s*9.*luyện tập chung.*tiết\s*[123]/.test(title)){
-   const bank=[
-    ["2 1/3","7/3","Đổi hỗn số thành phân số"],
-    ["4 2/5","22/5","Đổi hỗn số thành phân số"],
-    ["13/4","3 1/4","Đổi phân số thành hỗn số"],
-    ["17/5","3 2/5","Đổi phân số thành hỗn số"]
-   ];
-   const b=bank[(i-1)%bank.length],m=(i-1)%4;
-   if(m===0)add("Viết hỗn số "+b[0]+" dưới dạng phân số.",b[1],b[2]);
-   else if(m===1){const vals=[["173 cm","1,73 m"],["2 kg 500 g","2,5 kg"],["3 m 25 cm","3,25 m"],["4 tấn 300 kg","4,3 tấn"]],v=vals[(i-1)%vals.length];add("Đổi "+v[0]+" sang đơn vị thích hợp.",v[1],"Đổi đơn vị đo");}
-   else if(m===2)add("Viết phân số "+b[0]+" dưới dạng hỗn số.",b[1],b[2]);
-   else {const vals=[["5 m 6 dm","5,6 m"],["3 kg 250 g","3,25 kg"],["7 m 5 cm","7,05 m"],["2 tấn 50 kg","2,05 tấn"]],v=vals[(i-1)%vals.length];add("Viết số đo "+v[0]+" dưới dạng số thập phân.",v[1],"Đổi đơn vị đo");}
-   return true;
-  }
-if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.test(title)){
+    const m=(i-1)%6;
+    if(m===0){const h=5+(i%5);add(h+" giờ = ? phút.",String(h*60),"Đổi đơn vị thời gian");}
+    else if(m===1){const h=2+(i%3),mi=30+(i%2)*15;add(h+" giờ "+mi+" phút = ? phút.",String(h*60+mi),"Đổi đơn vị thời gian");}
+    else if(m===2){add("Trong lớp học, hai đường thẳng tạo thành góc vuông. Hai đường thẳng đó là hai đường thẳng gì?","vuông góc","Nhận biết quan hệ đường thẳng");}
+    else if(m===3){add("Hai đường thẳng không cắt nhau và luôn cách đều nhau là hai đường thẳng gì?","song song","Nhận biết quan hệ đường thẳng");}
+    else if(m===4){const d=8+(i%5),w=4+(i%3);add("Một hình chữ nhật có chiều dài "+d+" m và chiều rộng "+w+" m. Tính diện tích.",String(d*w)+" m²","Diện tích hình chữ nhật");}
+    else {const d=10+(i%4),w=3+(i%4);add("Mảnh đất hình chữ nhật dài "+d+" m, rộng "+w+" m. Diện tích mảnh đất là bao nhiêu mét vuông?",String(d*w)+" m²","Diện tích hình chữ nhật");}
+    return true;
+   }
+   if(/bài\s*9.*luyện tập chung.*tiết\s*1/.test(title)){
+    const m=(i-1)%8;
+    if(m===0){const n=12000+i*37;const digit=Math.floor(n/1000)%10;add("Trong số "+n+", chữ số hàng nghìn có giá trị là bao nhiêu?",String(digit*1000),"Giá trị chữ số");}
+    else if(m===1){const n=7+(i%4);add("Viết phân số thập phân "+n+"/10 dưới dạng số thập phân.",dec(n/10),"Phân số thập phân");}
+    else if(m===2){const a=12000+i*37,b=a-325,c=a+148;add("Số nào lớn nhất trong ba số "+a+", "+b+" và "+c+"?",String(c),"So sánh số tự nhiên");}
+    else if(m===3){add("Phân số nào bé nhất: 3/5, 4/5 hay 2/5?","2/5","So sánh phân số");}
+    else if(m===4){const a=400000+i*317,b=92000+i*41;add("Đặt tính rồi tính: "+a+" + "+b+".",String(a+b),"Cộng số tự nhiên");}
+    else if(m===5){const a=900000+i*217,b=45678+i*31;add("Đặt tính rồi tính: "+a+" − "+b+".",String(a-b),"Trừ số tự nhiên");}
+    else if(m===6){const a=356+(i%20),b=12+(i%8);add("Tính: "+a+" × "+b+".",String(a*b),"Nhân số tự nhiên");}
+    else {const a=6720+(i%20)*56,b=4+(i%5);add("Tính: "+a+" : "+b+".",String(a/b),"Chia số tự nhiên");}
+    return true;
+   }
+   if(/bài\s*9.*luyện tập chung.*tiết\s*2/.test(title)){
+    const m=(i-1)%6;
+    if(m===0){const a=3+(i%4),b=5+(i%4),d=12;add("Tính: "+a+"/"+d+" + "+b+"/"+d+".",fracText(a+b,d),"Cộng phân số");}
+    else if(m===1){const a=7+(i%3),b=2+(i%2),d=10;add("Tính: "+a+"/"+d+" − "+b+"/"+d+".",fracText(a-b,d),"Trừ phân số");}
+    else if(m===2){const a=2+(i%3),b=3;add("Tính: "+a+"/"+b+" × 2/3.",fracText(a*2,b*3),"Nhân phân số");}
+    else if(m===3){const a=2+(i%3),b=3;add("Tính: "+a+"/"+b+" : 1/2.",fracText(a*2,b),"Chia phân số");}
+    else if(m===4){const a=12+(i%4),b=18+(i%3);add("Tính giá trị biểu thức: "+a+" + "+b+" × 2.",String(a+b*2),"Giá trị biểu thức");}
+    else {const a=6,b=8,d=10;add("Tính số trung bình cộng của "+a+", "+b+" và "+d+".",String((a+b+d)/3),"Trung bình cộng");}
+    return true;
+   }
+   if(/bài\s*9.*luyện tập chung.*tiết\s*3/.test(title)){
+    const m=(i-1)%5;
+    if(m===0){const a=12020+i*7,b=6915+i*5;add("Ước lượng "+a+" − "+b+" bằng cách làm tròn đến hàng nghìn.",String(Math.round(a/1000)*1000-Math.round(b/1000)*1000),"Ước lượng");}
+    else if(m===1){const a=36070+i*11,b=23950+i*7;add("Ước lượng "+a+" + "+b+" bằng cách làm tròn đến hàng chục nghìn.",String(Math.round(a/10000)*10000+Math.round(b/10000)*10000),"Ước lượng");}
+    else if(m===2){add("Tính thuận tiện: 25 × 36 × 4.",String(25*36*4),"Tính thuận tiện");}
+    else if(m===3){add("Tính thuận tiện: 125 × 8 × 7.",String(125*8*7),"Tính thuận tiện");}
+    else {const a=24+(i%5),b=6+(i%3);add("Một lớp có "+a+" học sinh, chia đều thành "+b+" nhóm. Hỏi mỗi nhóm có bao nhiêu học sinh?",String(a/b),"Bài toán thực tế");}
+    return true;
+   }
+   if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.test(title)){
    const bank={Yếu:[["2,4","24/10","hàng phần mười","4/10"],["3,5","35/10","hàng phần mười","5/10"],["4,2","42/10","hàng phần mười","2/10"],["5,7","57/10","hàng phần mười","7/10"]],"Trung bình":[["3,7","37/10","hàng phần mười","7/10"],["4,25","425/100","hàng phần trăm","5/100"],["5,30","530/100","hàng phần trăm","0/100"],["7,04","704/100","hàng phần trăm","4/100"]],Khá:[["3,75","375/100","hàng phần trăm","5/100"],["4,256","4256/1000","hàng phần nghìn","6/1000"],["5,306","5306/1000","hàng phần nghìn","6/1000"],["7,048","7048/1000","hàng phần nghìn","8/1000"]],Tốt:[["13,705","13705/1000","hàng phần nghìn","5/1000"],["24,056","24056/1000","hàng phần nghìn","6/1000"],["35,408","35408/1000","hàng phần nghìn","8/1000"],["47,125","47125/1000","hàng phần nghìn","5/1000"]]};
    const b=(bank[group]||bank["Trung bình"])[(i-1)%4]; const m=(i-1)%4;
    if(m===0)add("Viết số thập phân "+b[0]+" dưới dạng phân số thập phân.",b[1],"Viết số");
