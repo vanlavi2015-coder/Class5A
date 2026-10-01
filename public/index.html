@@ -1356,7 +1356,7 @@ function viewSubmission(aid,sid){
    <div style="margin-top:6px"><span class="pill ${isManual?'yellow':right?'good':'bad'}">${status}</span></div>
    <div class="sub" style="margin-top:5px"><b>Học sinh trả lời:</b> ${esc(String(given||"(chưa trả lời)"))}</div>
    <div class="sub"><b>Đáp án chuẩn:</b> ${esc(String(q.answer||""))}</div>
-   ${isManual?`<div class="field" style="margin-top:8px"><label>✍️ Điểm câu ${qi+1} (0–10)</label><input id="gradeQ${qi}" type="number" min="0" max="10" step="0.5" value="${saved[qi]?.score??''}" placeholder="Nhập điểm"></div>`:""}
+   ${isManual?`<div class="field" style="margin-top:8px"><label>✍️ Điểm câu ${qi+1} (0–10)</label><input id="gradeQ${qi}" type="number" min="0" max="10" step="0.5" value="${saved[qi]?.score??''}" placeholder="Nhập điểm"></div>`:""}<div class="field" style="margin-top:8px"><label>🔑 Đáp án chuẩn — cô có thể sửa</label><input id="answerQ${qi}" value="${esc(String(q.answer??""))}" placeholder="Nhập đáp án đúng"><label class="sub" style="display:block;margin-top:5px">Đáp án khác chấp nhận (ngăn cách bằng ;)</label><input id="acceptedQ${qi}" value="${esc((q.acceptedAnswers||[]).filter(v=>v!==q.answer).join("; "))}" placeholder="Ví dụ: 0,25; 25/100"></div>
   </div>`;
  }).join("");
  const autoScore=auto?Math.round(correct/auto*100):null;
@@ -1377,12 +1377,21 @@ function viewSubmission(aid,sid){
     <div class="field"><label>⭐ Số sao</label><input id="gradeStars" type="number" min="0" max="10" step="1" value="${x.stars||0}"></div>
     <div class="field"><label>💬 Nhận xét</label><input id="gradePraise" value="${esc(x.praise||"")}" placeholder="Cô nhận xét..."></div>
    </div>
-   <button class="btn primary" style="margin-top:10px" onclick="saveTeacherGrade('${a.id}',${s.id})">💾 Lưu kết quả chấm</button>
+   <button class="btn primary" style="margin-top:10px" onclick="saveTeacherGrade('${a.id}',${s.id})">💾 Lưu kết quả chấm</button><button class="btn gold" style="margin-top:10px" onclick="saveTeacherAnswers('${a.id}',${s.id})">🔑 Lưu đáp án & chấm lại</button>
   </div>
   <h3>📝 Bài làm của học sinh</h3>${items}
   <button class="btn" style="margin-top:10px" onclick="closeModal()">Đóng</button>`;
  document.getElementById("modal").classList.add("show");
 }
+async function saveTeacherAnswers(aid,sid){
+ const a=state.assignments.find(x=>x.id===aid),s=STUDENTS.find(x=>x.id===sid);if(!a||!s)return;
+ const set=a.sets.find(z=>z.group===s.group)||a.sets.find(z=>z.group==="Cả 4 nhóm")||a.sets[0],qs=set?.questions||[];
+ try{if(!LAVI.token)throw new Error("Chưa đăng nhập tài khoản giáo viên");let changed=0;
+  for(let i=0;i<qs.length;i++){const el=document.getElementById("answerQ"+i);if(!el)continue;const answer=String(el.value||"").trim();if(!answer)continue;const acc=document.getElementById("acceptedQ"+i);const r=await fetch("/api/teacher/answer",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+LAVI.token},body:JSON.stringify({assignmentId:aid,group:set.group,questionIndex:i,answer,acceptedAnswers:String(acc?.value||"").split(";").map(x=>x.trim()).filter(Boolean)})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"Không lưu được đáp án");changed+=Number(j.updatedSubmissions||0);a.sets.find(z=>z.group===set.group).questions[i].answer=answer;a.sets.find(z=>z.group===set.group).questions[i].acceptedAnswers=[...new Set([answer,...String(acc?.value||"").split(";").map(x=>x.trim()).filter(Boolean)])];}
+  localStorage.setItem("lavi5a_real",JSON.stringify(state));await loadOnlineState();viewSubmission(aid,sid);toast("✅ Đã lưu đáp án và chấm lại "+changed+" lượt bài.");
+ }catch(e){toast(e.message)}
+}
+
 async function saveTeacherGrade(aid,sid){
  const scoreEl=document.getElementById("gradeScore"),starsEl=document.getElementById("gradeStars"),praiseEl=document.getElementById("gradePraise");
  const x=state.submissions[aid+"_"+sid]||{},a=state.assignments.find(z=>z.id===aid),st=STUDENTS.find(z=>z.id===sid);
