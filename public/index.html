@@ -1781,12 +1781,47 @@ function studentShowNotice(){
  ns.filter(n=>!n.read).forEach(n=>n.read=true);
  if(ns.some(n=>!n.read))fetch('/api/student/read-notifications',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({ids:ns.map(n=>n.id)})});
 }
+function startRedo(aid){
+ const sub=state.submissions[aid+'_'+LAVI.user.studentId];
+ if(Number(sub?.attempts||0)>=3)return toast('Em đã dùng đủ 3 lần làm bài.');
+ window.LAVI_REDO=window.LAVI_REDO||{};
+ window.LAVI_REDO[aid]=true;
+ openStudentAssignment(aid);
+}
+function shuffleForRedo(arr){
+ const x=arr.map((q,i)=>({q,i}));
+ for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}
+ return x;
+}
 function openStudentAssignment(aid){
  const sid=LAVI.user.studentId,s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid),set=findSet(a,s.group),sub=state.submissions[aid+'_'+sid];
  if(!a||!set)return;
  const hasResult=!!sub;
- const manualCount=set.questions.filter(q=>q.manual||/cô chấm/i.test(String(q.type||''))).length; const resultTotal=Number(sub?.autoTotal)||Math.max(0,(Number(sub?.total)||set.questions.length)-manualCount);
- const resultCorrect=Number.isFinite(Number(sub?.correct))?Number(sub.correct):set.questions.reduce((n,q,i)=>n+(sub?.answers?.[i]&&normalize(sub.answers[i])===normalize(q.answer)?1:0),0);
+ const redo=!!(window.LAVI_REDO&&window.LAVI_REDO[aid])&&hasResult;
+ const attempts=Number(sub?.attempts||0);
+ const remaining=Math.max(0,3-attempts);
+ if(redo&&remaining<=0){delete window.LAVI_REDO[aid];return toast('Em đã dùng đủ 3 lần làm bài.');}
+ const display=redo?shuffleForRedo(set.questions):set.questions.map((q,i)=>({q,i}));
+ if(!hasResult||redo){
+   window.LAVI_CURRENT_ORDER={aid,order:display.map(x=>x.i)};
+   const qsHtml=display.map((item,di)=>{
+     const q=item.q, originalIndex=item.i;
+     if(q.type==="Trắc nghiệm 4 đáp án"&&Array.isArray(q.options)){
+       return '<div class="student-q"><b>Câu '+(di+1)+'.</b> '+esc(q.text.replace(/\s*Chọn đáp án đúng:.*$/,""))+
+       '<div class="mc-options">'+q.options.map((op,oi)=>{const letter=["A","B","C","D"][oi];return '<label class="mc-option"><input type="radio" name="ans'+originalIndex+'" value="'+letter+'"><span class="mc-letter">'+letter+'.</span><span class="mc-text">'+esc(op)+'</span></label>';}).join('')+'</div><div class="mc-hint">Chọn một đáp án đúng nhất.</div></div>';
+     }
+     return '<div class="student-q"><b>Câu '+(di+1)+'.</b> '+esc(q.text)+'<input id="ans'+originalIndex+'" class="student-answer" placeholder="Nhập câu trả lời của em..."></div>';
+   }).join('');
+   const title=redo?'🔄 Làm lại bài — Lần '+(attempts+1)+'/3':'📝 Bài tập';
+   document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">'+title+'</h2><div class="student-meta">'+esc(a.subject)+' · '+esc(a.lesson)+' · '+esc(s.name)+'</div>'+
+   (redo?'<div style="margin:10px 0;padding:10px;background:#fff7ed;border-radius:10px">🔀 Lần làm lại sẽ được <b>đảo thứ tự câu hỏi</b>. Nếu bài có cấu hình biến thể số liệu, LAVI sẽ dùng bộ số liệu khác.</div>':'')+
+   qsHtml+
+   '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="submitOnline(\''+a.id+'\','+sid+')">📤 Nộp bài</button></div>';
+   return;
+ }
+ const manualCount=set.questions.filter(q=>q.manual||/cô chấm/i.test(String(q.type||''))).length;
+ const resultTotal=Number(sub?.autoTotal)||Math.max(0,(Number(sub?.total)||set.questions.length)-manualCount);
+ const resultCorrect=Number.isFinite(Number(sub?.correct))?Number(sub.correct):0;
  const resultWrong=Math.max(0,resultTotal-resultCorrect);
  const resultCorrectPercent=Number.isFinite(Number(sub?.correctPercent))?Number(sub.correctPercent):(resultTotal?Math.round(resultCorrect/resultTotal*100):null);
  const resultWrongPercent=Number.isFinite(Number(sub?.wrongPercent))?Number(sub.wrongPercent):(resultTotal?100-resultCorrectPercent:null);
@@ -1794,28 +1829,16 @@ function openStudentAssignment(aid){
    const studentAns=String(sub?.answers?.[i]??'').trim();
    const accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];
    const correct=studentAns!==''&&accepted.some(expected=>answersEqual(studentAns,expected));
-   if(!hasResult){
-     if(q.type==="Trắc nghiệm 4 đáp án"&&Array.isArray(q.options)){
-      const prev=String(sub?.answers?.[i]||"").trim().toUpperCase();
-      return '<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text.replace(/\s*Chọn đáp án đúng:.*$/,""))+
-       '<div class="mc-options">'+q.options.map((op,oi)=>{const letter=["A","B","C","D"][oi];return '<label class="mc-option"><input type="radio" name="ans'+i+'" value="'+letter+'" '+(prev===letter?'checked':'')+'><span class="mc-letter">'+letter+'.</span><span class="mc-text">'+esc(op)+'</span></label>';}).join('')+'</div><div class="mc-hint">Chọn một đáp án đúng nhất.</div></div>';
-     }
-     return '<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<input id="ans'+i+'" class="student-answer" value="'+esc(sub?.answers?.[i]||'')+'" placeholder="Nhập câu trả lời của em..."></div>';
-   }
    if(q.manual||/cô chấm/i.test(String(q.type||''))) return '<div class="student-q" style="border-left:5px solid #d97706"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<div style="margin-top:9px;font-weight:900;color:#b45309">📝 CÔ CHẤM</div><div style="margin-top:5px"><b>Em trả lời:</b> '+(studentAns?esc(studentAns):'<i>Chưa trả lời</i>')+'</div></div>';
-   return '<div class="student-q" style="border-left:5px solid '+(correct?'#16a34a':'#dc2626')+'">'+
-    '<b>Câu '+(i+1)+'.</b> '+esc(q.text)+
-    '<div style="margin-top:9px;font-weight:900;color:'+(correct?'#15803d':'#b91c1c')+'">'+(correct?'✅ ĐÚNG':'❌ SAI')+'</div>'+
-    '<div style="margin-top:5px"><b>Em trả lời:</b> '+(studentAns?esc(studentAns):'<i>Chưa trả lời</i>')+'</div>'+
-    (!correct?'<div style="margin-top:5px;color:#166534"><b>Đáp án đúng:</b> '+esc(q.answer)+'</div>':'')+
-    '</div>';
+   return '<div class="student-q" style="border-left:5px solid '+(correct?'#16a34a':'#dc2626')+'"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<div style="margin-top:9px;font-weight:900;color:'+(correct?'#15803d':'#b91c1c')+'">'+(correct?'✅ ĐÚNG':'❌ SAI')+'</div><div style="margin-top:5px"><b>Em trả lời:</b> '+(studentAns?esc(studentAns):'<i>Chưa trả lời</i>')+'</div>'+(!correct?'<div style="margin-top:5px;color:#166534"><b>Đáp án đúng:</b> '+esc(q.answer)+'</div>':'')+'</div>';
  }).join('');
+ const best=Number(sub.bestScore??sub.score??0);
  document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h2><div class="student-meta">'+esc(s.name)+'</div>'+
- (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><div style="font-size:18px;font-weight:900;color:#166534;margin-bottom:7px">💬 '+esc(sub.praise||'Cố gắng lên em nhé!')+'</div><b>KẾT QUẢ:</b> <span class="student-score">'+(sub.score==null?'CHỜ CÔ CHẤM':sub.score+'/100')+'</span> · '+sub.stars+' ⭐'+
- '<div style="margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="padding:9px;background:#dcfce7;border-radius:10px"><b>✅ Đúng: '+resultCorrect+'/'+resultTotal+'</b><br>'+resultCorrectPercent+'%</div><div style="padding:9px;background:#fee2e2;border-radius:10px"><b>❌ Sai: '+resultWrong+'/'+resultTotal+'</b><br>'+resultWrongPercent+'%</div></div>'+
- '<div style="margin-top:8px;font-weight:800">📊 '+resultCorrectPercent+'% câu đúng · '+resultWrongPercent+'% câu sai</div><div style="margin-top:5px">'+esc(sub.praise||'')+'</div></div>':'')+
+ '<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><div style="font-size:18px;font-weight:900;color:#166534;margin-bottom:7px">💬 '+esc(sub.praise||'Cố gắng lên em nhé!')+'</div><b>ĐIỂM CAO NHẤT:</b> <span class="student-score">'+best+'/100</span> · Lần '+attempts+'/3 · '+sub.stars+' ⭐'+
+ '<div style="margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="padding:9px;background:#dcfce7;border-radius:10px"><b>✅ Đúng: '+resultCorrect+'/'+resultTotal+'</b><br>'+resultCorrectPercent+'%</div><div style="padding:9px;background:#fee2e2;border-radius:10px"><b>❌ Sai: '+resultWrong+'/'+resultTotal+'</b><br>'+resultWrongPercent+'%</div></div></div>'+
  resultQuestions+
- '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="'+(hasResult?'studentMode()':'submitOnline(\''+a.id+'\','+sid+')')+'">'+(hasResult?'← Về danh sách bài':'📤 Nộp bài')+'</button></div>';
+ (remaining>0?'<button class="student-btn gold" style="width:100%;padding:13px;margin-top:8px" onclick="startRedo(\''+a.id+'\')">🔄 Làm lại bài (còn '+remaining+' lần)</button>':'<div style="margin-top:10px;text-align:center;font-weight:800;color:#6b7280">Đã sử dụng đủ 3 lần làm bài.</div>')+
+ '</div>';
 }
 function starsForScore(score,group){
  const n=Number(score)||0;
@@ -1854,15 +1877,17 @@ async function submitOnline(aid,sid){
   if(!set?.questions?.length)throw new Error('Bài tập chưa có câu hỏi');
   if(!LAVI.token)throw new Error('Phiên đăng nhập đã hết. Hãy đăng nhập lại');
   const answers={};let correct=0;
-  set.questions.forEach((q,i)=>{
+  const order=(window.LAVI_CURRENT_ORDER&&window.LAVI_CURRENT_ORDER.aid===aid)?window.LAVI_CURRENT_ORDER.order:set.questions.map((q,i)=>i);
+  order.forEach((originalIndex)=>{
+   const q=set.questions[originalIndex];
    let v="";
-   if(q.type==="Trắc nghiệm 4 đáp án")v=document.querySelector('input[name="ans'+i+'"]:checked')?.value||"";
-   else v=(document.getElementById('ans'+i)?.value||'').trim();
-   answers[i]=v;
+   if(q.type==="Trắc nghiệm 4 đáp án")v=document.querySelector('input[name="ans'+originalIndex+'"]:checked')?.value||"";
+   else v=(document.getElementById('ans'+originalIndex)?.value||'').trim();
+   answers[originalIndex]=v;
    const manual=!!q.manual||/cô chấm|tự luận|tự\s*luận|essay/i.test(String(q.type||""));
    if(!manual&&v){const accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];if(accepted.some(x=>answersEqual(v,x)))correct++;}
   });
-  const score=Math.round(correct/set.questions.length*100);
+  const score=correct*30;
   const oldScore=state.submissions[aid+'_'+sid]?.score||0;
   const improved=score-oldScore>=10;
   const stars=Math.min(5,starsForScore(score,s.group)+(improved?1:0));
@@ -1877,6 +1902,7 @@ async function submitOnline(aid,sid){
   const j=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(j.error||('Máy chủ trả lỗi '+r.status));
   state.submissions[aid+'_'+sid]=j.submission;
+  if(window.LAVI_REDO)delete window.LAVI_REDO[aid];
   if(Number.isFinite(Number(j.starsTotal)))state.stars[sid]=Number(j.starsTotal);
   else state.stars[sid]=(state.stars[sid]||0)+stars;
   state.awards.unshift({time:new Date().toISOString(),studentId:sid,stars:j.submission?.stars??stars,reason:'Hoàn thành bài'});
