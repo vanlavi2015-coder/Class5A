@@ -1479,6 +1479,21 @@ function praise(score,group,improved){
  if(n>=60)return "💪 Cố gắng tốt! Em tiếp tục luyện tập để tiến bộ hơn nhé.";
  return "🌱 Em hãy xem lại bài và luyện thêm từng bước nhé. Cô tin em sẽ tiến bộ!";
 }
+async function fetchWithRetry(url,options={},attempts=3){
+ let last;
+ for(let i=0;i<attempts;i++){
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+  try{
+   const r=await fetch(url,{...options,signal:ctrl.signal});
+   clearTimeout(timer);
+   return r;
+  }catch(e){
+   clearTimeout(timer);last=e;
+   if(i<attempts-1)await new Promise(resolve=>setTimeout(resolve,1200*(i+1)));
+  }
+ }
+ throw new Error(last?.name==='AbortError'?'Kết nối máy chủ quá lâu. Hãy thử nộp lại.':(last?.message||'Không kết nối được máy chủ'));
+}
 async function submitOnline(aid,sid){
  const btn=event?.currentTarget;
  if(btn){btn.disabled=true;btn.textContent='⏳ Đang nộp bài...';}
@@ -1491,7 +1506,7 @@ async function submitOnline(aid,sid){
   const answers={};let correct=0;
   set.questions.forEach((q,i)=>{
    let v="";
-   if(q.type==="Trắc nghiệm 4 đáp án") v=document.querySelector('input[name="ans'+i+'"]:checked')?.value||"";
+   if(q.type==="Trắc nghiệm 4 đáp án")v=document.querySelector('input[name="ans'+i+'"]:checked')?.value||"";
    else v=(document.getElementById('ans'+i)?.value||'').trim();
    answers[i]=v;if(v&&normalize(v)===normalize(q.answer))correct++;
   });
@@ -1500,20 +1515,27 @@ async function submitOnline(aid,sid){
   const improved=score-oldScore>=10;
   const stars=starsForScore(score,s.group)+(improved?1:0);
   const p=praise(score,s.group,improved);
-  const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({assignmentId:aid,answers,score,stars,praise:p})});
+  localStorage.setItem('lavi5a_draft_'+aid+'_'+sid,JSON.stringify({assignmentId:aid,studentId:sid,answers,savedAt:new Date().toISOString()}));
+  let r;
+  try{
+   r=await fetchWithRetry('/api/submit',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({assignmentId:aid,answers,score,stars,praise:p})},3);
+  }catch(e){
+   throw new Error('Chưa kết nối được máy chủ. Bài làm đã được giữ lại, cô/học sinh hãy bấm “Nộp bài” lại sau vài giây.');
+  }
   const j=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(j.error||('Máy chủ trả lỗi '+r.status));
   state.submissions[aid+'_'+sid]=j.submission;
-  if(Number.isFinite(Number(j.starsTotal))) state.stars[sid]=Number(j.starsTotal);
+  if(Number.isFinite(Number(j.starsTotal)))state.stars[sid]=Number(j.starsTotal);
   else state.stars[sid]=(state.stars[sid]||0)+stars;
   state.awards.unshift({time:new Date().toISOString(),studentId:sid,stars:j.submission?.stars??stars,reason:'Hoàn thành bài'});
+  localStorage.removeItem('lavi5a_draft_'+aid+'_'+sid);
   localStorage.setItem('lavi5a_real',JSON.stringify(state));
   studentMode();
   toast(s.name+': '+score+'/100 · +'+stars+' ⭐');
  }catch(e){
   console.error('submitOnline',e);
   toast('❌ '+e.message);
-  alert('Nộp bài chưa thành công: '+e.message);
+  alert('Nộp bài: '+e.message);
  }finally{
   if(btn){btn.disabled=false;btn.textContent='📤 Nộp bài';}
  }
