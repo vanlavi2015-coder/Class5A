@@ -262,6 +262,8 @@ function openAvatarPicker(){
  const s=currentStudent(), current=s?.avatar||'🎓';
  document.getElementById("modalBox").innerHTML='<h2 style="margin-top:0">🖼️ Ảnh đại diện</h2><p class="sub">Em có thể chọn avatar có sẵn hoặc tải ảnh của mình từ điện thoại.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><label class="btn primary" style="display:inline-flex;align-items:center;gap:6px">📷 Chọn ảnh từ điện thoại<input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadStudentAvatar(this.files[0])"></label><button class="btn" onclick="closeModal()">Đóng</button></div><div class="avatar-picker">'+AVATARS.map(a=>'<button class="avatar-choice '+(a===current?'selected':'')+'" onclick="saveStudentAvatar('+JSON.stringify(a)+')" title="Chọn '+a+'">'+a+'</button>').join('')+'</div>';
  document.getElementById("modal").classList.add("show");
+ document.getElementById("modalBox").dataset.assignmentId=String(aid);
+ document.getElementById("modalBox").dataset.studentId=String(sid);
 }
 async function uploadStudentAvatar(file){
  if(!file)return;
@@ -1357,6 +1359,7 @@ function viewSubmission(aid,sid){
    <div class="sub" style="margin-top:5px"><b>Học sinh trả lời:</b> ${esc(String(given||"(chưa trả lời)"))}</div>
    <div class="sub"><b>Đáp án chuẩn:</b> ${esc(String(q.answer||""))}</div>
    ${isManual?`<div class="field" style="margin-top:8px"><label>✍️ Điểm câu ${qi+1} (0–10)</label><input id="gradeQ${qi}" type="number" min="0" max="10" step="0.5" value="${saved[qi]?.score??''}" placeholder="Nhập điểm"></div>`:""}<div class="field" style="margin-top:8px"><label>🔑 Đáp án chuẩn — cô có thể sửa</label><input id="answerQ${qi}" value="${esc(String(q.answer??""))}" placeholder="Nhập đáp án đúng"><label class="sub" style="display:block;margin-top:5px">Đáp án khác chấp nhận (ngăn cách bằng ;)</label><input id="acceptedQ${qi}" value="${esc((q.acceptedAnswers||[]).filter(v=>v!==q.answer).join("; "))}" placeholder="Ví dụ: 0,25; 25/100"></div>
+   <button class="btn success" style="margin-top:8px" onclick='saveTeacherAnswerQuestion(${JSON.stringify(a.id)},${JSON.stringify(set.group)},${qi})'>💾 Lưu đáp án Câu ${qi+1}</button>
   </div>`;
  }).join("");
  const autoScore=auto?Math.round(correct/auto*100):null;
@@ -1374,7 +1377,7 @@ function viewSubmission(aid,sid){
    <p class="sub">Cô nhập điểm từng câu tự luận theo thang <b>0–10</b>. Đáp án chuẩn của tất cả câu có thể sửa ở phần bên dưới.</p>
    <div class="grid3">
     <div class="field"><label>Điểm cuối cùng /100</label><input id="gradeScore" type="number" min="0" max="100" step="1" value="${x.score==null?(autoScore??""):x.score}"></div>
-    <div class="field"><label>⭐ Số sao</label><input id="gradeStars" type="number" min="0" max="10" step="1" value="${x.stars||0}"></div>
+    <div class="field"><label>⭐ Số sao (tối đa 5 sao/bài)</label><input id="gradeStars" type="number" min="0" max="5" step="1" value="${Math.min(5,Number(x.stars)||0)}" oninput="autoPraiseFromStars()"></div>
     <div class="field"><label>💬 Nhận xét</label><input id="gradePraise" value="${esc(x.praise||"")}" placeholder="Cô nhận xét..."></div>
    </div>
    <button class="btn primary" style="margin-top:10px" onclick="saveTeacherGrade('${a.id}',${s.id})">💾 Lưu kết quả chấm</button><button class="btn gold" style="margin-top:10px" onclick="saveTeacherAnswers('${a.id}',${s.id})">🔑 Lưu đáp án & chấm lại</button>
@@ -1382,6 +1385,34 @@ function viewSubmission(aid,sid){
   <div class="card" style="padding:12px;margin-bottom:12px;background:#fffbeb;border:1px solid #fcd34d"><b>🔑 Chỉnh sửa đáp án</b><div class="sub" style="margin-top:5px">Cô có thể sửa <b>đáp án chuẩn và đáp án chấp nhận cho tất cả câu</b>, gồm cả câu tự động và câu tự luận. Sau khi lưu, các bài đã nộp sẽ được chấm lại theo đáp án mới; câu tự luận vẫn giữ quyền chấm điểm của cô.</div></div><h3>📝 Bài làm của học sinh</h3>${items}
   <button class="btn" style="margin-top:10px" onclick="closeModal()">Đóng</button>`;
  document.getElementById("modal").classList.add("show");
+}
+function praiseByStars(stars){
+ const n=Math.max(0,Math.min(5,Number(stars)||0));
+ if(n>=5)return "🏆 Xuất sắc! Em hoàn thành bài rất tuyệt vời!";
+ if(n===4)return "🌟 Rất tốt! Em đã hoàn thành bài rất tốt!";
+ if(n===3)return "👏 Tốt lắm! Em đã nắm được phần lớn kiến thức.";
+ if(n===2)return "💪 Em đã cố gắng. Hãy luyện thêm để tiến bộ hơn nhé!";
+ if(n===1)return "🌱 Em đã có cố gắng. Cô tin em sẽ tiến bộ từng ngày!";
+ return "❤️ Em hãy xem lại bài và cố gắng thêm nhé. Cô tin em sẽ làm tốt hơn!";
+}
+function autoPraiseFromStars(){
+ const stars=document.getElementById("gradeStars"),praiseEl=document.getElementById("gradePraise");
+ if(stars&&praiseEl)praiseEl.value=praiseByStars(stars.value);
+}
+async function saveTeacherAnswerQuestion(aid,group,qi){
+ const answerEl=document.getElementById("answerQ"+qi),acceptedEl=document.getElementById("acceptedQ"+qi);
+ const answer=String(answerEl?.value||"").trim();
+ const accepted=String(acceptedEl?.value||"").split(";").map(x=>x.trim()).filter(Boolean);
+ if(!answer)return toast("Câu "+(qi+1)+": cô cần nhập đáp án chuẩn trước.");
+ try{
+  if(!LAVI.token)throw new Error("Chưa đăng nhập tài khoản giáo viên");
+  const r=await fetch("/api/teacher/answer",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+LAVI.token},body:JSON.stringify({assignmentId:aid,group,questionIndex:qi,answer,acceptedAnswers:accepted})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||"Không lưu được đáp án");
+  await loadOnlineState();
+  viewSubmission(aid,Number(document.getElementById("modalBox")?.dataset?.studentId)||0);
+  toast("✅ Đã lưu đáp án Câu "+(qi+1)+" và chấm lại "+Number(j.updatedSubmissions||0)+" bài.");
+ }catch(e){toast("❌ "+e.message)}
 }
 async function saveTeacherAnswers(aid,sid){
  const a=state.assignments.find(x=>x.id===aid),s=STUDENTS.find(x=>x.id===sid);if(!a||!s)return;
@@ -1514,18 +1545,15 @@ function openStudentAssignment(aid){
 }
 function starsForScore(score,group){
  const n=Number(score)||0;
- if(n>=90)return 3;
- if(n>=80)return 2;
- if(n>=60)return 1;
+ if(n>=95)return 5;
+ if(n>=90)return 4;
+ if(n>=80)return 3;
+ if(n>=65)return 2;
+ if(n>=50)return 1;
  return 0;
 }
 function praise(score,group,improved){
- const n=Number(score)||0;
- if(improved)return "🌟 Em đã có tiến bộ rõ rệt! Tiếp tục cố gắng nhé!";
- if(n>=90)return "🏆 Xuất sắc! Em hoàn thành bài rất tốt!";
- if(n>=80)return "👏 Rất tốt! Em đã nắm khá chắc kiến thức.";
- if(n>=60)return "💪 Cố gắng tốt! Em tiếp tục luyện tập để tiến bộ hơn nhé.";
- return "🌱 Em hãy xem lại bài và luyện thêm từng bước nhé. Cô tin em sẽ tiến bộ!";
+ return praiseByStars(Math.min(5,starsForScore(score,group)+(improved?1:0)));
 }
 async function fetchWithRetry(url,options={},attempts=3){
  let last;
@@ -1561,7 +1589,7 @@ async function submitOnline(aid,sid){
   const score=Math.round(correct/set.questions.length*100);
   const oldScore=state.submissions[aid+'_'+sid]?.score||0;
   const improved=score-oldScore>=10;
-  const stars=starsForScore(score,s.group)+(improved?1:0);
+  const stars=Math.min(5,starsForScore(score,s.group)+(improved?1:0));
   const p=praise(score,s.group,improved);
   localStorage.setItem('lavi5a_draft_'+aid+'_'+sid,JSON.stringify({assignmentId:aid,studentId:sid,answers,savedAt:new Date().toISOString()}));
   let r;
@@ -1598,7 +1626,7 @@ function answersEqual(a,b){
 function submitDemo(aid,sid){
  const s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid);
  const score=75+((sid*7)%21);const old=state.submissions[aid+"_"+sid]?.score||0;const improved=score-old>=10;
- const stars=starsForScore(score,s.group)+(improved?1:0);const praise=praise(score,s.group,improved);
+ const stars=Math.min(5,starsForScore(score,s.group)+(improved?1:0));const praise=praise(score,s.group,improved);
  state.submissions[aid+"_"+sid]={score,stars,praise,time:new Date().toISOString()};
  state.stars[sid]=(state.stars[sid]||0)+stars;
  state.awards.unshift({time:new Date().toISOString(),studentId:sid,stars,reason:`Hoàn thành bài ${a.lesson}`});
