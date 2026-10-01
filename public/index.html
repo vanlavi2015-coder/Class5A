@@ -1286,10 +1286,26 @@ function renderAssignments(id){
  el.innerHTML=arr.map(a=>{
    const total=a.sets.reduce((n,s)=>n+studentsForGroup(s.group).length,0);
    const submitted=Object.keys(state.submissions).filter(k=>k.startsWith(a.id+"_")).length;
-   return `<div class="assignment"><h3>${esc(a.subject)} – ${esc(a.lesson)}</h3>${gifBlock(a.gifUrl)}<p><span class="pill good">Đang giao</span> <span class="pill blue">Tuần ${esc(a.week)}</span> · ${a.sets.map(s=>s.group).join(" · ")} · ${submitted}/${total} lượt nộp</p><div class="bar"><i style="width:${total?submitted/total*100:0}%"></i></div><div class="row" style="margin-top:9px"><button class="btn primary" onclick="viewAssignment('${a.id}')">Xem bài</button><button class="btn" onclick="showSubmissionForAssignment('${a.id}')">📥 Xem bài nộp (${submitted})</button><button class="btn" onclick="remind('${a.id}')">🔔 Nhắc</button><button class="btn danger" onclick="removeAssignment('${a.id}')">Xóa</button></div></div>`
+   return `<div class="assignment"><h3>${esc(a.subject)} – ${esc(a.lesson)}</h3>${gifBlock(a.gifUrl)}<p><span class="pill good">Đang giao</span> <span class="pill blue">Tuần ${esc(a.week)}</span> · ${a.sets.map(s=>s.group).join(" · ")} · ${submitted}/${total} lượt nộp</p><div class="bar"><i style="width:${total?submitted/total*100:0}%"></i></div><div class="row" style="margin-top:9px"><button class="btn primary" onclick="viewAssignment('${a.id}')">Xem bài</button><button class="btn gold" onclick="editAssignmentAnswers('${a.id}')">✏️ Sửa đáp án</button><button class="btn" onclick="showSubmissionForAssignment('${a.id}')">📥 Xem bài nộp (${submitted})</button><button class="btn" onclick="remind('${a.id}')">🔔 Nhắc</button><button class="btn danger" onclick="removeAssignment('${a.id}')">Xóa</button></div></div>`
  }).join("")
 }
 function showSubmissionForAssignment(id){ show('submissions'); const sel=document.getElementById('submissionAssignmentFilter'); if(sel)sel.value=id; renderSubmissions(); }
+function editAssignmentAnswers(aid){
+ const a=state.assignments.find(x=>x.id===aid); if(!a)return toast('Không tìm thấy bài.');
+ const sets=a.sets||[]; if(!sets.length)return toast('Bài chưa có bộ câu hỏi.');
+ const options=sets.map((s,i)=>'<option value="'+i+'">'+esc(s.group)+'</option>').join('');
+ document.getElementById('modalBox').innerHTML='<h2>✏️ Sửa đáp án từng câu</h2><p class="sub">Cô chọn nhóm/đề rồi sửa từng câu.</p><select id="answerEditSet" onchange="renderAnswerEditSet(\''+esc(aid)+'\',this.value)">'+options+'</select><div id="answerEditQuestions" style="margin-top:12px"></div><button class="btn" onclick="closeModal()">Đóng</button>';
+ document.getElementById('modal').classList.add('show'); renderAnswerEditSet(aid,0);
+}
+function renderAnswerEditSet(aid,si){
+ const a=state.assignments.find(x=>x.id===aid),set=a?.sets?.[Number(si)]; if(!set)return;
+ document.getElementById('answerEditQuestions').innerHTML=(set.questions||[]).map((q,qi)=>'<div class="question"><b>Câu '+(qi+1)+'.</b> '+esc(q.text)+'<div class="field"><label>🔑 Đáp án chuẩn</label><input id="editAns_'+si+'_'+qi+'" value="'+esc(q.answer??'')+'"></div><div class="field"><label>Đáp án khác chấp nhận (;)</label><input id="editAcc_'+si+'_'+qi+'" value="'+esc((q.acceptedAnswers||[]).filter(v=>v!==q.answer).join('; '))+'"></div><button class="btn success" onclick=\'saveAssignmentAnswerOne('+JSON.stringify(aid)+','+JSON.stringify(set.group)+','+qi+','+Number(si)+')\'>💾 Lưu đáp án Câu '+(qi+1)+'</button></div>').join('');
+}
+async function saveAssignmentAnswerOne(aid,group,qi,si){
+ const answer=document.getElementById('editAns_'+si+'_'+qi)?.value?.trim()||''; const accepted=document.getElementById('editAcc_'+si+'_'+qi)?.value||'';
+ if(!answer)return toast('Cô hãy nhập đáp án chuẩn.');
+ try{if(!LAVI.token)throw new Error('Chưa đăng nhập tài khoản giáo viên'); const r=await fetch('/api/teacher/answer',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({assignmentId:aid,group,questionIndex:qi,answer,acceptedAnswers:accepted.split(';').map(x=>x.trim()).filter(Boolean)})}); const j=await r.json().catch(()=>({})); if(!r.ok)throw new Error(j.error||'Không lưu được đáp án'); await loadOnlineState(); editAssignmentAnswers(aid); const sel=document.getElementById('answerEditSet'); if(sel)sel.value=String(si); renderAnswerEditSet(aid,si); toast('✅ Đã lưu đáp án Câu '+(qi+1)+' và chấm lại '+Number(j.updatedSubmissions||0)+' bài.');}catch(e){toast('❌ '+e.message)}
+}
 function viewAssignment(id){
  const a=state.assignments.find(x=>x.id===id);document.getElementById("modalBox").innerHTML=`<h2>${esc(a.subject)} – ${esc(a.lesson)}</h2>${gifBlock(a.gifUrl)}${a.sets.map(s=>`<div class="assignment"><h3>${s.group}</h3>${s.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}<button class="btn" onclick="closeModal()">Đóng</button>`;document.getElementById("modal").classList.add("show")
 }
