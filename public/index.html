@@ -311,6 +311,39 @@ function makeQuestions(lesson,group,count){
  }
  return qs;
 }
+function generate(){
+ try{
+  const lesson=selectedLesson();
+  const group=document.getElementById("cGroup").value;
+  const count=Math.max(3,Math.min(15,Number(document.getElementById("cCount").value)||8));
+  const due=document.getElementById("cDue").value;
+  const note=(document.getElementById("cNote").value||"").trim();
+  if(!lesson) return toast("Chưa có bài học để tạo bài.");
+  const groups=group==="Cả 4 nhóm"?GROUPS:[group];
+  const sets=groups.map(g=>({group:g,questions:makeQuestions(lesson,g,count)}));
+  draft={
+   id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
+   subject:lesson.subject,
+   week:String(lesson.week),
+   topic:lesson.topic||"",
+   lesson:lesson.lesson,
+   duration:lesson.duration||"",
+   group,
+   count,
+   due:due||"",
+   note,
+   sets,
+   status:"Nháp",
+   createdAt:new Date().toISOString()
+  };
+  document.getElementById("draft").innerHTML=renderDraft();
+  document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});
+  toast("Đã tạo bản nháp "+sets.length+" nhóm");
+ }catch(e){
+  console.error(e);
+  toast("Không tạo được bài: "+(e.message||"lỗi không xác định"));
+ }
+}
 function renderDraft(){
  if(!draft)return "";
  return `<div class="card"><h2>📝 Bản nháp: ${esc(draft.subject)} – ${esc(draft.lesson)}</h2><p><span class="pill blue">Tuần ${esc(draft.week)}</span> <span class="pill yellow">${esc(draft.group)}</span></p>
