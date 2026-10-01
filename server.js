@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS awards(id TEXT PRIMARY KEY, student_id INTEGER NOT NU
 CREATE TABLE IF NOT EXISTS notifications(id TEXT PRIMARY KEY, student_id INTEGER NOT NULL, message TEXT NOT NULL, read INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS schedules(id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS game_results(student_id INTEGER NOT NULL, game_type TEXT NOT NULL, score INTEGER NOT NULL DEFAULT 0, correct INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL DEFAULT 10, stars INTEGER NOT NULL DEFAULT 0, time_seconds INTEGER NOT NULL DEFAULT 0, played_at TEXT NOT NULL, PRIMARY KEY(student_id,game_type));
+CREATE TABLE IF NOT EXISTS game_attempts(id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL, game_type TEXT NOT NULL, score INTEGER NOT NULL DEFAULT 0, correct INTEGER NOT NULL DEFAULT 0, total INTEGER NOT NULL DEFAULT 10, stars INTEGER NOT NULL DEFAULT 0, time_seconds INTEGER NOT NULL DEFAULT 0, played_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `);
 
@@ -81,6 +82,15 @@ app.get('/api/health',(req,res)=>res.json({ok:true,app:'LAVI 5A Online v3',stude
 app.post('/api/login',(req,res)=>{const rawUser=String(req.body?.username||'').trim();const username=rawUser.toLowerCase();const password=String(req.body?.password??'');const u=db.prepare('SELECT * FROM users WHERE lower(username)=?').get(username);if(!u)return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});let ok=bcrypt.compareSync(password,u.password_hash);if(!ok){if(u.role==='teacher')ok=password===(process.env.LAVI_TEACHER_PASSWORD||'Lavi@2026');else if(u.role==='student')ok=password==='1234';}if(!ok)return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});const user={username:u.username,role:u.role,studentId:u.student_id||null};res.json({token:tokenFor(user),user,students:students()});});
 app.get('/api/state',auth,(req,res)=>res.json({state:req.user.role==='teacher'?stateForTeacher():stateForStudent(req.user.studentId),students:req.user.role==='teacher'?students():students().filter(s=>s.id===req.user.studentId),user:req.user}));
 app.get('/api/students',auth,(req,res)=>{if(!teacher(req,res))return;res.json({students:students()});});
+app.get('/api/game/status',auth,(req,res)=>{
+  if(req.user.role!=='student')return res.status(403).json({error:'Chỉ học sinh được xem lượt chơi'});
+  const type=String(req.query?.gameType||'').trim();
+  if(!['math','choice','knowledge'].includes(type))return res.status(400).json({error:'Loại trò chơi không hợp lệ'});
+  const row=db.prepare('SELECT COUNT(*) n FROM game_attempts WHERE student_id=? AND game_type=?').get(req.user.studentId,type);
+  const best=db.prepare('SELECT score FROM game_results WHERE student_id=? AND game_type=?').get(req.user.studentId,type);
+  const attempts=Number(row?.n||0);
+  res.json({ok:true,attempts,maxAttempts:3,remaining:Math.max(0,3-attempts),bestScore:Number(best?.score||0)});
+});
 app.post('/api/game/result',auth,(req,res)=>{
   if(req.user.role!=='student')return res.status(403).json({error:'Chỉ học sinh được lưu kết quả trò chơi'});
   const type=String(req.body?.gameType||'').trim();
@@ -90,17 +100,17 @@ app.post('/api/game/result',auth,(req,res)=>{
   const total=Math.max(1,Number(req.body?.total)||10);
   const stars=Math.max(0,Math.min(5,Number(req.body?.stars)||0));
   const timeSeconds=Math.max(0,Number(req.body?.timeSeconds)||0);
+  const attempts=Number(db.prepare('SELECT COUNT(*) n FROM game_attempts WHERE student_id=? AND game_type=?').get(req.user.studentId,type)?.n||0);
+  if(attempts>=3)return res.status(429).json({error:'Em đã sử dụng đủ 3 lượt cho trò chơi này.',attempts,maxAttempts:3,remaining:0});
+  db.prepare('INSERT INTO game_attempts(student_id,game_type,score,correct,total,stars,time_seconds,played_at) VALUES(?,?,?,?,?,?,?,?)').run(req.user.studentId,type,score,correct,total,stars,timeSeconds,now());
   const old=db.prepare('SELECT score FROM game_results WHERE student_id=? AND game_type=?').get(req.user.studentId,type);
   if(!old || score>=Number(old.score||0)){
     db.prepare('INSERT INTO game_results(student_id,game_type,score,correct,total,stars,time_seconds,played_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(student_id,game_type) DO UPDATE SET score=excluded.score,correct=excluded.correct,total=excluded.total,stars=excluded.stars,time_seconds=excluded.time_seconds,played_at=excluded.played_at').run(req.user.studentId,type,score,correct,total,stars,timeSeconds,now());
   }
-  res.json({ok:true});
+  const used=attempts+1;
+  res.json({ok:true,attempts:used,maxAttempts:3,remaining:Math.max(0,3-used)});
 });
-app.get('/api/overall-leaderboard',auth,(req,res)=>{
-  const ss=students();
-  const assignmentRows=db.prepare('SELECT student_id, SUM(CASE WHEN json_extract(payload,\'$.score\') IS NOT NULL THEN CAST(json_extract(payload,\'$.score\') AS REAL) ELSE 0 END) AS points, COUNT(CASE WHEN json_extract(payload,\'$.score\') IS NOT NULL THEN 1 END) AS completed FROM submissions GROUP BY student_id').all();
-  const games=db.prepare('SELECT student_id, game_type, score, stars, correct, total, time_seconds FROM game_results').all();
-  const amap=new Map(assignmentRows.map(x=>[Number(x.student_id),{points:Number(x.points)||0,completed:Number(x.completed)||0}]));
+r(x.student_id),{points:Number(x.points)||0,completed:Number(x.completed)||0}]));
   const gmap=new Map();
   for(const g of games){const id=Number(g.student_id);if(!gmap.has(id))gmap.set(id,{points:0,stars:0,games:0,details:[]});const z=gmap.get(id);z.points+=Number(g.score)||0;z.stars+=Number(g.stars)||0;z.games++;z.details.push({type:g.game_type,score:Number(g.score)||0,stars:Number(g.stars)||0,correct:Number(g.correct)||0,total:Number(g.total)||0,timeSeconds:Number(g.time_seconds)||0});}
   const list=ss.map(s=>{const a=amap.get(s.id)||{points:0,completed:0};const g=gmap.get(s.id)||{points:0,stars:0,games:0,details:[]};return {studentId:s.id,name:s.name,group:s.group,assignmentPoints:a.points,completedAssignments:a.completed,gamePoints:g.points,gameStars:g.stars,playedGames:g.games,totalPoints:a.points+g.points,details:g.details};});
