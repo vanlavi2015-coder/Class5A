@@ -64,6 +64,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
   <button onclick="show('students',this)">👩‍🎓 Học sinh</button>
   <button onclick="show('stars',this)">⭐ Sao & Khen</button>
   <button onclick="show('race',this)">🏁 Trò chơi & Xếp hạng</button>
+  <button onclick="openKnowledgeGame()">🧠 Trò chơi kiến thức</button>
   <button onclick="show('submissions',this)">📥 Bài nộp</button>
   <button onclick="show('schedule',this)">🗓️ Lịch</button>
   <button onclick="show('curriculum',this)">📚 Phạm vi kiến thức</button>
@@ -156,7 +157,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
     </div>
     <div class="card game-card">
      <h3>🧠 Thử tài kiến thức</h3><p class="sub">10 câu kiến thức Tiểu học.</p>
-     <button class="btn primary" onclick="startKnowledgeGame()">▶️ Chơi ngay</button>
+     <button class="btn primary" onclick="openKnowledgeGame()">▶️ Chơi ngay</button>
     </div>
    </div>
    <div id="gameArea" style="margin-top:14px"></div>
@@ -273,6 +274,7 @@ function toggleMenu(){
 function closeMenu(){
  document.body.classList.remove('menu-open');
 }
+function openKnowledgeGame(){window.location.href="game-kien-thuc.html";}
 function show(id,btn){
  if(window.innerWidth<=560) closeMenu();
 
