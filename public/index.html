@@ -1971,12 +1971,30 @@ async function loadRace(){
  }catch(e){document.getElementById('raceBoard').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
 async function studentLeaderboard(){
+ const meId=LAVI.user?.studentId;
+ const student=STUDENTS.find(x=>x.id===meId);
+ const content=document.getElementById('studentContent');
+ const games='<div class="student-assignment" style="margin-top:12px"><h3>🎮 Trò chơi 5A</h3><p>Không cần chờ cô giao bài — em có thể luyện tập ngay.</p><div class="grid3"><button class="btn primary" onclick="startQuickMathGame()">⚡ Tính nhanh</button><button class="btn primary" onclick="startChoiceGame()">🎯 Săn đáp án</button><button class="btn primary" onclick="startKnowledgeGame()">🧠 Thử tài kiến thức</button></div><div id="studentGameArea"></div></div>';
+ content.innerHTML='<div class="student-rank-card"><div class="sub">🏆 XẾP HẠNG TỔNG 5A</div><h2 style="margin:5px 0">Bài tập + Trò chơi</h2><div id="studentRankLoading" class="sub" style="margin-top:12px">⏳ Đang tải bảng xếp hạng...</div></div>'+games;
  try{
   const r=await fetch('/api/overall-leaderboard',{headers:{Authorization:'Bearer '+LAVI.token}});
-  const j=await r.json();if(!r.ok)throw new Error(j.error||'Không tải được xếp hạng');
-  const s=STUDENTS.find(x=>x.id===LAVI.user?.studentId),me=j.leaderboard.find(x=>x.studentId===LAVI.user.studentId),rows=j.leaderboard.slice(0,10);
-  document.getElementById('studentContent').innerHTML='<div class="student-rank-card"><div class="sub">🏆 XẾP HẠNG TỔNG 5A</div><h2 style="margin:5px 0">Bài tập + Trò chơi</h2><div class="student-rank-big">'+(me?'Hạng '+me.rank:'Chưa xếp hạng')+'</div><p><b>'+esc(s?.name||'')+'</b></p><div class="grid3" style="margin-top:12px"><div class="card"><div class="sub">Tổng điểm</div><div class="num">'+(me?.totalPoints||0)+'</div></div><div class="card"><div class="sub">Điểm bài tập</div><div class="num">'+(me?.assignmentPoints||0)+'</div></div><div class="card"><div class="sub">Điểm trò chơi</div><div class="num">'+(me?.gamePoints||0)+'</div></div></div><p class="sub" style="margin-top:10px">Bài đã nộp: '+(me?.completedAssignments||0)+' · Trò đã chơi: '+(me?.playedGames||0)+' · Mỗi trò chỉ tính điểm cao nhất.</p></div><div class="student-assignment" style="margin-top:12px"><h3>🥇 Bảng xếp hạng 5A</h3>'+rows.map(x=>'<div class="studentcard '+(x.studentId===LAVI.user.studentId?'race-me':'')+'"><span>'+medal(x.rank)+' <b>'+esc(x.name)+'</b><small style="display:block;color:#64748b">'+esc(x.group)+'</small></span><b>'+x.totalPoints+' điểm</b></div>').join('')+'</div><div class="student-assignment" style="margin-top:12px"><h3>🎮 Trò chơi 5A</h3><p>Không cần chờ cô giao bài — em có thể luyện tập ngay.</p><div class="grid3"><button class="btn primary" onclick="startQuickMathGame()">⚡ Tính nhanh</button><button class="btn primary" onclick="startChoiceGame()">🎯 Săn đáp án</button><button class="btn primary" onclick="startKnowledgeGame()">🧠 Thử tài kiến thức</button></div><div id="studentGameArea"></div></div>';
- }catch(e){toast(e.message)}
+  const j=await r.json();
+  if(!r.ok)throw new Error(j.error||'Không tải được xếp hạng');
+  const me=j.leaderboard.find(x=>x.studentId===meId),rows=j.leaderboard.slice(0,10);
+  const rank=document.getElementById('studentRankLoading');
+  if(rank)rank.parentElement.outerHTML='<div class="student-rank-card"><div class="sub">🏆 XẾP HẠNG TỔNG 5A</div><h2 style="margin:5px 0">Bài tập + Trò chơi</h2><div class="student-rank-big">'+(me?'Hạng '+me.rank:'Chưa xếp hạng')+'</div><p><b>'+esc(student?.name||'')+'</b></p><div class="grid3" style="margin-top:12px"><div class="card"><div class="sub">Tổng điểm</div><div class="num">'+(me?.totalPoints||0)+'</div></div><div class="card"><div class="sub">Điểm bài tập</div><div class="num">'+(me?.assignmentPoints||0)+'</div></div><div class="card"><div class="sub">Điểm trò chơi</div><div class="num">'+(me?.gamePoints||0)+'</div></div></div><p class="sub" style="margin-top:10px">Bài đã nộp: '+(me?.completedAssignments||0)+' · Trò đã chơi: '+(me?.playedGames||0)+' · Mỗi trò chỉ tính điểm cao nhất.</p></div>';
+  const card=document.querySelector('#studentContent .student-assignment');
+  if(card&&card.querySelector('h3')?.textContent.includes('Bảng xếp hạng'))card.remove();
+  const rankCard=document.createElement('div');
+  rankCard.className='student-assignment';
+  rankCard.style.marginTop='12px';
+  rankCard.innerHTML='<h3>🥇 Bảng xếp hạng 5A</h3>'+rows.map(x=>'<div class="studentcard '+(x.studentId===meId?'race-me':'')+'"><span>'+medal(x.rank)+' <b>'+esc(x.name)+'</b><small style="display:block;color:#64748b">'+esc(x.group)+'</small></span><b>'+x.totalPoints+' điểm</b></div>').join('');
+  const gameCard=document.querySelector('#studentContent .student-assignment');
+  content.insertBefore(rankCard,gameCard);
+ }catch(e){
+  const rank=document.getElementById('studentRankLoading');
+  if(rank)rank.innerHTML='⚠️ Chưa tải được xếp hạng. <b>Em vẫn có thể chơi các trò chơi bên dưới!</b>';
+ }
 }
 async function changeGroup(id,group){try{const r=await fetch('/api/teacher/group',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({studentId:id,group})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Không đổi được nhóm');const s=STUDENTS.find(x=>x.id===id);s.group=group;renderAll();toast(`Đã chuyển ${s.name} sang nhóm ${group}`)}catch(e){toast(e.message)}}
 async function changePassword(){try{const r=await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({currentPassword:document.getElementById('pwOld').value,newPassword:document.getElementById('pwNew').value})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Không đổi được mật khẩu');document.getElementById('pwOld').value='';document.getElementById('pwNew').value='';toast('Đã đổi mật khẩu thành công')}catch(e){toast(e.message)}}
