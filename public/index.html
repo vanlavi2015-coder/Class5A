@@ -278,14 +278,14 @@ function makeQuestions(lesson,group,count,note=""){
   }
   if(/khái niệm.*số thập phân|số thập phân/.test(title)){
    const bank=[
-    ["3,7","7/10","hàng phần mười","7 phần mười"],
-    ["4,25","25/100","hàng phần trăm","5 phần trăm"],
-    ["5,306","306/1000","hàng phần nghìn","6 phần nghìn"],
-    ["7,04","4/100","hàng phần trăm","4 phần trăm"],
-    ["8,125","125/1000","hàng phần nghìn","5 phần nghìn"],
-    ["2,509","509/1000","hàng phần nghìn","9 phần nghìn"],
-    ["6,38","38/100","hàng phần trăm","8 phần trăm"],
-    ["9,407","407/1000","hàng phần nghìn","7 phần nghìn"]
+    ["3,7","37/10","hàng phần mười","7/10"],
+    ["4,25","425/100","hàng phần trăm","5/100"],
+    ["5,306","5306/1000","hàng phần nghìn","6/1000"],
+    ["7,04","704/100","hàng phần trăm","4/100"],
+    ["8,125","8125/1000","hàng phần nghìn","5/1000"],
+    ["2,509","2509/1000","hàng phần nghìn","9/1000"],
+    ["6,38","638/100","hàng phần trăm","8/100"],
+    ["9,407","9407/1000","hàng phần nghìn","7/1000"]
    ];
    const b=bank[(i-1)%bank.length], m=(i-1)%8;
    if(/làm tròn/.test(title)){const whole=2+(i%7),tenths=i%10,hundred=(i+3)%10,x=whole+","+tenths+hundred;add("Làm tròn số "+x+" đến hàng phần mười.",dec(whole+(hundred>=5?1:0))+",0","Làm tròn số thập phân");}
