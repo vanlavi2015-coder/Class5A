@@ -389,6 +389,17 @@ function makeQuestions(lesson,group,count,note=""){
   }
   return false;
  }
+ function manualAdd(text,type="Tự luận – cô chấm"){
+  const q={id:qs.length+1,text,answer:"",type,manual:true};
+  qs.push(q);
+ }
+ function standardKnowledge(i){
+  const n=levelNum(group,1), stage=group==="Yếu"?"nêu 1 ý chính":group==="Trung bình"?"nêu 2 ý chính":group==="Khá"?"nêu 2 ý chính và 1 ví dụ":"nêu 3 ý chính và liên hệ thực tế";
+  const isScience=subj==="Khoa học";
+  const topic=String(lesson?.lesson||"bài học");
+  const patterns=isScience?["Nêu "+n+" từ khóa quan trọng em cần nhớ trong bài “"+topic+"”.","Điền/ghi "+stage+" về nội dung bài “"+topic+"”.","Trình bày ngắn gọn "+stage+" trong bài “"+topic+"”.","Nêu một tình huống thực tế có liên quan đến bài “"+topic+"” và cách xử lí phù hợp."]:["Ghi tên nội dung chính của bài “"+topic+"” và "+stage+".","Điền/ghi "+stage+" quan trọng của bài “"+topic+"”.","Nêu "+stage+" về địa điểm, nhân vật, sự kiện hoặc nội dung chính của bài “"+topic+"”.","Liên hệ thực tế: nêu một việc em có thể làm sau khi học bài “"+topic+"”." ];
+  manualAdd(patterns[(i-1)%patterns.length]); return true;
+ }
  function standardVietnamese(i){
   if(/danh từ|động từ|tính từ/.test(title)){
    const bank=[
@@ -460,16 +471,9 @@ function makeQuestions(lesson,group,count,note=""){
  }
 
  for(let i=1;i<=count;i++){
-  let made=math?standardMath(i):standardVietnamese(i);
-  // Không cho phép Bài 9 rơi xuống câu hỏi dự phòng.
-  if(math && /bài\s*9[.\-:]?\s*luyện\s*tập\s*chung/.test(title)) made=true;
-  if(!made){
-   if(subj==="Tiếng Việt"){
-    add("Đọc lại bài “"+(lesson?.lesson||"bài học")+"” và trả lời: Nội dung chính của bài là gì?","Cô giáo chấm theo nội dung bài học.","Đọc hiểu - cô chấm");
-   }else{
-    add("Ôn lại bài “"+(lesson?.lesson||"bài học")+"” và trả lời một câu hỏi ngắn về nội dung bài.","Cô giáo chấm theo bài học.","Tự luận - cô chấm");
-   }
-  }
+  let made=math?standardMath(i):(subj==="Tiếng Việt"?standardVietnamese(i):standardKnowledge(i));
+  // Không còn bộ câu hỏi dự phòng chung. Mỗi bài đều đi qua bộ quy tắc theo môn/bài.
+  if(!made) made=standardKnowledge(i);
  }
  if(wantMC){
   const before=qs.length;
