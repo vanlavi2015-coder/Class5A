@@ -247,7 +247,7 @@ function fracText(n,d){const f=frac(n,d);return f[1]===1?String(f[0]):f[0]+"/"+f
 function mixedToImproper(w,n,d){return w*d+n}
 function levelNum(group,base){return group==="Yếu"?base:group==="Trung bình"?base+1:group==="Khá"?base+2:base+3}
 function makeQuestions(lesson,group,count,note=""){
- const title=String(lesson?.lesson||"").toLowerCase(), subj=lesson?.subject||"";
+ const rawTitle=String(lesson?.lesson||""); const title=rawTitle.toLowerCase().replace(/[\u00a0\u2000-\u200b]/g," ").replace(/\s+/g," ").trim(), subj=String(lesson?.subject||"").trim();
  const qs=[], math=subj==="Toán", simple=group==="Yếu";
  const req=String(note||"").toLowerCase();
  const wantMC=/trắc nghiệm|chọn đáp án|khoanh/.test(req);
@@ -264,7 +264,7 @@ function makeQuestions(lesson,group,count,note=""){
  function standardMath(i){
   const groupOffset={Yếu:0,"Trung bình":1,Khá:2,Tốt:4}[group]||0;
   const k=(i-1+groupOffset)%8;
-  if(/bài 9\.\s*luyện tập chung/.test(title)){
+  if(/bài\s*9[.\-:]?\s*luyện\s*tập\s*chung/.test(title)){
    // Bài 9 tiết 3: ước lượng/làm tròn, tính biểu thức thuận tiện và bài toán thực tế.
    const level={Yếu:0,"Trung bình":1,Khá:2,Tốt:3}[group]??1;
    const roundBank={Yếu:[[12020,6915,1000],[36070,23950,10000],[48200,17600,1000],[73500,28400,10000]],"Trung bình":[[18240,7930,1000],[45870,23640,10000],[126500,48700,10000],[384600,151200,100000]],Khá:[[31240,16870,1000],[67580,29430,10000],[248600,119700,100000],[598600,101500,100000]],Tốt:[[412020,196915,1000],[736070,423950,10000],[958600,201500,100000],[4180300,3990700,1000000]]};
@@ -460,7 +460,9 @@ function makeQuestions(lesson,group,count,note=""){
  }
 
  for(let i=1;i<=count;i++){
-  const made=math?standardMath(i):standardVietnamese(i);
+  let made=math?standardMath(i):standardVietnamese(i);
+  // Không cho phép Bài 9 rơi xuống câu hỏi dự phòng.
+  if(math && /bài\s*9[.\-:]?\s*luyện\s*tập\s*chung/.test(title)) made=true;
   if(!made){
    if(subj==="Tiếng Việt"){
     add("Đọc lại bài “"+(lesson?.lesson||"bài học")+"” và trả lời: Nội dung chính của bài là gì?","Cô giáo chấm theo nội dung bài học.","Đọc hiểu - cô chấm");
