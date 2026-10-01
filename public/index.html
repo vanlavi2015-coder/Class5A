@@ -262,6 +262,81 @@ function makeQuestions(lesson,group,count,note=""){
  function dec(v){return String(v).replace(".",",")}
  function valFor(base,i){return simple?base+(i%2):levelNum(group,base)+(i%3)}
  function standardMath(i){
+  // QUY TẮC TOÁN HKI 2026–2027: bám sát các dạng bài trong giáo án cô đã gửi.
+  // Không trộn nội dung của bài khác; nếu chưa có dạng được xác định thì giữ quy tắc hiện có.
+  if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.test(title)){
+   const bank={Yếu:[["2,4","24/10","hàng phần mười","4/10"],["3,5","35/10","hàng phần mười","5/10"],["4,2","42/10","hàng phần mười","2/10"],["5,7","57/10","hàng phần mười","7/10"]],"Trung bình":[["3,7","37/10","hàng phần mười","7/10"],["4,25","425/100","hàng phần trăm","5/100"],["5,30","530/100","hàng phần trăm","0/100"],["7,04","704/100","hàng phần trăm","4/100"]],Khá:[["3,75","375/100","hàng phần trăm","5/100"],["4,256","4256/1000","hàng phần nghìn","6/1000"],["5,306","5306/1000","hàng phần nghìn","6/1000"],["7,048","7048/1000","hàng phần nghìn","8/1000"]],Tốt:[["13,705","13705/1000","hàng phần nghìn","5/1000"],["24,056","24056/1000","hàng phần nghìn","6/1000"],["35,408","35408/1000","hàng phần nghìn","8/1000"],["47,125","47125/1000","hàng phần nghìn","5/1000"]]};
+   const b=(bank[group]||bank["Trung bình"])[(i-1)%4]; const m=(i-1)%4;
+   if(m===0)add("Viết số thập phân "+b[0]+" dưới dạng phân số thập phân.",b[1],"Viết số");
+   else if(m===1)add("Trong số "+b[0]+", chữ số "+b[0].slice(-1)+" thuộc hàng nào?",b[2],"Xác định hàng");
+   else if(m===2)add("Trong số "+b[0]+", chữ số "+b[0].slice(-1)+" có giá trị là bao nhiêu?",b[3],"Giá trị chữ số");
+   else add("Đọc số thập phân "+b[0]+".",b[0],"Đọc số");
+   return true;
+  }
+  if(/viết số đo đại lượng dưới dạng số thập phân/.test(title)){
+   const bank=[["1 kg","0,001 tấn"],["564 m","0,564 km"],["3,2 m","3200 mm"],["4,5 kg","4500 g"],["132 mm","13,2 cm"],["7 m 5 dm","7,5 m"],["3 kg 250 g","3,25 kg"],["2 m 35 cm","2,35 m"]];
+   const b=bank[(i-1)%bank.length]; add("Viết số đo "+b[0]+" dưới dạng thích hợp.",b[1],"Đổi đơn vị đo"); return true;
+  }
+  if(/luyện tập chung/.test(title) && /số thập phân|đo lường|hình/.test(title)){
+   const a=group==="Yếu"?2.4:group==="Trung bình"?3.25:group==="Khá"?12.48:125.75, b=group==="Yếu"?1.2:group==="Trung bình"?2.15:group==="Khá"?4.36:24.25;
+   const m=(i-1)%4;
+   if(m===0)add("Đặt tính rồi tính: "+dec(a)+" + "+dec(b)+".",dec(a+b),"Đặt tính rồi tính");
+   else if(m===1)add("So sánh hai số "+dec(a)+" và "+dec(b)+".",a>b?">":a<b?"<":"=","So sánh số thập phân");
+   else if(m===2)add("Viết số đo 173 cm dưới dạng mét.", "1,73 m","Đổi đơn vị đo");
+   else add("Làm tròn số "+dec(a+b+0.46)+" đến hàng phần mười.",dec(Math.round((a+b+0.46)*10)/10),"Làm tròn số thập phân");
+   return true;
+  }
+  if(/thực hành và trải nghiệm với một số đơn vị đo đại lượng/.test(title)){
+   if(i%2===1)add("Một nền lớp hình chữ nhật dài 8 m, rộng 6 m. Tính diện tích nền lớp.", "48 m²","Tính diện tích thực tế");
+   else add("Nền lớp có diện tích 48 m². Nếu mỗi viên gạch lát được 0,25 m² thì cần bao nhiêu viên để lát kín nền?", "192 viên","Bài toán thực tế");
+   return true;
+  }
+  if(/phép cộng số thập phân/.test(title)){
+   const bank=[[7.635,6.249],[23.58,5.271],[4.61,8],[56,3.7],[12.45,6.8],[35.7,4.26]]; const b=bank[(i-1)%bank.length];
+   if(i%3===1)add("Đặt tính rồi tính: "+dec(b[0])+" + "+dec(b[1])+".",dec(b[0]+b[1]),"Đặt tính rồi tính");
+   else if(i%3===2)add("Tính bằng cách thuận tiện: "+dec(b[0])+" + "+dec(b[1])+" + 0.",dec(b[0]+b[1]),"Tính thuận tiện");
+   else add("Tính: "+dec(b[1])+" + "+dec(b[0])+".",dec(b[0]+b[1]),"Tính chất giao hoán");
+   return true;
+  }
+  if(/phép nhân số thập phân/.test(title)){
+   const bank=[[8.6,0.7],[2.14,15],[5.2,0.43],[3.6,24],[36,0.24],[0.36,2.4]]; const b=bank[(i-1)%bank.length];
+   add("Đặt tính rồi tính: "+dec(b[0])+" × "+dec(b[1])+".",dec(b[0]*b[1]),"Đặt tính rồi tính"); return true;
+  }
+  if(/nhân, chia số thập phân với 10|chia số thập phân với 10/.test(title)){
+   const bank=[[3.75,10],[42.6,100],[5.08,1000],[7.2,0.1],[4.35,0.01],[12.5,0.001]]; const b=bank[(i-1)%bank.length];
+   add("Tính nhẩm: "+dec(b[0])+" × "+dec(b[1])+".",dec(b[0]*b[1]),"Tính nhẩm"); return true;
+  }
+  if(/hình tam giác.*diện tích hình tam giác/.test(title)){
+   const b=levelNum(group,6)+i, h=levelNum(group,4)+(i%3); add("Tính diện tích hình tam giác có đáy "+b+" cm và chiều cao "+h+" cm.",dec(b*h/2)+" cm²","Tính diện tích hình tam giác"); return true;
+  }
+  if(/hình thang.*diện tích hình thang/.test(title)){
+   const a=levelNum(group,8)+i,b=levelNum(group,5)+i,h=levelNum(group,3)+(i%3),area=(a+b)*h/2;
+   if(i%3===1)add("Tính diện tích hình thang có đáy lớn "+a+" cm, đáy bé "+b+" cm và chiều cao "+h+" cm.",dec(area)+" cm²","Tính diện tích hình thang");
+   else if(i%3===2)add("Điền số thích hợp: S = ("+a+" + "+b+") × "+h+" : ___.","2","Điền công thức");
+   else add("Một mảnh đất hình thang có hai đáy "+a+" m và "+b+" m, chiều cao "+h+" m. Tính diện tích.",dec(area)+" m²","Bài toán thực tế");
+   return true;
+  }
+  if(/đường tròn.*chu vi và diện tích hình tròn/.test(title)){
+   const r=levelNum(group,3)+i%4, pi=3.14, m=(i-1)%3;
+   if(m===0)add("Tính chu vi hình tròn có bán kính "+r+" cm (lấy π = 3,14).",dec(2*pi*r)+" cm","Tính chu vi hình tròn");
+   else if(m===1)add("Tính diện tích hình tròn có bán kính "+r+" cm (lấy π = 3,14).",dec(pi*r*r)+" cm²","Tính diện tích hình tròn");
+   else add("Hình nào có chu vi lớn hơn: hình vuông cạnh "+(r*2)+" cm hay hình tròn bán kính "+r+" cm? (π = 3,14)",2*pi*r>(r*2*4)?"hình tròn":"hình vuông","So sánh chu vi");
+   return true;
+  }
+  if(/ôn tập số thập phân/.test(title)){
+   const m=(i-1)%3;
+   if(m===0){const vals=[["173 cm","1,73 m"],["82 dm","8,2 m"],["800 kg","0,8 tấn"],["3 dm²","0,03 m²"]],b=vals[(i-1)%vals.length];add("Viết số thích hợp vào ô trống: "+b[0]+" = ___ "+b[1].replace(/[0-9, ]+/,"").trim()+".",b[1].split(" ")[0],"Đổi đơn vị đo");}
+   else if(m===1){const x=12.456+i/1000;add("Làm tròn số "+dec(x)+" đến hàng phần mười.",dec(Math.round(x*10)/10),"Làm tròn số thập phân");}
+   else add("Viết số đo 3 dm² 75 cm² dưới dạng dm².","3,75 dm²","Đổi đơn vị đo"); return true;
+  }
+  if(/ôn tập một số hình phẳng/.test(title)){
+   if(i%3===1)add("Hình tam giác có đáy 8 cm và chiều cao 5 cm. Tính diện tích.","20 cm²","Tính diện tích hình tam giác");
+   else if(i%3===2)add("Hãy nêu tên một hình có tâm và bán kính.","Hình tròn","Nhận biết hình phẳng");
+   else add("Hình thang có hai đáy 6 cm và 10 cm, chiều cao 4 cm. Tính diện tích.","32 cm²","Tính diện tích hình thang"); return true;
+  }
+  if(/ôn tập đo lường/.test(title)){
+   const bank=[["173 cm","1,73 m"],["82 dm","8,2 m"],["800 kg","0,8 tấn"],["3 m²","30000 cm²"],["2,5 kg","2500 g"]],b=bank[(i-1)%bank.length]; add("Viết số thích hợp: "+b[0]+" = ___ "+b[1].replace(/[0-9, ]+/,"").trim()+".",b[1].split(" ")[0],"Đổi đơn vị đo"); return true;
+  }
   const groupOffset={Yếu:0,"Trung bình":1,Khá:2,Tốt:4}[group]||0;
   const k=(i-1+groupOffset)%8;
   if(/bài\s*9[.\-:]?\s*luyện\s*tập\s*chung/.test(title)){
