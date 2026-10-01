@@ -551,7 +551,7 @@ function makeQuestions(lesson,group,count,note=""){
       ];
       const b=tvPick(bank),m=(i-1)%4;
       if(m===0)add("Tìm một từ đồng nghĩa với từ “"+b[0]+"”.",b[1],"Tìm từ đồng nghĩa");
-      else if(m===1)add("Chọn từ đồng nghĩa với “"+b[0]+"”: A. "+b[1]+"  B. nhỏ bé  C. chậm chạp.","A","Chọn từ");
+      else if(m===1)add("Chọn từ đồng nghĩa với “"+b[0]+"”.", "A", "Chọn từ", [" "+b[1], "nhỏ bé", "chậm chạp", "ồn ào"]);
       else if(m===2)add("Điền từ thích hợp: “Du khách muốn ______ vẻ đẹp của vịnh.”",b[1],"Điền từ");
       else tvManual("Đặt một câu có sử dụng cặp từ đồng nghĩa “"+b[0]+" – "+b[1]+"”");
       return true;
