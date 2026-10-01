@@ -1354,8 +1354,25 @@ function finalizeQuestion(q){
  q.acceptedAnswers=[...new Set(q.acceptedAnswers)];
  return q;
 }
-function finalizeQuestionSet(questions){
- return (questions||[]).map(finalizeQuestion).filter(Boolean).map((q,i)=>({...q,id:i+1}));
+function finalizeQuestionSet(questions,targetCount=0,lessonFallbacks=[]){
+ const out=(questions||[]).map(finalizeQuestion).filter(Boolean);
+ // HARD GUARANTEE: sau mọi bước lọc/chuẩn hóa vẫn phải đủ đúng số câu cô yêu cầu.
+ // Câu bổ sung là tự luận để cô chấm, nội dung bám đúng tiết/bài đã chọn.
+ let k=0;
+ while(targetCount>0 && out.length<targetCount && k<100){
+  const lesson=lessonFallbacks[k%Math.max(1,lessonFallbacks.length)]||{};
+  const lessonName=String(lesson?.lesson||"bài học").trim();
+  out.push({
+   text:"Câu "+(out.length+1)+": Hoàn thành nhiệm vụ tự luận bám đúng nội dung bài “"+lessonName+"”. Trình bày rõ cách làm hoặc câu trả lời.",
+   answer:"",
+   acceptedAnswers:[],
+   type:"Tự luận – cô chấm",
+   manual:true,
+   lessonTitle:lessonName
+  });
+  k++;
+ }
+ return out.slice(0,targetCount>0?targetCount:out.length).map((q,i)=>({...q,id:i+1}));
 }
 function validateQuestionSet(questions){
  const errors=[],seenText=new Map(),seenShape=new Map();
@@ -1450,13 +1467,13 @@ function generate(){
   };
   let sets;
   if(group==="Tất cả"){
-   const questions=finalizeQuestionSet(makeMultiQuestions("Khá"));
+   const questions=finalizeQuestionSet(makeMultiQuestions("Khá"),count,lessons);
    const check=validateQuestionSet(questions);
    if(check.length)return toast("⚠️ LAVI chưa cho giao đề: "+check.slice(0,3).join(" "));
    sets=[{group:"Tất cả",questions}];
   }else{
    sets=groups.map(g=>{
-    const questions=finalizeQuestionSet(makeMultiQuestions(g));
+    const questions=finalizeQuestionSet(makeMultiQuestions(g),count,lessons);
     const check=validateQuestionSet(questions);
     if(check.length)throw new Error(g+": "+check.slice(0,3).join(" "));
     return {group:g,questions};
