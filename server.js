@@ -4,6 +4,7 @@ const fs=require('fs');
 const bcrypt=require('bcryptjs');
 const jwt=require('jsonwebtoken');
 const crypto=require('crypto');
+const https=require('https');
 const {DatabaseSync}=require('node:sqlite');
 
 const app=express();
@@ -48,6 +49,19 @@ const BACKUP_PATH=process.env.LAVI_BACKUP_PATH||'backup/lavi5a.enc.json';
 const BACKUP_BRANCH=process.env.LAVI_BACKUP_BRANCH||'Lavi-Data';
 const BACKUP_KEY=String(process.env.LAVI_BACKUP_KEY||'');
 let backupQueue=Promise.resolve();
+function githubRequest(url,options={}){
+ return new Promise((resolve,reject)=>{
+  const u=new URL(url);
+  const req=https.request(u,{method:options.method||'GET',headers:options.headers||{}},res=>{
+   let body=''; res.setEncoding('utf8');
+   res.on('data',chunk=>body+=chunk);
+   res.on('end',()=>resolve({ok:res.statusCode>=200&&res.statusCode<300,status:res.statusCode,text:async()=>body,json:async()=>JSON.parse(body)}));
+  });
+  req.on('error',reject);
+  if(options.body)req.write(options.body);
+  req.end();
+ });
+}
 function backupEnabled(){return !!(BACKUP_TOKEN&&BACKUP_REPO&&BACKUP_KEY);}
 function encryptionKey(){return crypto.createHash('sha256').update(BACKUP_KEY).digest();}
 function backupObject(){return {version:4,exportedAt:now(),students:students(),state:stateForTeacher(),scoreHistory:db.prepare('SELECT * FROM score_history ORDER BY id').all()};}
@@ -57,11 +71,11 @@ async function githubBackup(){
  if(!backupEnabled())return {enabled:false};
  const api='https://api.github.com/repos/'+BACKUP_REPO+'/contents/'+BACKUP_PATH;
  const headers={'Accept':'application/vnd.github+json','Authorization':'Bearer '+BACKUP_TOKEN,'X-GitHub-Api-Version':'2026-03-10','User-Agent':'LAVI-5A'};
- let sha=null; const get=await fetch(api+'?ref='+encodeURIComponent(BACKUP_BRANCH),{headers});
+ let sha=null; const get=await githubRequest(api+'?ref='+encodeURIComponent(BACKUP_BRANCH),{headers});
  if(get.ok){const old=await get.json();sha=old.sha||null;}else if(get.status!==404)throw new Error('GitHub backup GET '+get.status);
  const content=Buffer.from(encryptBackup(backupObject()),'utf8').toString('base64');
  const body={message:'LAVI 5A: sao luu du lieu diem',content,branch:BACKUP_BRANCH}; if(sha)body.sha=sha;
- const put=await fetch(api,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const put=await githubRequest(api,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(!put.ok)throw new Error('GitHub backup PUT '+put.status+' '+(await put.text()).slice(0,300));
  return {enabled:true,ok:true};
 }
