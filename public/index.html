@@ -225,7 +225,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
     <label><b>Mật khẩu</b></label>
     <input id="loginPass" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu">
     <div id="loginErr" class="loginErr"></div>
-    <button class="btn primary" onclick="doLogin()">🔐 Đăng nhập</button>
+    <button type="button" id="loginBtn" class="btn primary" onclick="doLogin()">🔐 Đăng nhập</button>
     <div class="sub" style="margin-top:14px;font-size:12px">Bản online dùng tài khoản riêng. Giáo viên có quyền quản lý; học sinh chỉ xem và nộp bài của mình.</div>
   </div>
 </div>
@@ -1831,7 +1831,7 @@ document.getElementById("cDue").value=new Date(Date.now()+86400000).toISOString(
 fillSubjects();fillNotifyTargets();renderAll();
 
 window.LAVI={token:localStorage.getItem('lavi_token')||'',user:JSON.parse(localStorage.getItem('lavi_user')||'null')};
-async function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;document.getElementById('loginErr').textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Đăng nhập thất bại');LAVI.token=j.token;LAVI.user=j.user;localStorage.setItem('lavi_token',j.token);localStorage.setItem('lavi_user',JSON.stringify(j.user));await loadOnlineState();applyRole();document.getElementById('loginOverlay').style.display='none';document.getElementById('onlineUser').textContent=(j.user.role==='teacher'?'👩‍🏫 Giáo viên':'👨‍🎓 '+(STUDENTS.find(x=>x.id===j.user.studentId)?.name||'Học sinh'));if(j.user.role==='student')studentMode();}catch(e){document.getElementById('loginErr').textContent=e.message}}
+async function doLogin(){const btn=document.getElementById('loginBtn'),err=document.getElementById('loginErr'),u=String(document.getElementById('loginUser')?.value||'').trim(),p=String(document.getElementById('loginPass')?.value||'');if(err)err.textContent='';if(!u||!p){if(err)err.textContent='Vui lòng nhập tài khoản và mật khẩu';return}if(btn){btn.disabled=true;btn.textContent='⏳ Đang đăng nhập...'}try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});let j={};try{j=await r.json()}catch{}if(!r.ok)throw new Error(j.error||('Máy chủ trả về lỗi '+r.status));if(!j.token||!j.user)throw new Error('Máy chủ chưa trả về phiên đăng nhập');LAVI.token=j.token;LAVI.user=j.user;localStorage.setItem('lavi_token',j.token);localStorage.setItem('lavi_user',JSON.stringify(j.user));await loadOnlineState();applyRole();document.getElementById('loginOverlay').style.display='none';document.getElementById('onlineUser').textContent=(j.user.role==='teacher'?'👩‍🏫 Giáo viên':'👨‍🎓 '+(STUDENTS.find(x=>x.id===j.user.studentId)?.name||'Học sinh'));if(j.user.role==='student')studentMode()}catch(e){if(err)err.textContent=e?.message||'Không đăng nhập được';console.error('LAVI login:',e)}finally{if(btn){btn.disabled=false;btn.textContent='🔐 Đăng nhập'}}}
 async function loadOnlineState(){if(!LAVI.token)return;try{const r=await fetch('/api/state',{headers:{Authorization:'Bearer '+LAVI.token}});if(!r.ok)throw new Error();const j=await r.json();if(Array.isArray(j.students))j.students.forEach(x=>{const s=STUDENTS.find(y=>y.id===x.id);if(s)Object.assign(s,x)});state=j.state;localStorage.setItem('lavi5a_real',JSON.stringify(state));renderAll();syncStudentAvatar();}catch(e){}}
 function applyRole(){
  const isStudent=LAVI.user?.role==='student';
@@ -2002,6 +2002,7 @@ async function sendNotification(){const target=document.getElementById('notifyTa
 function fillNotifyTargets(){const el=document.getElementById('notifyTarget');if(!el)return;el.innerHTML='<option value="all">Cả lớp</option>'+STUDENTS.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}
 async function markNotificationsRead(ids){try{await fetch('/api/student/read-notifications',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({ids})});(state.notifications||[]).forEach(n=>{if(ids.includes(n.id))n.read=true});studentMode()}catch(e){toast('Không cập nhật được thông báo')}}
 function logout(){localStorage.removeItem('lavi_token');localStorage.removeItem('lavi_user');location.reload()}
+document.getElementById('loginPass')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doLogin()}});document.getElementById('loginUser')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('loginPass')?.focus()}});
 if(LAVI.token&&LAVI.user){loadOnlineState().then(()=>{applyRole();document.getElementById('loginOverlay').style.display='none';document.getElementById('onlineUser').textContent=LAVI.user.role==='teacher'?'👩‍🏫 Giáo viên':'👨‍🎓 '+(STUDENTS.find(x=>x.id===LAVI.user.studentId)?.name||'Học sinh');if(LAVI.user.role==='student')studentMode();})}
 
 </script>
