@@ -78,6 +78,28 @@ app.get('/api/health',(req,res)=>res.json({ok:true,app:'LAVI 5A Online v3',stude
 app.post('/api/login',(req,res)=>{const {username,password}=req.body||{};const u=db.prepare('SELECT * FROM users WHERE username=?').get(String(username||''));if(!u||!bcrypt.compareSync(String(password||''),u.password_hash))return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});const user={username:u.username,role:u.role,studentId:u.student_id||null};res.json({token:tokenFor(user),user,students:students()});});
 app.get('/api/state',auth,(req,res)=>res.json({state:req.user.role==='teacher'?stateForTeacher():stateForStudent(req.user.studentId),students:req.user.role==='teacher'?students():students().filter(s=>s.id===req.user.studentId),user:req.user}));
 app.get('/api/students',auth,(req,res)=>{if(!teacher(req,res))return;res.json({students:students()});});
+app.get('/api/leaderboard',auth,(req,res)=>{
+  const assignmentId=String(req.query.assignmentId||'');
+  if(!assignmentId)return res.status(400).json({error:'Thiếu assignmentId'});
+  const rows=db.prepare('SELECT s.id,s.name,s.group_name AS "group",sub.payload FROM students s LEFT JOIN submissions sub ON sub.student_id=s.id AND sub.assignment_id=? ORDER BY s.id').all(assignmentId);
+  const list=rows.map(r=>{
+    const p=r.payload?JSON.parse(r.payload):null;
+    return {studentId:r.id,name:r.name,group:r.group,submitted:!!p,score:p?.score??null,stars:p?.stars??0,time:p?.time??null,correct:p?.correct??0,total:p?.total??0};
+  });
+  const submitted=list.filter(x=>x.submitted);
+  submitted.sort((a,b)=>{
+    const sa=Number(a.score??-1), sb=Number(b.score??-1);
+    if(sb!==sa)return sb-sa;
+    const ta=a.time?new Date(a.time).getTime():Number.MAX_SAFE_INTEGER;
+    const tb=b.time?new Date(b.time).getTime():Number.MAX_SAFE_INTEGER;
+    if(ta!==tb)return ta-tb;
+    return Number(b.stars||0)-Number(a.stars||0);
+  });
+  const rankById=new Map(submitted.map((x,i)=>[x.studentId,i+1]));
+  list.forEach(x=>x.rank=rankById.get(x.studentId)||null);
+  const userRank=req.user.role==='student'?rankById.get(req.user.studentId)||null:null;
+  res.json({ok:true,assignmentId,leaderboard:list,submittedCount:submitted.length,totalStudents:list.length,userRank});
+});
 app.put('/api/state',auth,(req,res)=>{if(!teacher(req,res))return;const s=req.body?.state;if(!s)return res.status(400).json({error:'Thiếu state'});try{db.exec('BEGIN');for(const a of s.assignments||[]){db.prepare('INSERT INTO assignments(id,payload,status,created_at) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,status=excluded.status').run(String(a.id),JSON.stringify(a),a.status||'Đang giao',a.createdAt||now());}for(const [k,v] of Object.entries(s.submissions||{})){db.prepare('INSERT INTO submissions(k,assignment_id,student_id,payload,submitted_at) VALUES(?,?,?,?,?) ON CONFLICT(k) DO UPDATE SET payload=excluded.payload').run(k,String(v.assignmentId||k.split('_')[0]),Number(v.studentId||k.split('_')[1]),JSON.stringify(v),v.time||now());}db.exec('COMMIT');res.json({ok:true,updatedAt:now()});}catch(e){try{db.exec('ROLLBACK')}catch{}res.status(500).json({error:e.message});}});
 app.post('/api/password',auth,(req,res)=>{const {currentPassword,newPassword}=req.body||{};const u=db.prepare('SELECT * FROM users WHERE username=?').get(req.user.username);if(!u||!bcrypt.compareSync(String(currentPassword||''),u.password_hash))return res.status(400).json({error:'Mật khẩu hiện tại không đúng'});if(String(newPassword||'').length<6)return res.status(400).json({error:'Mật khẩu mới tối thiểu 6 ký tự'});db.prepare('UPDATE users SET password_hash=? WHERE username=?').run(bcrypt.hashSync(String(newPassword),10),req.user.username);res.json({ok:true});});
 app.post('/api/teacher/group',auth,(req,res)=>{if(!teacher(req,res))return;const {studentId,group}=req.body||{};if(!['Tốt','Khá','Trung bình','Yếu'].includes(group))return res.status(400).json({error:'Nhóm không hợp lệ'});const s=db.prepare('SELECT * FROM students WHERE id=?').get(Number(studentId));if(!s)return res.status(404).json({error:'Không tìm thấy học sinh'});db.prepare('UPDATE students SET group_name=? WHERE id=?').run(group,s.id);res.json({ok:true,student:students().find(x=>x.id===s.id)});});
