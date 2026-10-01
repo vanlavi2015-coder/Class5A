@@ -13,18 +13,21 @@ Tạo repository riêng, upload toàn bộ mã nguồn.
 - `LAVI_TEACHER_PASSWORD`: mật khẩu giáo viên ban đầu.
 - `LAVI_DATA_DIR`: có thể bỏ trống. Khi có Persistent Disk gắn tại `/var/data`, LAVI tự động dùng `/var/data` để lưu SQLite.
 
-## 4. Persistent Disk — BẮT BUỘC để giữ điểm
-Render mặc định dùng filesystem tạm thời; dữ liệu ghi vào đó có thể mất khi service redeploy/restart. Persistent Disk giữ lại dữ liệu dưới mount path. 
+## 4. Lưu dữ liệu bền vững trên Render Free
 
-Cấu hình:
-- Mount Path: `/var/data`
-- Size: `1 GB` là đủ cho LAVI 5A ở giai đoạn hiện tại.
-- Không cần đặt `LAVI_DATA_DIR` nếu dùng đúng mount path `/var/data`.
+Render Free không giữ filesystem qua redeploy/restart/spin-down, nên SQLite local chỉ là bộ nhớ tạm. LAVI đã bổ sung cơ chế **sao lưu điểm mã hóa lên GitHub** để không phụ thuộc filesystem.
 
-SQLite sẽ lưu tại:
-`/var/data/lavi5a.sqlite`
+### Cấu hình GitHub backup
+- Tạo một branch riêng tên `lavi-data` trong repository.
+- Tạo **Fine-grained Personal Access Token** chỉ cấp quyền **Contents: Read and write** cho repository này.
+- Trên Render → Environment thêm:
+  - `LAVI_BACKUP_TOKEN` = token GitHub
+  - `LAVI_BACKUP_KEY` = một chuỗi bí mật dài do cô tự đặt, ví dụ tối thiểu 32 ký tự
+  - Không cần đặt `LAVI_BACKUP_REPO`, `LAVI_BACKUP_BRANCH` nếu dùng mặc định.
+- LAVI mã hóa dữ liệu bằng AES-256-GCM trước khi ghi backup. File backup trên GitHub không chứa dữ liệu điểm dạng đọc được nếu không có `LAVI_BACKUP_KEY`.
+- Backup được ghi vào `backup/lavi5a.enc.json` trên branch `lavi-data`, **không ghi vào branch main**, tránh mỗi lần lưu điểm lại kích hoạt deploy.
 
-Lưu ý: Persistent Disk hiện yêu cầu service trả phí trên Render.
+GitHub hỗ trợ Fine-grained token với quyền Contents write cho API tạo/cập nhật file. urlTài liệu GitHub về quyền tokenhttps://docs.github.com/en/rest/repos/contents
 
 ## 5. Sau khi deploy
 1. Mở URL Web Service và đăng nhập.
