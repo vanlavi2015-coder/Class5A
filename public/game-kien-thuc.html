@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAVI – Trò chơi kiến thức 5A</title>
+<style>
+:root{--p:#4f46e5;--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;--ok:#16a34a;--bad:#dc2626}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,#4338ca,#7c3aed);color:white;padding:20px 16px;text-align:center}
+main{max-width:900px;margin:18px auto;padding:0 14px}.card{background:var(--card);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 6px 24px #0000000d}
+h1,h2,h3{margin:0 0 10px}.muted{color:var(--muted)}button{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--p);color:#fff}.secondary{background:#eef2ff;color:#3730a3}.danger{background:#fee2e2;color:#991b1b}
+input,select{padding:11px;border:1px solid #d0d5dd;border-radius:10px;width:100%;font-size:15px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.topics{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}.topic{border:1px solid #e4e7ec;border-radius:12px;padding:11px}.topic label{display:flex;gap:8px;align-items:flex-start}.topic input{width:auto;margin-top:4px}
+.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700}
+.q{font-size:21px;font-weight:700;line-height:1.45}.answers{display:grid;gap:10px;margin-top:18px}.answers button{text-align:left;background:#f8fafc;color:#172033;border:2px solid #e5e7eb}.answers button:hover{border-color:#818cf8}.answers button.correct{background:#dcfce7;border-color:#22c55e}.answers button.wrong{background:#fee2e2;border-color:#ef4444}
+.progress{height:9px;background:#e5e7eb;border-radius:99px;overflow:hidden}.progress>div{height:100%;background:#6366f1;width:0}
+.center{text-align:center}.score{font-size:42px;font-weight:900;color:#4338ca}.hidden{display:none!important}.notice{padding:12px;border-radius:12px;background:#f8fafc}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}
+@media(max-width:600px){.row{grid-template-columns:1fr}.q{font-size:18px}}
+</style>
+</head>
+<body>
+<header><h1>🎮 LAVI – TRÒ CHƠI KIẾN THỨC 5A</h1><div>Học đến đâu – chơi đến đó 🌟</div></header>
+<main>
+<div id="login" class="card">
+<h2>🔐 Đăng nhập</h2><p class="muted">Dùng tài khoản LAVI hiện tại của lớp 5A.</p>
+<div class="row"><div><label>Tài khoản</label><input id="user" placeholder="hs01 hoặc teacher"></div><div><label>Mật khẩu</label><input id="pass" type="password" placeholder="Mật khẩu"></div></div>
+<br><button onclick="login()">Vào trò chơi</button><div id="loginMsg"></div>
+</div>
+
+<div id="teacher" class="card hidden">
+<h2>👩‍🏫 Phạm vi kiến thức đã học</h2>
+<p class="muted">Cô chỉ tích chọn những nội dung lớp 5A đã học. Trò chơi của học sinh sẽ chỉ lấy câu hỏi từ các nội dung được chọn.</p>
+<div id="topicList" class="topics"></div><br>
+<button onclick="saveTopics()">💾 Lưu phạm vi đã học</button>
+<span id="saveMsg"></span>
+</div>
+
+<div id="student" class="hidden">
+<div class="card">
+<div class="row"><div><span class="badge" id="scopeBadge">Đang tải phạm vi</span></div><div style="text-align:right"><b id="attemptText"></b></div></div>
+<h2 style="margin-top:12px">🧠 Kiến thức tổng hợp</h2>
+<p class="muted">Toán • Tiếng Việt • Khoa học • Lịch sử & Địa lí • Công nghệ • Giáo dục địa phương • Kỹ năng sống</p>
+<div id="scope" class="notice"></div><br>
+<button id="startBtn" onclick="startGame()">🎯 Bắt đầu chơi</button>
+</div>
+<div id="game" class="card hidden">
+<div class="row"><div><b id="counter"></b></div><div style="text-align:right"><b id="liveScore">0 điểm</b></div></div>
+<div class="progress" style="margin:12px 0 18px"><div id="bar"></div></div>
+<div><span class="badge" id="subject"></span> <span class="badge" id="topic"></span></div>
+<p class="q" id="question"></p>
+<div class="answers" id="answers"></div>
+<p id="feedback"></p>
+</div>
+<div id="result" class="card center hidden"></div>
+</div>
+</main>
+
+<script>
+const TOPICS=[
+{id:'math_calc',s:'Toán',t:'Tính nhẩm trong phạm vi 10.000'},
+{id:'math_fraction',s:'Toán',t:'Hỗn số và đổi đơn vị đo'},
+{id:'math_trapezoid',s:'Toán',t:'Diện tích hình thang'},
+{id:'viet_grammar',s:'Tiếng Việt',t:'Luyện từ và câu'},
+{id:'viet_words',s:'Tiếng Việt',t:'Từ đồng nghĩa, trái nghĩa, đa nghĩa'},
+{id:'science',s:'Khoa học',t:'Kiến thức khoa học đã học'},
+{id:'history',s:'Lịch sử & Địa lí',t:'Lịch sử, địa lí Việt Nam'},
+{id:'technology',s:'Công nghệ',t:'Công nghệ và sử dụng an toàn'},
+{id:'local',s:'GD địa phương',t:'Cao Bằng và quê hương'},
+{id:'life',s:'Kỹ năng sống',t:'An toàn, ứng xử, tự bảo vệ'}
+];
+const BANK=[
+['math_calc','3 500 + 2 500 bằng bao nhiêu?',['5 000','6 000','7 000','4 000'],0],
+['math_calc','8 000 − 3 600 bằng bao nhiêu?',['4 200','4 400','4 600','5 400'],1],
+['math_calc','250 × 4 bằng bao nhiêu?',['800','900','1 000','1 200'],2],
+['math_calc','4 800 : 6 bằng bao nhiêu?',['600','700','800','900'],2],
+['math_calc','1 250 + 2 750 bằng bao nhiêu?',['3 500','4 000','4 500','5 000'],1],
+['math_calc','9 000 − 4 500 bằng bao nhiêu?',['4 000','4 500','5 000','5 500'],1],
+['math_calc','120 × 5 bằng bao nhiêu?',['500','600','700','800'],1],
+['math_calc','7 200 : 8 bằng bao nhiêu?',['800','900','1 000','1 100'],1],
+['math_calc','6 500 + 1 500 bằng bao nhiêu?',['7 000','7 500','8 000','8 500'],2],
+['math_calc','10 000 − 2 500 bằng bao nhiêu?',['7 000','7 500','8 000','8 500'],1],
+['math_fraction','2 1/2 viết dưới dạng phân số bằng?',['3/2','4/2','5/2','6/2'],2],
+['math_fraction','1 m = bao nhiêu cm?',['10','100','1 000','10 000'],1],
+['math_fraction','3 kg = bao nhiêu g?',['30','300','3 000','30 000'],2],
+['math_fraction','2,5 m = bao nhiêu cm?',['25','250','2 500','25 000'],1],
+['math_trapezoid','Hình thang có hai đáy 8 cm và 12 cm, chiều cao 5 cm. Diện tích là?',['40 cm²','50 cm²','60 cm²','100 cm²'],1],
+['math_trapezoid','Công thức tính diện tích hình thang là?',['(đáy lớn + đáy bé) × chiều cao','(đáy lớn + đáy bé) × chiều cao : 2','đáy lớn × đáy bé','đáy lớn × chiều cao'],1],
+['math_trapezoid','Hai đáy 10 m và 6 m, chiều cao 4 m. Diện tích là?',['16 m²','24 m²','32 m²','64 m²'],2],
+['viet_grammar','Từ nào dưới đây là quan hệ từ?',['và','đẹp','chạy','nhanh'],0],
+['viet_grammar','Trong câu “Em học bài vì ngày mai kiểm tra”, từ “vì” biểu thị quan hệ gì?',['Nguyên nhân','Kết quả','Điều kiện','Mục đích'],0],
+['viet_grammar','Dấu câu nào thường dùng để kết thúc câu hỏi?',['Dấu chấm','Dấu phẩy','Dấu chấm hỏi','Dấu hai chấm'],2],
+['viet_grammar','Từ “nhưng” thường biểu thị quan hệ gì?',['Tương phản','Nguyên nhân','Thời gian','Mục đích'],0],
+['viet_words','Từ đồng nghĩa với “chăm chỉ” là?',['lười biếng','siêng năng','vội vàng','yếu ớt'],1],
+['viet_words','Từ trái nghĩa với “dũng cảm” là?',['gan dạ','mạnh mẽ','nhút nhát','kiên cường'],2],
+['viet_words','“Mắt” trong “mắt kim” và “mắt người” là ví dụ về?',['Từ đồng nghĩa','Từ trái nghĩa','Từ nhiều nghĩa','Quan hệ từ'],2],
+['science','Cơ quan nào giúp con người hô hấp?',['Dạ dày','Phổi','Tim','Thận'],1],
+['science','Nguồn năng lượng nào là năng lượng tái tạo?',['Mặt Trời','Than đá','Dầu mỏ','Khí đốt'],0],
+['science','Nước có thể chuyển từ thể lỏng sang thể khí khi?',['Đông đặc','Nóng chảy','Bay hơi','Ngưng tụ'],2],
+['science','Cây xanh cần gì để quang hợp?',['Ánh sáng','Đá','Kim loại','Nhựa'],0],
+['history','Ngày Quốc khánh Việt Nam là ngày nào?',['2/9','30/4','19/5','22/12'],0],
+['history','Thủ đô của Việt Nam là?',['Huế','Hà Nội','Đà Nẵng','TP. Hồ Chí Minh'],1],
+['history','Vịnh Hạ Long thuộc tỉnh/thành nào?',['Cao Bằng','Quảng Ninh','Lào Cai','Thanh Hóa'],1],
+['history','Đồng bằng lớn nhất nước ta là?',['Đồng bằng Bắc Bộ','Đồng bằng Nam Bộ','Đồng bằng duyên hải miền Trung','Không có'],1],
+['technology','Khi sử dụng thiết bị điện, việc nào an toàn?',['Chạm tay ướt vào ổ điện','Kéo dây điện để rút phích','Tắt nguồn trước khi vệ sinh','Tự sửa dây điện hỏng'],2],
+['technology','Mật khẩu an toàn nên?',['Dùng ngày sinh','Dùng 123456','Chia sẻ cho bạn','Khó đoán và không chia sẻ'],3],
+['technology','Thông tin trên Internet cần được?',['Tin ngay','Kiểm chứng trước khi chia sẻ','Chia sẻ càng nhanh càng tốt','Không cần kiểm tra'],1],
+['local','Cao Bằng thuộc vùng nào của Việt Nam?',['Đông Bắc','Tây Nam Bộ','Tây Nguyên','Nam Trung Bộ'],0],
+['local','Pác Bó gắn với sự kiện lịch sử nào?',['Nơi Bác Hồ về nước năm 1941','Nơi thành lập ASEAN','Nơi diễn ra Hội nghị Genève','Nơi mở đường Trường Sơn'],0],
+['local','Nước Hai là địa danh thuộc huyện nào của Cao Bằng?',['Hòa An','Trùng Khánh','Bảo Lạc','Nguyên Bình'],0],
+['life','Khi gặp người lạ rủ đi theo, em nên?',['Đi ngay','Giữ khoảng cách và từ chối','Cho địa chỉ nhà','Đi theo nếu được quà'],1],
+['life','Nếu bị bắt nạt ở trường, em nên?',['Đánh lại','Giữ im lặng mãi','Báo người lớn đáng tin cậy','Bỏ học'],2],
+['life','Khi qua đường, em nên?',['Chạy thật nhanh','Quan sát và đi đúng nơi quy định','Vừa đi vừa dùng điện thoại','Đi theo xe lớn'],1],
+['life','Nếu phát hiện cháy, việc đầu tiên phù hợp là?',['Trốn kín trong phòng','Báo động và tìm cách thoát nạn an toàn','Quay video','Quay lại lấy đồ'],1],
+['life','Khi nhận được tin nhắn đáng ngờ yêu cầu mật khẩu, em nên?',['Gửi ngay','Không cung cấp và báo người lớn','Chuyển tiếp cho bạn','Đăng lên mạng'],1],
+['life','Khi bạn mắc lỗi, cách ứng xử phù hợp là?',['Chê bai','Giúp bạn sửa lỗi và động viên','Nói cho cả lớp biết','Bỏ mặc'],1]
+];
+let token='',me=null,state=null,questions=[],idx=0,score=0,correct=0,answered=false;
+
+function esc(x){return String(x).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+async function login(){
+ const u=document.getElementById('user').value.trim(),p=document.getElementById('pass').value;
+ const msg=document.getElementById('loginMsg');msg.className='notice';msg.textContent='Đang đăng nhập...';
+ try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const d=await r.json();if(!r.ok)throw Error(d.error||'Đăng nhập thất bại');token=d.token;me=d.user;state=(await get('/api/state')).state;document.getElementById('login').classList.add('hidden');if(me.role==='teacher')showTeacher();else showStudent()}catch(e){msg.className='notice err';msg.textContent=e.message}}
+async function get(url){const r=await fetch(url,{headers:{Authorization:'Bearer '+token}});const d=await r.json();if(!r.ok)throw Error(d.error||'Lỗi kết nối');return d}
+function topicName(id){return TOPICS.find(x=>x.id===id)?.t||id}
+function showTeacher(){document.getElementById('teacher').classList.remove('hidden');renderTopics()}
+function renderTopics(){const saved=getSavedTopics();document.getElementById('topicList').innerHTML=TOPICS.map(x=>'<div class="topic"><label><input type="checkbox" value="'+x.id+'" '+(saved.includes(x.id)?'checked':'')+'><span><b>'+x.s+'</b><br><span class="muted">'+x.t+'</span></span></label></div>').join('')}
+function getSavedTopics(){const a=(state?.assignments||[]).find(x=>x.id==='LAVI_KNOWLEDGE_SCOPE');return Array.isArray(a?.topics)&&a.topics.length?a.topics:TOPICS.map(x=>x.id)}
+async function saveTopics(){const topics=[...document.querySelectorAll('#topicList input:checked')].map(x=>x.value);if(!topics.length){alert('Cô hãy chọn ít nhất một nội dung đã học.');return}const fresh=await get('/api/state');const assignments=fresh.state.assignments||[];const obj={id:'LAVI_KNOWLEDGE_SCOPE',topics,updatedAt:new Date().toISOString(),status:'Cấu hình'};const i=assignments.findIndex(x=>x.id===obj.id);if(i>=0)assignments[i]=obj;else assignments.push(obj);const st=fresh.state;st.assignments=assignments;const r=await fetch('/api/state',{method:'PUT',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({state:st})});const d=await r.json();if(!r.ok)throw Error(d.error||'Không lưu được');state=st;document.getElementById('saveMsg').textContent=' ✓ Đã lưu';setTimeout(()=>document.getElementById('saveMsg').textContent='',2000)}
+async function showStudent(){document.getElementById('student').classList.remove('hidden');const topics=getSavedTopics();document.getElementById('scope').innerHTML=topics.map(x=>'<span class="badge" style="margin:3px">'+esc(topicName(x))+'</span>').join('');document.getElementById('scopeBadge').textContent=topics.length+' nội dung đã học';await refreshAttempts()}
+async function refreshAttempts(){try{const d=await get('/api/game/status?gameType=knowledge');document.getElementById('attemptText').textContent='Còn '+d.remaining+'/3 lượt';document.getElementById('startBtn').disabled=d.remaining<=0;document.getElementById('startBtn').textContent=d.remaining<=0?'Đã hết 3 lượt':'🎯 Bắt đầu chơi'}catch(e){}}
+function startGame(){const topics=getSavedTopics();let pool=BANK.filter(q=>topics.includes(q[0]));if(pool.length<5){alert('Phạm vi kiến thức đã chọn chưa có đủ câu hỏi. Cô hãy chọn thêm nội dung.');return}pool.sort(()=>Math.random()-.5);questions=pool.slice(0,Math.min(10,pool.length));idx=0;score=0;correct=0;document.getElementById('game').classList.remove('hidden');document.getElementById('result').classList.add('hidden');renderQ()}
+function renderQ(){const q=questions[idx];answered=false;document.getElementById('counter').textContent='Câu '+(idx+1)+'/'+questions.length;document.getElementById('liveScore').textContent=score+' điểm';document.getElementById('bar').style.width=(idx/questions.length*100)+'%';document.getElementById('subject').textContent=TOPICS.find(x=>x.id===q[0]).s;document.getElementById('topic').textContent=topicName(q[0]);document.getElementById('question').textContent=q[1];document.getElementById('feedback').textContent='';document.getElementById('answers').innerHTML=q[2].map((a,i)=>'<button onclick="answer('+i+')">'+esc(a)+'</button>').join('')}
+function answer(n){if(answered)return;answered=true;const q=questions[idx],bs=[...document.querySelectorAll('#answers button')];bs[q[3]].classList.add('correct');if(n===q[3]){correct++;score+=10;document.getElementById('feedback').className='notice ok';document.getElementById('feedback').textContent='✅ Chính xác! +10 điểm'}else{bs[n].classList.add('wrong');document.getElementById('feedback').className='notice err';document.getElementById('feedback').textContent='❌ Chưa đúng. Đáp án đúng: '+q[2][q[3]]}document.getElementById('liveScore').textContent=score+' điểm';setTimeout(()=>{idx++;if(idx<questions.length)renderQ();else finish()},900)}
+async function finish(){document.getElementById('bar').style.width='100%';const total=questions.length;const stars=score>=90?5:score>=70?4:score>=50?3:score>=30?2:1;try{const d=await fetch('/api/game/result',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({gameType:'knowledge',score,correct,total,stars,timeSeconds:0})}).then(r=>r.json());if(d.error)throw Error(d.error)}catch(e){alert(e.message)}document.getElementById('game').classList.add('hidden');const r=document.getElementById('result');r.classList.remove('hidden');r.innerHTML='<h2>🎉 Hoàn thành!</h2><div class="score">'+score+'</div><p>Đúng <b>'+correct+'/'+total+'</b> câu</p><p>🏆 Sao nhận được: <b>'+stars+'</b></p><button onclick="startGame()">🔄 Chơi lại</button> <button class="secondary" onclick="location.reload()">🏠 Về trang đầu</button>';refreshAttempts()}
+</script>
+</body></html>
