@@ -1896,7 +1896,7 @@ async function finishGame(){
  const secs=Math.max(1,Math.round((Date.now()-GAME_STATE.started)/1000));
  const score=GAME_STATE.correct*10;
  const stars=GAME_STATE.correct>=9?5:GAME_STATE.correct>=7?4:GAME_STATE.correct>=5?3:GAME_STATE.correct>=3?2:GAME_STATE.correct>0?1:0;
- gameEl().innerHTML='<div class="game-board game-result"><div style="font-size:52px">'+(stars?'🌟'.repeat(stars):'💪')+'</div><h2>Hoàn thành!</h2><p>Đúng <b>'+GAME_STATE.correct+'/'+GAME_STATE.questions.length+'</b> câu · <b>'+score+'</b> điểm · '+secs+' giây</p><p>'+stars+' ⭐</p><button class="btn primary" onclick="startGameAgain()">🔄 Chơi lại</button> <button class="btn" onclick="gameEl().innerHTML=''">Đóng</button></div>';
+ gameEl().innerHTML='<div class="game-board game-result"><div style="font-size:52px">'+(stars?'🌟'.repeat(stars):'💪')+'</div><h2>Hoàn thành!</h2><p>Đúng <b>'+GAME_STATE.correct+'/'+GAME_STATE.questions.length+'</b> câu · <b>'+score+'</b> điểm · '+secs+' giây</p><p>'+stars+' ⭐</p><button class="btn primary" onclick="startGameAgain()">🔄 Chơi lại</button> <button class="btn" onclick="gameEl().innerHTML=&quot;&quot;">Đóng</button></div>';
  if(LAVI.user?.role==='student'&&LAVI.token&&GAME_STATE.type){
   try{await fetch('/api/game/result',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({gameType:GAME_STATE.type,score,correct:GAME_STATE.correct,total:GAME_STATE.questions.length,stars,timeSeconds:secs})})}catch(e){}
  }
