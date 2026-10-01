@@ -539,21 +539,40 @@ function makeQuestions(lesson,group,count,note=""){
   const tvWeek=Number(lesson?.week)||0;
   const tvLevel={Yếu:0,"Trung bình":1,Khá:2,Tốt:3}[group]??1;
   const tvDetail=tvLevel===0?"nhận biết, làm trực tiếp và có gợi ý":tvLevel===1?"cơ bản, rõ ràng và bám mẫu":tvLevel===2?"vận dụng, có giải thích ngắn": "vận dụng cao hơn, có giải thích và liên hệ";
-  function tvManual(prompt){ manualAdd(prompt+" — Mức độ: "+tvDetail,"Tự luận – cô chấm"); }
+  function tvManual(prompt){ manualAdd(prompt,"Tự luận – cô chấm"); }
   function tvPick(arr){return arr[(i-1)%arr.length];}
 
   // TIẾNG VIỆT HKI TUẦN 5–18: bám đúng các kế hoạch bài dạy cô đã gửi.
   if(tvWeek>=5 && tvWeek<=18){
     if(/từ đồng nghĩa/.test(title)){
       const bank=[
-        ["ngắm nhìn","chiêm ngưỡng"],["quần tụ","quây quần"],["vững chắc","vững chãi"],
-        ["trầm tĩnh","trầm lặng"],["chăm chỉ","siêng năng"],["to lớn","khổng lồ"]
+        ["ngắm nhìn","chiêm ngưỡng"],
+        ["quần tụ","quây quần"],
+        ["vững chắc","vững chãi"],
+        ["trầm tĩnh","trầm lặng"],
+        ["chăm chỉ","siêng năng"],
+        ["to lớn","khổng lồ"]
       ];
       const b=tvPick(bank),m=(i-1)%4;
-      if(m===0)add("Tìm một từ đồng nghĩa với từ “"+b[0]+"”.",b[1],"Tìm từ đồng nghĩa");
-      else if(m===1)add("Chọn từ đồng nghĩa với “"+b[0]+"”.", "A", "Chọn từ", [" "+b[1], "nhỏ bé", "chậm chạp", "ồn ào"]);
-      else if(m===2)add("Điền từ thích hợp: “Du khách muốn ______ vẻ đẹp của vịnh.”",b[1],"Điền từ");
-      else tvManual("Đặt một câu có sử dụng cặp từ đồng nghĩa “"+b[0]+" – "+b[1]+"”");
+      if(m===0){
+        add("Tìm một từ đồng nghĩa với từ “"+b[0]+"”.",b[1],"Tìm từ đồng nghĩa");
+      }else if(m===1){
+        const opts=[b[1],"nhỏ bé","chậm chạp","ồn ào"];
+        add("Chọn từ đồng nghĩa với “"+b[0]+"”.","A","Trắc nghiệm 4 đáp án",opts);
+      }else if(m===2){
+        // Câu điền từ phải dùng đúng ngữ cảnh với chính cặp từ đang học.
+        const contexts={
+          "ngắm nhìn":"Du khách muốn ______ vẻ đẹp của vịnh.",
+          "quần tụ":"Mọi người ______ bên sân trường để dự lễ.",
+          "vững chắc":"Ngôi nhà được xây dựng rất ______.",
+          "trầm tĩnh":"Thầy giáo luôn giữ vẻ ______ khi giải quyết công việc.",
+          "chăm chỉ":"Lan rất ______ học tập.",
+          "to lớn":"Cây cổ thụ có thân hình ______."
+        };
+        add("Điền từ thích hợp vào chỗ trống: “"+contexts[b[0]]+"”",b[1],"Điền từ");
+      }else{
+        tvManual("Đặt một câu có sử dụng cặp từ đồng nghĩa “"+b[0]+" – "+b[1]+"”");
+      }
       return true;
     }
     if(/từ đa nghĩa/.test(title)){
