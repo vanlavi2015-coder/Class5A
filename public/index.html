@@ -354,15 +354,59 @@ function makeQuestions(lesson,group,count,note=""){
     "Khá":[[15,8],[12,7],[18,10],[14,9]],
     "Tốt":[[18,9],[15,8],[20,12],[16,10]]
    };
-   const b=level[group]||level["Trung bình"], m=(i-1)%8;
-   if(m===0){const [d,r]=b[0];add("Một hình chữ nhật có chiều dài "+d+" cm và chiều rộng "+r+" cm. Tính diện tích hình chữ nhật.",dec(d*r)+" cm²","Tính diện tích hình chữ nhật");}
-   else if(m===1){const [a,h]=b[1];add("Một hình tam giác có đáy "+a+" cm và chiều cao "+h+" cm. Tính diện tích hình tam giác.",dec(a*h/2)+" cm²","Tính diện tích hình tam giác");}
-   else if(m===2){const [a,b2,h]=[b[2][0],b[2][1],b[3][1]];add("Một hình thang có đáy lớn "+a+" cm, đáy bé "+b2+" cm và chiều cao "+h+" cm. Tính diện tích hình thang.",dec((a+b2)*h/2)+" cm²","Tính diện tích hình thang");}
-   else if(m===3){const [d,r]=b[0];add("Một hình chữ nhật có chiều dài "+d+" cm và chiều rộng "+r+" cm. Tính chu vi hình chữ nhật.",dec((d+r)*2)+" cm","Tính chu vi hình chữ nhật");}
-   else if(m===4){const [a,h]=b[1];add("Một hình tam giác có diện tích "+dec(a*h/2)+" cm² và đáy "+a+" cm. Tính chiều cao của hình tam giác.",dec(h)+" cm","Tìm chiều cao hình tam giác");}
-   else if(m===5){const [a,b2,h]=[b[2][0],b[2][1],b[3][1]];add("Một hình thang có diện tích "+dec((a+b2)*h/2)+" cm², hai đáy dài "+a+" cm và "+b2+" cm. Tính chiều cao hình thang.",dec(h)+" cm","Tìm chiều cao hình thang");}
-   else if(m===6){add("Đổi 3 m² 25 dm² thành đơn vị mét vuông.", "3,25 m²","Đổi đơn vị diện tích");}
-   else {add("Một mảnh đất hình chữ nhật dài "+(b[0][0]+2)+" m và rộng "+b[0][1]+" m. Người ta dành 1/4 diện tích mảnh đất để trồng hoa. Tính diện tích phần đất trồng hoa.",dec((b[0][0]+2)*b[0][1]/4)+" m²","Bài toán thực tế");}
+   // Mỗi câu dùng một bộ số riêng; không lặp lại cùng dữ liệu trong một đề.
+   const banks={
+    "Yếu":[
+     {d:8,r:5,a:6,h:4,A:10,B:6,H:3,landD:11,landR:5},
+     {d:9,r:4,a:7,h:5,A:12,B:7,H:4,landD:13,landR:4},
+     {d:10,r:6,a:8,h:6,A:14,B:8,H:5,landD:12,landR:6},
+     {d:7,r:3,a:9,h:4,A:16,B:9,H:4,landD:15,landR:3},
+     {d:12,r:5,a:10,h:6,A:18,B:10,H:5,landD:14,landR:5},
+     {d:11,r:7,a:12,h:5,A:20,B:11,H:6,landD:16,landR:7},
+     {d:13,r:4,a:11,h:7,A:22,B:12,H:4,landD:17,landR:4},
+     {d:15,r:6,a:14,h:6,A:24,B:14,H:5,landD:19,landR:6}
+    ],
+    "Trung bình":[
+     {d:12,r:7,a:9,h:5,A:14,B:8,H:6,landD:15,landR:7},
+     {d:13,r:6,a:10,h:7,A:16,B:9,H:5,landD:17,landR:6},
+     {d:15,r:8,a:11,h:6,A:18,B:10,H:7,landD:19,landR:8},
+     {d:14,r:9,a:12,h:5,A:20,B:12,H:6,landD:18,landR:9},
+     {d:16,r:7,a:13,h:8,A:22,B:14,H:5,landD:21,landR:7},
+     {d:18,r:10,a:15,h:6,A:24,B:15,H:7,landD:23,landR:10},
+     {d:17,r:8,a:14,h:9,A:26,B:16,H:6,landD:20,landR:8},
+     {d:20,r:9,a:16,h:7,A:28,B:18,H:5,landD:25,landR:9}
+    ],
+    "Khá":[
+     {d:15,r:8,a:12,h:7,A:18,B:10,H:6,landD:18,landR:8},
+     {d:17,r:9,a:13,h:8,A:20,B:11,H:7,landD:21,landR:9},
+     {d:18,r:10,a:14,h:6,A:22,B:12,H:8,landD:23,landR:10},
+     {d:20,r:11,a:15,h:7,A:24,B:14,H:6,landD:25,landR:11},
+     {d:19,r:8,a:16,h:9,A:26,B:15,H:7,landD:24,landR:8},
+     {d:22,r:12,a:18,h:8,A:28,B:16,H:9,landD:27,landR:12},
+     {d:24,r:10,a:17,h:7,A:30,B:18,H:8,landD:29,landR:10},
+     {d:25,r:13,a:20,h:9,A:32,B:20,H:7,landD:31,landR:13}
+    ],
+    "Tốt":[
+     {d:18,r:9,a:15,h:8,A:20,B:12,H:7,landD:21,landR:9},
+     {d:20,r:10,a:16,h:9,A:22,B:13,H:8,landD:23,landR:10},
+     {d:22,r:12,a:17,h:7,A:24,B:14,H:9,landD:25,landR:12},
+     {d:24,r:11,a:18,h:8,A:26,B:15,H:7,landD:27,landR:11},
+     {d:25,r:13,a:20,h:9,A:28,B:16,H:8,landD:29,landR:13},
+     {d:27,r:12,a:21,h:7,A:30,B:18,H:9,landD:31,landR:12},
+     {d:28,r:14,a:22,h:8,A:32,B:20,H:7,landD:33,landR:14},
+     {d:30,r:15,a:24,h:9,A:34,B:22,H:8,landD:35,landR:15}
+    ]
+   };
+   const b=(banks[group]||banks["Trung bình"])[Math.max(0,Math.min(7,i-1))];
+   const m=(i-1)%8;
+   if(m===0){add("Một hình chữ nhật có chiều dài "+b.d+" cm và chiều rộng "+b.r+" cm. Tính diện tích hình chữ nhật.",dec(b.d*b.r)+" cm²","Tính diện tích hình chữ nhật");}
+   else if(m===1){add("Một hình tam giác có đáy "+b.a+" cm và chiều cao "+b.h+" cm. Tính diện tích hình tam giác.",dec(b.a*b.h/2)+" cm²","Tính diện tích hình tam giác");}
+   else if(m===2){add("Một hình thang có đáy lớn "+b.A+" cm, đáy bé "+b.B+" cm và chiều cao "+b.H+" cm. Tính diện tích hình thang.",dec((b.A+b.B)*b.H/2)+" cm²","Tính diện tích hình thang");}
+   else if(m===3){add("Một hình chữ nhật có chiều dài "+b.d+" cm và chiều rộng "+b.r+" cm. Tính chu vi hình chữ nhật.",dec((b.d+b.r)*2)+" cm","Tính chu vi hình chữ nhật");}
+   else if(m===4){add("Một hình tam giác có diện tích "+dec(b.a*b.h/2)+" cm² và đáy "+b.a+" cm. Tính chiều cao của hình tam giác.",dec(b.h)+" cm","Tìm chiều cao hình tam giác");}
+   else if(m===5){add("Một hình thang có diện tích "+dec((b.A+b.B)*b.H/2)+" cm², hai đáy dài "+b.A+" cm và "+b.B+" cm. Tính chiều cao hình thang.",dec(b.H)+" cm","Tìm chiều cao hình thang");}
+   else if(m===6){const x=2+(i%5),y=25+(i%5)*5;add("Đổi "+x+" m² "+y+" dm² thành đơn vị mét vuông.",dec(x+y/100)+" m²","Đổi đơn vị diện tích");}
+   else {add("Một mảnh đất hình chữ nhật dài "+b.landD+" m và rộng "+b.landR+" m. Người ta dành 1/4 diện tích mảnh đất để trồng hoa. Tính diện tích phần đất trồng hoa.",dec(b.landD*b.landR/4)+" m²","Bài toán thực tế");}
    return true;
   }
 if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.test(title)){
