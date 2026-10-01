@@ -844,6 +844,21 @@ function makeQuestions(lesson,group,count,note=""){
   const idx=Math.min(qs.length-1,1),q=qs[idx];
   if(q){q.type="Bài toán có lời văn";q.text=q.text.replace(/^Tính diện tích/,"Một khu đất có dạng hình học tương ứng. "+q.text);}
  }
+ function qualityGate(q){
+  if(!q)return q;
+  q={...q,text:String(q.text||"").trim(),answer:String(q.answer??"").trim()};
+  const manual=!!q.manual||/cô chấm/i.test(String(q.type||""));
+  const bad=["người được nhắc đến trong câu","câu đúng ngữ pháp và dùng đúng từ","đáp án đúng","tùy câu trả lời"];
+  if(manual){q.manual=true;q.answer="";q.type=q.type||"Tự luận – cô chấm";return q;}
+  if(!q.text||!q.answer||bad.includes(q.answer.toLowerCase())){q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;}
+  const t=q.text.toLowerCase(),a=q.answer.toLowerCase();
+  if(/tìm đại từ/.test(t)&&!q.text.includes(q.answer)){q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;}
+  if(/tìm (một )?(danh từ|động từ|tính từ)/.test(t)&&!q.text.toLowerCase().includes(a)){q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;}
+  if(q.options&&(!Array.isArray(q.options)||q.options.length!==4||!["A","B","C","D"].includes(q.answer))){q.manual=true;q.answer="";q.options=undefined;q.type="Tự luận – cô chấm";return q;}
+  if(/^(đặt|viết|hãy viết|nêu tác dụng|giải thích|trình bày|thực hiện|lập dàn ý)/.test(t)){q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;}
+  return q;
+ }
+ const checked=qs.map(qualityGate);
  return qs.slice(0,count).map((q,i)=>({...q,id:i+1}));
 }
 function safeGifUrl(v){
