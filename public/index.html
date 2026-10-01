@@ -262,7 +262,8 @@ function makeQuestions(lesson,group,count,note=""){
  function dec(v){return String(v).replace(".",",")}
  function valFor(base,i){return simple?base+(i%2):levelNum(group,base)+(i%3)}
  function standardMath(i){
-  const k=(i-1)%8;
+  const groupOffset={Yếu:0,"Trung bình":1,Khá:2,Tốt:4}[group]||0;
+  const k=(i-1+groupOffset)%8;
   if(/hỗn số/.test(title)){
    const w=simple?2+(i%3):levelNum(group,2)+(i%2), d=simple?2+(i%2):4+(i%3), n=1+(i%d);
    if(k%3===0) add("Viết hỗn số "+w+" "+n+"/"+d+" thành phân số.",String(mixedToImproper(w,n,d)),"Viết hỗn số thành phân số");
@@ -277,16 +278,33 @@ function makeQuestions(lesson,group,count,note=""){
    return true;
   }
   if(/khái niệm.*số thập phân|số thập phân/.test(title)){
-   const bank=[
-    ["3,7","37/10","hàng phần mười","7/10"],
-    ["4,25","425/100","hàng phần trăm","5/100"],
-    ["5,306","5306/1000","hàng phần nghìn","6/1000"],
-    ["7,04","704/100","hàng phần trăm","4/100"],
-    ["8,125","8125/1000","hàng phần nghìn","5/1000"],
-    ["2,509","2509/1000","hàng phần nghìn","9/1000"],
-    ["6,38","638/100","hàng phần trăm","8/100"],
-    ["9,407","9407/1000","hàng phần nghìn","7/1000"]
-   ];
+   const decimalBanks={
+    Yếu:[
+      ["2,4","24/10","hàng phần mười","4/10"],["3,5","35/10","hàng phần mười","5/10"],
+      ["4,2","42/10","hàng phần mười","2/10"],["5,7","57/10","hàng phần mười","7/10"],
+      ["6,3","63/10","hàng phần mười","3/10"],["7,8","78/10","hàng phần mười","8/10"],
+      ["8,1","81/10","hàng phần mười","1/10"],["9,6","96/10","hàng phần mười","6/10"]
+    ],
+    "Trung bình":[
+      ["3,7","37/10","hàng phần mười","7/10"],["4,25","425/100","hàng phần trăm","5/100"],
+      ["5,30","530/100","hàng phần trăm","0/100"],["7,04","704/100","hàng phần trăm","4/100"],
+      ["8,12","812/100","hàng phần trăm","2/100"],["2,50","250/100","hàng phần trăm","0/100"],
+      ["6,38","638/100","hàng phần trăm","8/100"],["9,40","940/100","hàng phần trăm","0/100"]
+    ],
+    Khá:[
+      ["3,75","375/100","hàng phần trăm","5/100"],["4,256","4256/1000","hàng phần nghìn","6/1000"],
+      ["5,306","5306/1000","hàng phần nghìn","6/1000"],["7,048","7048/1000","hàng phần nghìn","8/1000"],
+      ["8,125","8125/1000","hàng phần nghìn","5/1000"],["2,509","2509/1000","hàng phần nghìn","9/1000"],
+      ["6,380","6380/1000","hàng phần nghìn","0/1000"],["9,407","9407/1000","hàng phần nghìn","7/1000"]
+    ],
+    Tốt:[
+      ["13,705","13705/1000","hàng phần nghìn","5/1000"],["24,056","24056/1000","hàng phần nghìn","6/1000"],
+      ["35,408","35408/1000","hàng phần nghìn","8/1000"],["47,125","47125/1000","hàng phần nghìn","5/1000"],
+      ["58,309","58309/1000","hàng phần nghìn","9/1000"],["62,504","62504/1000","hàng phần nghìn","4/1000"],
+      ["73,680","73680/1000","hàng phần nghìn","0/1000"],["86,907","86907/1000","hàng phần nghìn","7/1000"]
+    ]
+   };
+   const bank=decimalBanks[group]||decimalBanks["Trung bình"];
    const b=bank[(i-1)%bank.length], m=(i-1)%8;
    if(/làm tròn/.test(title)){const whole=2+(i%7),tenths=i%10,hundred=(i+3)%10,x=whole+","+tenths+hundred;add("Làm tròn số "+x+" đến hàng phần mười.",dec(whole+(hundred>=5?1:0))+",0","Làm tròn số thập phân");}
    else if(/so sánh/.test(title)){const x=2+(i%6)/10,y=x+0.01;add("So sánh hai số "+dec(x.toFixed(2))+" và "+dec(y.toFixed(2))+".","<","So sánh số thập phân");}
@@ -362,13 +380,26 @@ function makeQuestions(lesson,group,count,note=""){
     ["Buổi sáng, đàn chim nhỏ bay trên bầu trời xanh.","chim","bay","nhỏ"],
     ["Mẹ nấu bữa cơm thơm ngon cho cả gia đình.","mẹ","nấu","thơm ngon"]
    ];
-   const b=bank[(i-1)%bank.length],m=(i-1)%6;
-   if(m===0)add("Tìm một danh từ, một động từ và một tính từ trong câu: “"+b[0]+"”.",b[1]+"; "+b[2]+"; "+b[3],"Xác định từ");
-   else if(m===1)add("Tìm danh từ trong câu: “"+b[0]+"”.",b[1],"Tìm danh từ");
-   else if(m===2)add("Tìm động từ trong câu: “"+b[0]+"”.",b[2],"Tìm động từ");
-   else if(m===3)add("Tìm tính từ trong câu: “"+b[0]+"”.",b[3],"Tìm tính từ");
-   else if(m===4)add("Từ “"+b[1]+"” trong câu thuộc loại từ nào?","danh từ","Phân loại từ");
-   else add("Từ “"+b[2]+"” trong câu thuộc loại từ nào?","động từ","Phân loại từ");
+   const b=bank[(i-1)%bank.length];
+   const vm={Yếu:0,"Trung bình":1,Khá:2,Tốt:4}[group]||0;
+   const m=(i-1+vm)%6;
+   if(group==="Yếu") {
+    if(m%3===0)add("Tìm một danh từ trong câu: “"+b[0]+"”.",b[1],"Tìm danh từ");
+    else if(m%3===1)add("Tìm một động từ trong câu: “"+b[0]+"”.",b[2],"Tìm động từ");
+    else add("Tìm một tính từ trong câu: “"+b[0]+"”.",b[3],"Tìm tính từ");
+   } else if(group==="Trung bình") {
+    if(m%3===0)add("Tìm một danh từ và một động từ trong câu: “"+b[0]+"”.",b[1]+"; "+b[2],"Xác định từ");
+    else if(m%3===1)add("Tìm danh từ trong câu: “"+b[0]+"”.",b[1],"Tìm danh từ");
+    else add("Tìm tính từ trong câu: “"+b[0]+"”.",b[3],"Tìm tính từ");
+   } else if(group==="Khá") {
+    if(m%3===0)add("Tìm một danh từ, một động từ và một tính từ trong câu: “"+b[0]+"”.",b[1]+"; "+b[2]+"; "+b[3],"Xác định từ");
+    else if(m%3===1)add("Từ “"+b[1]+"” và “"+b[2]+"” trong câu lần lượt thuộc loại từ nào?", "danh từ; động từ","Phân loại từ");
+    else add("Từ “"+b[3]+"” trong câu thuộc loại từ nào?","tính từ","Phân loại từ");
+   } else {
+    if(m%3===0)add("Tìm và phân loại 3 từ được in đậm trong câu: “"+b[0]+"” (chọn một danh từ, một động từ, một tính từ).",b[1]+"; "+b[2]+"; "+b[3],"Phân loại từ");
+    else if(m%3===1)add("Từ “"+b[1]+"”, “"+b[2]+"”, “"+b[3]+"” lần lượt thuộc loại từ nào?", "danh từ; động từ; tính từ","Phân loại từ");
+    else add("Chọn loại từ của từ “"+b[3]+"” và nêu từ đó chỉ đặc điểm gì.", "tính từ; chỉ đặc điểm","Phân loại từ");
+   }
    return true;
   }
   if(/đại từ/.test(title)){
