@@ -536,6 +536,195 @@ function makeQuestions(lesson,group,count,note=""){
   manualAdd(patterns[(i-1)%patterns.length]); return true;
  }
  function standardVietnamese(i){
+  const tvWeek=Number(lesson?.week)||0;
+  const tvLevel={Yếu:0,"Trung bình":1,Khá:2,Tốt:3}[group]??1;
+  const tvDetail=tvLevel===0?"nhận biết, làm trực tiếp và có gợi ý":tvLevel===1?"cơ bản, rõ ràng và bám mẫu":tvLevel===2?"vận dụng, có giải thích ngắn": "vận dụng cao hơn, có giải thích và liên hệ";
+  function tvManual(prompt){ manualAdd(prompt+" — Mức độ: "+tvDetail,"Tự luận – cô chấm"); }
+  function tvPick(arr){return arr[(i-1)%arr.length];}
+
+  // TIẾNG VIỆT HKI TUẦN 5–18: bám đúng các kế hoạch bài dạy cô đã gửi.
+  if(tvWeek>=5 && tvWeek<=18){
+    if(/từ đồng nghĩa/.test(title)){
+      const bank=[
+        ["ngắm nhìn","chiêm ngưỡng"],["quần tụ","quây quần"],["vững chắc","vững chãi"],
+        ["trầm tĩnh","trầm lặng"],["chăm chỉ","siêng năng"],["to lớn","khổng lồ"]
+      ];
+      const b=tvPick(bank),m=(i-1)%4;
+      if(m===0)add("Tìm một từ đồng nghĩa với từ “"+b[0]+"”.",b[1],"Tìm từ đồng nghĩa");
+      else if(m===1)add("Chọn từ đồng nghĩa với “"+b[0]+"”: A. "+b[1]+"  B. nhỏ bé  C. chậm chạp.","A","Chọn từ");
+      else if(m===2)add("Điền từ thích hợp: “Du khách muốn ______ vẻ đẹp của vịnh.”",b[1],"Điền từ");
+      else tvManual("Đặt một câu có sử dụng cặp từ đồng nghĩa “"+b[0]+" – "+b[1]+"”");
+      return true;
+    }
+    if(/từ đa nghĩa/.test(title)){
+      const bank=[
+        ["chân","Bộ phận cơ thể dùng để đi, đứng.","Nghĩa gốc"],
+        ["chân","Bộ phận phía dưới của đồ vật, có tác dụng nâng đỡ.","Nghĩa chuyển"],
+        ["cao","Có khoảng cách lớn theo chiều thẳng đứng.","Nghĩa gốc"],
+        ["cao","Có mức vượt trên mức bình thường về số lượng hoặc chất lượng.","Nghĩa chuyển"],
+        ["hạt","Phần nằm trong quả, có thể nảy mầm thành cây con.","Nghĩa gốc"],
+        ["hạt","Phần nhỏ có hình giống hạt, như hạt mưa, hạt nắng.","Nghĩa chuyển"]
+      ];
+      const b=tvPick(bank);
+      if(i%2===1)add("Từ “"+b[0]+"” trong trường hợp này được dùng với nghĩa nào?",b[2],"Nghĩa gốc/nghĩa chuyển");
+      else tvManual("Đặt 2 câu để phân biệt hai nghĩa của từ “"+b[0]+"”");
+      return true;
+    }
+    if(/đại từ/.test(title)){
+      const bank=[
+        ["Lan và em cùng làm bài. Chúng em cùng kiểm tra lại bài.","Chúng em"],
+        ["Nam hỏi Mai: “Bạn đã làm xong bài chưa?”","Bạn"],
+        ["Cô giáo gọi Minh và tôi lên bảng. Cô giao cho chúng tôi một bài tập.","tôi"],
+        ["Các bạn trong tổ cùng giúp nhau học tập. Chúng tôi rất vui.","Chúng tôi"]
+      ];
+      const b=tvPick(bank);
+      if(i%3===1)add("Tìm đại từ trong câu: “"+b[0]+"”.",b[1],"Tìm đại từ");
+      else if(i%3===2)tvManual("Từ “"+b[1]+"” trong câu dùng để xưng hô hay thay thế? Giải thích ngắn gọn");
+      else tvManual("Viết lại câu “"+b[0]+"” bằng cách thay đại từ đã tìm bằng từ ngữ thích hợp");
+      return true;
+    }
+    if(/danh từ|động từ|tính từ/.test(title)){
+      const bank=[
+        ["Những bông hoa đỏ nở rực rỡ bên sân trường.","hoa","nở","đỏ"],
+        ["Các bạn học sinh chăm chỉ đọc sách trong thư viện.","học sinh","đọc","chăm chỉ"],
+        ["Buổi sáng, đàn chim nhỏ bay trên bầu trời xanh.","chim","bay","nhỏ"],
+        ["Mẹ nấu bữa cơm thơm ngon cho cả gia đình.","mẹ","nấu","thơm ngon"]
+      ];
+      const b=tvPick(bank),m=(i-1+tvLevel)%3;
+      if(tvLevel===0){
+        if(m===0)add("Tìm một danh từ trong câu: “"+b[0]+"”.",b[1],"Tìm danh từ");
+        else if(m===1)add("Tìm một động từ trong câu: “"+b[0]+"”.",b[2],"Tìm động từ");
+        else add("Tìm một tính từ trong câu: “"+b[0]+"”.",b[3],"Tìm tính từ");
+      }else if(tvLevel===1){
+        if(m===0)add("Tìm một danh từ và một động từ trong câu: “"+b[0]+"”.",b[1]+"; "+b[2],"Xác định từ");
+        else if(m===1)add("Tìm một tính từ trong câu: “"+b[0]+"”.",b[3],"Tìm tính từ");
+        else tvManual("Tìm và ghi lại một danh từ, một động từ, một tính từ trong câu: “"+b[0]+"”");
+      }else{
+        tvManual("Tìm và phân loại danh từ, động từ, tính từ trong câu: “"+b[0]+"”; giải thích ngắn gọn vì sao em xác định như vậy");
+      }
+      return true;
+    }
+    if(/sử dụng từ điển|luyện tập sử dụng từ điển/.test(title)){
+      const words=["học tập","tập trung","trôi chảy","nhân hậu"];
+      const w=words[(i-1)%words.length],m=(i-1)%4;
+      if(m===0)add("Từ “"+w+"” cần tra cứu trong loại tài liệu nào để biết nghĩa và cách dùng?","Từ điển tiếng Việt","Tra cứu từ điển");
+      else if(m===1)add("Khi tra một từ trong từ điển, sau khi tìm đúng mục từ, em cần đọc gì?","Nghĩa và ví dụ cách dùng","Tra cứu từ điển");
+      else if(m===2)tvManual("Tra từ “"+w+"”: ghi từ loại, một nghĩa phù hợp và đặt một câu minh họa");
+      else tvManual("Sắp xếp các bước tra từ: chọn từ điển phù hợp; tìm mục từ; đọc nghĩa; đọc ví dụ; đối chiếu thông tin");
+      return true;
+    }
+    if(/dấu gạch ngang/.test(title)){
+      const m=(i-1)%4;
+      if(m===0)add("Trong câu “Nguyễn Hiền - một người nổi tiếng ham học - đã đỗ Trạng nguyên.”, dấu gạch ngang dùng để làm gì?","Đánh dấu bộ phận chú thích, giải thích","Công dụng dấu gạch ngang");
+      else if(m===1)add("Dấu gạch ngang có thể dùng ở giữa câu để đánh dấu bộ phận nào?","Bộ phận chú thích, giải thích","Công dụng dấu gạch ngang");
+      else if(m===2)tvManual("Thêm dấu gạch ngang vào câu sau để đánh dấu bộ phận chú thích: “Nguyễn Hiền một người nổi tiếng ham học đã đỗ Trạng nguyên.”");
+      else tvManual("Viết 2–3 câu giới thiệu một danh nhân, trong đó có dùng dấu gạch ngang để chú thích, giải thích");
+      return true;
+    }
+    if(/luyện tập về dấu gạch ngang/.test(title)){
+      const m=(i-1)%3;
+      if(m===0)add("Dấu gạch ngang trong câu “Dế Mèn phiêu lưu kí - tác phẩm nổi tiếng của Tô Hoài - đem đến nhiều bài học.” có công dụng gì?","Đánh dấu bộ phận chú thích, giải thích","Công dụng dấu gạch ngang");
+      else if(m===1)tvManual("Thêm dấu gạch ngang thích hợp vào một câu giới thiệu sách để đánh dấu bộ phận chú thích");
+      else tvManual("Viết 1–2 câu giới thiệu một cuốn sách và sử dụng dấu gạch ngang đúng công dụng");
+      return true;
+    }
+    if(/điệp từ|điệp ngữ/.test(title)){
+      const bank=[
+        ["Em yêu mái trường, yêu thầy cô, yêu bạn bè.","yêu","nhấn mạnh tình cảm"],
+        ["Tre giữ làng, giữ nước, giữ mái nhà tranh, giữ đồng lúa chín.","giữ","nhấn mạnh vai trò, ý nghĩa"],
+        ["Rất nhanh, rất nhanh, cơn mưa mùa hạ kéo đến.","rất nhanh","nhấn mạnh mức độ, tạo nhịp điệu"],
+        ["Nhớ mãi, nhớ mãi những ngày thơ ấu.","nhớ mãi","nhấn mạnh cảm xúc"]
+      ];
+      const b=tvPick(bank);
+      if(i%2===1)add("Từ ngữ nào được lặp lại trong câu: “"+b[0]+"”?",b[1],"Tìm điệp từ/điệp ngữ");
+      else tvManual("Nêu tác dụng của việc lặp lại từ ngữ “"+b[1]+"” trong câu: “"+b[0]+"”");
+      return true;
+    }
+    if(/kết từ/.test(title)){
+      const m=(i-1)%5;
+      if(m===0)add("Trong câu “Tranh Đông Hồ giản dị mà tinh tế.”, kết từ là từ nào?","mà","Tìm kết từ");
+      else if(m===1)add("Cặp kết từ “mặc dù ... nhưng ...” biểu thị quan hệ gì?","đối lập","Quan hệ kết từ");
+      else if(m===2)add("Điền kết từ thích hợp: “Nếu bạn muốn chơi pi-a-nô thành thạo ___ bạn phải kiên trì.”","thì","Điền kết từ");
+      else if(m===3)add("Cặp kết từ “vì ... nên ...” biểu thị quan hệ gì?","nguyên nhân - kết quả","Quan hệ kết từ");
+      else tvManual("Viết 2–3 câu giới thiệu một bức tranh hoặc bức ảnh, có sử dụng kết từ");
+      return true;
+    }
+    if(/luyện tập về kết từ/.test(title)){
+      const m=(i-1)%4;
+      if(m===0)add("Cặp kết từ “không những ... mà còn ...” biểu thị quan hệ gì?","tăng tiến","Quan hệ kết từ");
+      else if(m===1)add("Cặp kết từ “nếu ... thì ...” biểu thị quan hệ gì?","điều kiện - kết quả","Quan hệ kết từ");
+      else if(m===2)tvManual("Tìm các kết từ trong câu: “Mặc dù trời mưa nhưng các bạn vẫn đến thư viện.”");
+      else tvManual("Đặt một câu có sử dụng một cặp kết từ phù hợp");
+      return true;
+    }
+    if(/báo cáo|chương trình hoạt động|kể chuyện|tả phong cảnh|tả người|giới thiệu nhân vật|thể hiện tình cảm|nêu ý kiến|chỉnh sửa|tìm hiểu cách viết|lập dàn ý|quan sát phong cảnh|viết đoạn văn|viết bài văn/.test(title)){
+      if(/kể chuyện sáng tạo/.test(title))tvManual("Thực hiện nhiệm vụ viết kể chuyện sáng tạo theo bài học: chọn câu chuyện, xác định nhân vật và sự việc chính, sắp xếp diễn biến hợp lí và thể hiện cách kể của em");
+      else if(/tả phong cảnh/.test(title))tvManual("Thực hiện nhiệm vụ viết theo bài học về tả phong cảnh: lựa chọn một phong cảnh, xác định đặc điểm nổi bật và sắp xếp ý theo trình tự quan sát");
+      else if(/thể hiện tình cảm.*câu chuyện/.test(title))tvManual("Viết đoạn văn thể hiện tình cảm, cảm xúc về một câu chuyện đã đọc hoặc đã nghe; nêu được điều em yêu thích, xúc động");
+      else if(/thể hiện tình cảm.*bài thơ/.test(title))tvManual("Viết đoạn văn thể hiện tình cảm, cảm xúc về một bài thơ; nêu chi tiết thơ khiến em yêu thích hoặc xúc động");
+      else if(/giới thiệu nhân vật.*cuốn sách/.test(title))tvManual("Viết đoạn văn giới thiệu một nhân vật trong cuốn sách đã đọc; nêu đặc điểm nổi bật, dẫn chứng và cảm xúc của em");
+      else if(/giới thiệu nhân vật.*bộ phim/.test(title))tvManual("Viết đoạn văn giới thiệu một nhân vật trong bộ phim hoạt hình đã xem; nêu đặc điểm nổi bật và chi tiết gây ấn tượng");
+      else if(/tả người/.test(title))tvManual("Thực hiện nhiệm vụ viết theo yêu cầu bài học về tả người, chú ý đặc điểm nổi bật và trình tự miêu tả");
+      else if(/chương trình hoạt động/.test(title))tvManual("Viết hoặc hoàn thiện chương trình hoạt động theo yêu cầu bài học, bảo đảm có các mục thông tin cần thiết và trình bày rõ ràng");
+      else if(/báo cáo/.test(title))tvManual("Viết hoặc chỉnh sửa báo cáo công việc theo yêu cầu bài học, bảo đảm nêu rõ công việc đã thực hiện và kết quả");
+      else if(/nêu ý kiến/.test(title))tvManual("Viết đoạn văn nêu ý kiến theo yêu cầu bài học, nêu rõ ý kiến và lí do phù hợp");
+      else if(/chỉnh sửa/.test(title))tvManual("Đọc lại bài viết, tự kiểm tra nội dung, dùng từ, đặt câu, chính tả và chỉnh sửa theo tiêu chí của bài học");
+      else if(/lập dàn ý/.test(title))tvManual("Lập dàn ý theo đúng yêu cầu bài học, xác định đủ các ý chính và sắp xếp theo trình tự hợp lí");
+      else if(/quan sát phong cảnh/.test(title))tvManual("Quan sát phong cảnh theo yêu cầu bài học, ghi lại các chi tiết nổi bật về màu sắc, âm thanh, hình ảnh và hoạt động");
+      else tvManual("Hoàn thành nhiệm vụ Viết theo đúng yêu cầu của bài học và tự đọc soát sản phẩm");
+      return true;
+    }
+    if(/trước cổng trời|kì diệu rừng xanh|hang sơn đoòng|những hòn đảo trên vịnh hạ long|mầm non|những ngọn núi nóng rẫy|bài ca về mặt trời|xin chào, xa-ha-ra|thư gửi các học sinh|tấm gương tự học|trải nghiệm để sáng tạo|khổ luyện thành tài|thế giới trong trang sách|từ những câu chuyện ấu thơ|giới thiệu sách dế mèn phiêu lưu kí|tinh thần học tập của nhà phi-lít|lợi ích của tự học|tiếng đàn ba-la-lai-ca|trí tưởng tượng phong phú|tranh làng hồ|tập hát quan họ|phim hoạt hình chú ốc sên bay|nghệ thuật múa ba lê|một ngôi chùa độc đáo|sự tích chú tễu/.test(title)){
+      const topic=String(lesson?.lesson||"bài đọc");
+      const readPrompts={
+        "trước cổng trời":["Xác định những hình ảnh cho thấy vẻ đẹp thiên nhiên vùng cao trong bài đọc.","Bài thơ thể hiện hình ảnh con người miền núi như thế nào?","Nêu chủ đề của bài thơ và một cảm xúc của em về thiên nhiên vùng cao."],
+        "kì diệu rừng xanh":["Tìm một chi tiết thể hiện vẻ đẹp kì thú của rừng trong bài đọc.","Những hình ảnh trong rừng được tác giả miêu tả có gì nổi bật?","Nêu điều em muốn làm để góp phần bảo vệ rừng."],
+        "hang sơn đoòng":["Văn bản cung cấp những thông tin chính nào về hang Sơn Đoòng?","Quá trình hình thành và quy mô của hang được giới thiệu như thế nào?","Vì sao cần trân trọng và bảo vệ hang Sơn Đoòng?"],
+        "những hòn đảo trên vịnh hạ long":["Tìm các từ ngữ gợi tả hình dáng những hòn đảo.","Nội dung chính của văn bản là gì?","Nêu một việc em có thể làm để bảo vệ cảnh đẹp biển đảo."],
+        "mầm non":["Hình ảnh mầm non được nhân hóa như thế nào?","Bài thơ cho thấy tín hiệu mùa xuân qua những chi tiết nào?","Nêu nội dung chính của bài thơ."],
+        "những ngọn núi nóng rẫy":["Văn bản cung cấp những thông tin chính nào về những ngọn núi nóng rẫy?","Điều gì làm em ấn tượng nhất sau khi đọc?","Nêu một việc làm thể hiện ý thức bảo vệ thiên nhiên."],
+        "bài ca về mặt trời":["Những hình ảnh nào làm nổi bật vẻ đẹp của Mặt Trời?","Tác giả sử dụng hình ảnh so sánh hoặc liên tưởng nào đáng chú ý?","Bài đọc gợi cho em cảm xúc gì về thiên nhiên và sự sống?"],
+        "xin chào, xa-ha-ra":["Văn bản giới thiệu những đặc điểm nào của Xa-ha-ra?","Tác giả đã làm nổi bật vẻ đẹp hoặc sự khắc nghiệt của sa mạc bằng những chi tiết nào?","Nêu một điều em học được từ bài đọc."],
+        "thư gửi các học sinh":["Bác Hồ gửi thư cho học sinh trong hoàn cảnh nào?","Bác Hồ khuyên học sinh những điều gì?","Em hiểu thế nào về niềm tin của Bác Hồ đối với học sinh?"],
+        "tấm gương tự học":["Nhân vật trong bài có những biểu hiện nào của tinh thần tự học?","Điều gì giúp nhân vật vượt qua khó khăn trong học tập?","Em rút ra bài học gì cho việc tự học của mình?"],
+        "trải nghiệm để sáng tạo":["Những trải nghiệm tuổi thơ nào của An-đéc-xen được nhắc đến?","Trải nghiệm và tâm hồn của nhân vật có vai trò gì đối với sáng tạo?","Bài đọc muốn nhắn nhủ điều gì?"],
+        "khổ luyện thành tài":["Nhân vật trong bài đã khổ luyện như thế nào?","Những chi tiết nào cho thấy sự kiên trì và cố gắng của nhân vật?","Em rút ra bài học gì về việc luyện tập?"],
+        "thế giới trong trang sách":["Những hình ảnh nào cho thấy sự kì diệu của thế giới trong trang sách?","Nhà thơ muốn nhắn nhủ điều gì qua bài thơ?","Em chia sẻ một bài học bổ ích từ một cuốn sách em đã đọc."],
+        "từ những câu chuyện ấu thơ":["Câu chuyện gợi cho em những suy nghĩ hoặc cảm xúc gì về tuổi thơ?","Tìm một chi tiết gây ấn tượng và giải thích vì sao em ấn tượng.","Nêu điều em học được từ bài đọc."],
+        "giới thiệu sách dế mèn phiêu lưu kí":["Tên sách, tác giả và nội dung chính của cuốn sách được giới thiệu như thế nào?","Nhân vật chính Dế Mèn được giới thiệu với những đặc điểm nào?","Vì sao lời giới thiệu sách có thể giúp người đọc muốn tìm đọc cuốn sách?"],
+        "tinh thần học tập của nhà phi-lít":["Nhân vật được giới thiệu có tinh thần học tập như thế nào?","Những việc làm nào thể hiện ý chí và sự cố gắng của nhân vật?","Em rút ra bài học gì cho bản thân?"],
+        "lợi ích của tự học":["Bài đọc nêu những lợi ích nào của tự học?","Vì sao tự học giúp mỗi người tiến bộ?","Em sẽ làm gì để rèn thói quen tự học?"],
+        "tiếng đàn ba-la-lai-ca":["Những âm thanh và hình ảnh nào được gợi lên từ tiếng đàn?","Bài thơ thể hiện tình cảm gì đối với nghệ thuật, âm nhạc và con người?","Em cảm nhận thế nào về vẻ đẹp của bài thơ?"],
+        "trí tưởng tượng phong phú":["Những chi tiết nào cho thấy sức tưởng tượng phong phú của nhân vật?","Trí tưởng tượng giúp nhân vật tạo ra điều gì?","Em nghĩ trí tưởng tượng có ích như thế nào trong học tập?"],
+        "tranh làng hồ":["Văn bản cung cấp những thông tin chính nào về tranh làng Hồ?","Những bức tranh được giới thiệu có đặc điểm gì nổi bật?","Em cần làm gì để trân trọng và giữ gìn giá trị văn hóa truyền thống?"],
+        "tập hát quan họ":["Bài đọc giới thiệu những nét đẹp nào của hát quan họ?","Âm nhạc quan họ gợi cho em cảm xúc gì?","Em sẽ làm gì để góp phần giữ gìn nét đẹp văn hóa truyền thống?"],
+        "phim hoạt hình chú ốc sên bay":["Tờ quảng cáo cung cấp những thông tin chính nào về bộ phim?","Những từ ngữ hoặc hình thức trình bày nào có tác dụng thu hút khán giả?","Em có nhận xét gì về việc lựa chọn sản phẩm văn hóa phù hợp với lứa tuổi?"],
+        "nghệ thuật múa ba lê":["Văn bản giới thiệu những đặc điểm nào của nghệ thuật múa ba lê?","Chi tiết nào làm em ấn tượng nhất?","Em cảm nhận thế nào về sự luyện tập và sáng tạo trong nghệ thuật?"],
+        "một ngôi chùa độc đáo":["Chùa Một Cột được giới thiệu về thời gian xây dựng và địa điểm như thế nào?","Điểm độc đáo trong kiến trúc của chùa là gì?","Em cần làm gì khi tham quan và giữ gìn di tích lịch sử, văn hóa?"],
+        "sự tích chú tễu":["Cuộc trò chuyện của các nhân vật trong vở kịch thể hiện điều gì?","Em nhận xét thế nào về suy nghĩ, cảm xúc của nhân vật?","Vở kịch gửi đến em thông điệp gì?"]
+      };
+      const key=Object.keys(readPrompts).find(k=>title.includes(k));
+      const arr=readPrompts[key]||["Nêu nội dung chính của bài đọc “"+topic+"”.","Tìm một chi tiết quan trọng trong bài và giải thích điều em hiểu từ chi tiết đó.","Nêu một điều em ấn tượng sau khi đọc bài."];
+      tvManual(tvPick(arr));
+      return true;
+    }
+    if(/ôn tập và đánh giá cuối hki/.test(title)){
+      const m=(i-1)%5;
+      const qsReview=[
+        "Kể tên 4 chủ điểm đã học trong học kì I và nêu ngắn gọn ý nghĩa của một chủ điểm.",
+        "Giải thích ngắn gọn một kiến thức tiếng Việt em đã học: kết từ, đại từ, dấu gạch ngang, từ đồng nghĩa hoặc từ đa nghĩa.",
+        "Cho một câu có từ ngữ thay thế; xác định từ ngữ thay thế và nêu tác dụng.",
+        "Tìm một điệp từ hoặc điệp ngữ trong một câu em tự viết và nêu tác dụng.",
+        "Viết một đoạn ngắn có sử dụng ít nhất một kiến thức tiếng Việt đã ôn tập."
+      ];
+      tvManual(qsReview[m]);
+      return true;
+    }
+    if(/kiểm tra/.test(title)){
+      tvManual("Thực hiện bài kiểm tra Đọc hiểu – viết theo đề cô giao; đọc kĩ yêu cầu, trả lời dựa vào văn bản và tự đọc soát bài làm");
+      return true;
+    }
+  }
   if(/danh từ|động từ|tính từ/.test(title)){
    const bank=[
     ["Những bông hoa đỏ nở rực rỡ bên sân trường.","hoa","nở","đỏ"],
