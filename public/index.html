@@ -305,14 +305,20 @@ function makeQuestions(lesson,group,count){
     ["Các bạn học sinh chăm chỉ đọc sách trong thư viện.","học sinh","đọc","chăm chỉ"],
     ["Buổi sáng, đàn chim nhỏ bay trên bầu trời xanh.","chim","bay","nhỏ"],
     ["Mẹ nấu bữa cơm thơm ngon cho cả gia đình.","mẹ","nấu","thơm ngon"],
-    ["Dòng sông trong veo chảy qua cánh đồng.","sông","chảy","trong veo"]
+    ["Dòng sông trong veo chảy qua cánh đồng.","sông","chảy","trong veo"],
+    ["Ông em kể những câu chuyện thú vị vào buổi tối.","ông","kể","thú vị"],
+    ["Cây phượng già tỏa bóng mát dưới sân trường.","cây phượng","tỏa","già"],
+    ["Những chú thỏ trắng chạy nhanh trên bãi cỏ.","thỏ","chạy","trắng"]
    ];
-   const b=bank[(i-1)%bank.length];
-   const mode=(i-1)%4;
+   const b=bank[(i-1)%bank.length], mode=(i-1)%8;
    if(mode===0){q="Trong câu “"+b[0]+"”, tìm một danh từ, một động từ và một tính từ.";a=b[1]+"; "+b[2]+"; "+b[3];type="Xác định từ";}
    else if(mode===1){q="Tìm danh từ trong câu: “"+b[0]+"”.";a=b[1];type="Xác định danh từ";}
    else if(mode===2){q="Tìm động từ trong câu: “"+b[0]+"”.";a=b[2];type="Xác định động từ";}
-   else {q="Tìm tính từ trong câu: “"+b[0]+"”.";a=b[3];type="Xác định tính từ";}
+   else if(mode===3){q="Tìm tính từ trong câu: “"+b[0]+"”.";a=b[3];type="Xác định tính từ";}
+   else if(mode===4){q="Từ “"+b[1]+"” trong câu “"+b[0]+"” thuộc loại từ nào?";a="danh từ";type="Phân loại từ";}
+   else if(mode===5){q="Từ “"+b[2]+"” trong câu “"+b[0]+"” thuộc loại từ nào?";a="động từ";type="Phân loại từ";}
+   else if(mode===6){q="Từ “"+b[3]+"” trong câu “"+b[0]+"” thuộc loại từ nào?";a="tính từ";type="Phân loại từ";}
+   else {q="Đặt một câu có sử dụng từ “"+b[3]+"”.";a="Học sinh đặt câu đúng ngữ pháp và dùng đúng từ.";type="Đặt câu";}
   } else if(subj==="Tiếng Việt" && /đại từ/.test(title)){
    const bank=[
     ["Lan và em cùng làm bài. Chúng em cùng kiểm tra lại bài.","Chúng em"],
