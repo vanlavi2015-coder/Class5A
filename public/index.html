@@ -262,8 +262,6 @@ function openAvatarPicker(){
  const s=currentStudent(), current=s?.avatar||'🎓';
  document.getElementById("modalBox").innerHTML='<h2 style="margin-top:0">🖼️ Ảnh đại diện</h2><p class="sub">Em có thể chọn avatar có sẵn hoặc tải ảnh của mình từ điện thoại.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><label class="btn primary" style="display:inline-flex;align-items:center;gap:6px">📷 Chọn ảnh từ điện thoại<input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadStudentAvatar(this.files[0])"></label><button class="btn" onclick="closeModal()">Đóng</button></div><div class="avatar-picker">'+AVATARS.map(a=>'<button class="avatar-choice '+(a===current?'selected':'')+'" onclick="saveStudentAvatar('+JSON.stringify(a)+')" title="Chọn '+a+'">'+a+'</button>').join('')+'</div>';
  document.getElementById("modal").classList.add("show");
- document.getElementById("modalBox").dataset.assignmentId=String(aid);
- document.getElementById("modalBox").dataset.studentId=String(sid);
 }
 async function uploadStudentAvatar(file){
  if(!file)return;
@@ -1385,6 +1383,8 @@ function viewSubmission(aid,sid){
   <div class="card" style="padding:12px;margin-bottom:12px;background:#fffbeb;border:1px solid #fcd34d"><b>🔑 Chỉnh sửa đáp án</b><div class="sub" style="margin-top:5px">Cô có thể sửa <b>đáp án chuẩn và đáp án chấp nhận cho tất cả câu</b>, gồm cả câu tự động và câu tự luận. Sau khi lưu, các bài đã nộp sẽ được chấm lại theo đáp án mới; câu tự luận vẫn giữ quyền chấm điểm của cô.</div></div><h3>📝 Bài làm của học sinh</h3>${items}
   <button class="btn" style="margin-top:10px" onclick="closeModal()">Đóng</button>`;
  document.getElementById("modal").classList.add("show");
+ document.getElementById("modalBox").dataset.assignmentId=String(aid);
+ document.getElementById("modalBox").dataset.studentId=String(sid);
 }
 function praiseByStars(stars){
  const n=Math.max(0,Math.min(5,Number(stars)||0));
