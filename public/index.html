@@ -30,7 +30,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
 .student-shell{max-width:980px;margin:0 auto;padding:18px 16px 40px}
 .student-top{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e4e7ec;border-radius:20px;padding:14px 16px;box-shadow:0 5px 20px rgba(16,24,40,.06)}
 .student-brand{display:flex;align-items:center;gap:10px}.student-logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:grid;place-items:center;font-size:23px}.student-name{font-weight:900;font-size:18px}.student-sub{font-size:12px;color:#667085;margin-top:2px}
-.student-actions{display:flex;gap:7px}.student-btn{border:1px solid #e4e7ec;background:#fff;border-radius:10px;padding:9px 11px;font-weight:800}.student-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}
+.student-actions{display:flex;gap:7px;flex-wrap:wrap}.student-btn{border:1px solid #e4e7ec;background:#fff;border-radius:10px;padding:9px 11px;font-weight:800}.student-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}.student-nav{display:flex;gap:8px;margin:12px 0;overflow:auto}.student-nav-btn{border:1px solid #dbe2f0;background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;white-space:nowrap}.student-nav-btn.active{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}.student-mode #menuToggle,.student-mode #menuBackdrop,.student-mode .mobilebar{display:none!important}
 .student-hero{margin-top:14px;background:linear-gradient(135deg,#312e81,#4f46e5);color:#fff;border-radius:22px;padding:20px}.student-hero h1{margin:0 0 4px;font-size:25px}.student-hero p{margin:0;opacity:.88}
 .student-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.student-kpi{background:#fff;border:1px solid #e4e7ec;border-radius:16px;padding:14px}.student-kpi .big{font-size:25px;font-weight:900;margin-top:4px}.student-kpi .small{font-size:12px;color:#667085}
 .student-tabs{display:flex;gap:8px;margin:14px 0;overflow:auto}.student-tab{border:1px solid #dbe2f0;background:#fff;border-radius:999px;padding:9px 14px;font-weight:800;white-space:nowrap}.student-tab.active{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}
@@ -38,7 +38,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
 .mc-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.mc-option{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1.5px solid #d9dfeb;border-radius:12px;background:#fff;cursor:pointer;transition:.15s;min-height:48px;box-sizing:border-box}.mc-option:hover{border-color:#818cf8;background:#f8faff}.mc-option input{margin-top:3px;accent-color:#4f46e5;width:17px;height:17px;flex:none}.mc-letter{font-weight:900;color:#374151;min-width:20px}.mc-text{font-weight:600;line-height:1.4;color:#253047}.mc-option:has(input:checked){border-color:#4f46e5;background:#eef2ff;box-shadow:0 0 0 2px rgba(79,70,229,.08)}.mc-hint{font-size:11px;color:#667085;margin-top:9px}
 @media(max-width:650px){.mc-options{grid-template-columns:1fr}.mc-option{padding:11px 12px}}.student-footer{margin-top:15px;text-align:center;color:#667085;font-size:12px}
 .gif-card{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:14px;background:#f8fafc;text-align:center}.gif-card img{max-width:100%;max-height:220px;border-radius:10px;object-fit:contain}.gif-card a{color:#4338ca;text-decoration:none;font-weight:700}.gif-preview{margin-top:8px}.student-score{font-size:34px;font-weight:950;color:#3730a3}.student-back{margin-bottom:12px}
-@media(max-width:650px){.student-shell{padding:10px 10px 28px}.student-top{padding:11px}.student-actions .student-btn:not(.logout){display:none}.student-kpis{grid-template-columns:1fr 1fr}.student-kpis .student-kpi:last-child{grid-column:1/-1}.student-hero{padding:17px}.student-hero h1{font-size:21px}}
+@media(max-width:650px){.student-shell{padding:10px 10px 28px}.student-top{padding:10px}.student-actions .student-btn{padding:8px 9px}.student-actions .student-btn:first-child{display:none}.student-kpis{grid-template-columns:1fr 1fr}.student-kpis .student-kpi:last-child{grid-column:1/-1}.student-hero{padding:17px}.student-hero h1{font-size:21px}}
 </style></head>
 <body>
 <button class="menuToggle" id="menuToggle" onclick="toggleMenu()" aria-label="Ẩn hoặc hiện thanh menu"><span class="menuIcon">☰</span></button><div class="menuBackdrop" id="menuBackdrop" onclick="closeMenu()"></div><div class="app">
@@ -74,7 +74,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
   </div>
   <div class="grid2" style="margin-top:14px">
    <div class="hero"><div>⭐ Tổng sao của lớp</div><div class="big" id="heroStars">0 ⭐</div><div style="opacity:.85">Tặng sao theo mức hoàn thành và sự tiến bộ.</div></div>
-   <div class="card"><h2>⚡ Giao bài nhanh</h2><p class="sub">Chọn phạm vi trong chương trình rồi tạo bài phân hóa theo Tốt – Khá – Trung bình – Yếu.</p><button class="btn primary" onclick="show('create')">＋ Tạo bài</button></div>
+   <div class="card"><h2>⚡ Giao bài nhanh</h2><p class="sub">Chọn phạm vi trong chương trình rồi tạo bài phân hóa theo Tốt – Khá – Trung bình – Yếu.</p><div class="row"><button class="btn primary" onclick="show('create')">＋ Tạo bài</button><button class="btn" onclick="show('race')">🏁 Trò chơi & Xếp hạng</button></div></div>
   </div>
   <div class="grid2" style="margin-top:14px">
    <div class="card"><h2>🎯 Nhóm học tập</h2><div id="groupSummary"></div></div>
@@ -200,7 +200,12 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
  <div class="student-shell">
   <div class="student-top">
    <div class="student-brand"><div class="student-logo">🎓</div><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI 5A · Góc học tập của em</div></div></div>
-   <div class="student-actions"><button class="student-btn" onclick="studentLeaderboard()">🏁 Xếp hạng</button><button class="student-btn logout" onclick="logout()">Đăng xuất</button></div>
+   <div class="student-actions"><button class="student-btn" onclick="studentMode()">📚 Bài của em</button><button class="student-btn" onclick="studentLeaderboard()">🏁 Xếp hạng</button><button class="student-btn logout" onclick="logout()">Đăng xuất</button></div>
+  </div>
+  <div class="student-nav">
+   <button class="student-nav-btn active" onclick="studentMode()">📚 Bài của em</button>
+   <button class="student-nav-btn" onclick="studentLeaderboard()">🏁 Trò chơi & Xếp hạng</button>
+   <button class="student-nav-btn" onclick="studentShowNotice()">🔔 Thông báo</button>
   </div>
   <div id="studentContent"></div>
   <div class="student-footer">🌟 Học chăm – Làm thật – Tiến bộ mỗi ngày · LAVI 5A</div>
@@ -1341,6 +1346,11 @@ function studentMode(){
  const sid=window.LAVI?.user?.studentId;
  if(!sid||LAVI.user.role!=='student'){toast('Hãy đăng nhập bằng tài khoản học sinh');return}
  const s=STUDENTS.find(x=>x.id===sid); if(!s)return;
+ document.body.classList.add('student-mode');
+ document.querySelector('.app').style.display='none';
+ document.querySelector('.mobilebar').style.display='none';
+ document.getElementById('menuToggle').style.display='none';
+ document.getElementById('menuBackdrop').style.display='none';
  document.getElementById('studentApp').style.display='block';
  document.getElementById('studentHeaderName').textContent=s.name;
  renderStudentHome();
@@ -1357,6 +1367,8 @@ function renderStudentHome(){
   '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3>'+gifBlock(a.gifUrl)+'<div class="student-meta">Tuần '+esc(a.week)+' · Nhóm '+esc(s.group)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?(sub.score==null?'📝 Đã nộp · Chờ cô chấm':'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐'):'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
 }
 function studentShowNotice(){
+ document.body.classList.add('student-mode');
+ document.getElementById('studentApp').style.display='block';
  const sid=LAVI.user.studentId,ns=(state.notifications||[]).filter(n=>n.studentId===sid);
  document.getElementById('studentList').innerHTML=ns.length?ns.map(n=>'<div class="student-assignment"><b>🔔 '+esc(n.message)+'</b><div class="student-meta">'+new Date(n.time).toLocaleString('vi-VN')+(n.read?' · Đã đọc':' · Chưa đọc')+'</div></div>').join(''):'<div class="student-assignment" style="text-align:center">Không có thông báo.</div>';
  ns.filter(n=>!n.read).forEach(n=>n.read=true);
@@ -1485,8 +1497,11 @@ async function doLogin(){const u=document.getElementById('loginUser').value.trim
 async function loadOnlineState(){if(!LAVI.token)return;try{const r=await fetch('/api/state',{headers:{Authorization:'Bearer '+LAVI.token}});if(!r.ok)throw new Error();const j=await r.json();state=j.state;localStorage.setItem('lavi5a_real',JSON.stringify(state));renderAll();}catch(e){}}
 function applyRole(){
  const isStudent=LAVI.user?.role==='student';
+ document.body.classList.toggle('student-mode',isStudent);
  document.querySelector('.app').style.display=isStudent?'none':'flex';
  document.querySelector('.mobilebar').style.display=isStudent?'none':'flex';
+ document.getElementById('menuToggle').style.display=isStudent?'none':'block';
+ document.getElementById('menuBackdrop').style.display=isStudent?'none':'';
  document.getElementById('studentApp').style.display=isStudent?'block':'none';
  if(isStudent){
   document.querySelectorAll('.section').forEach(x=>x.style.display='none');
