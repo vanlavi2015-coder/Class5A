@@ -458,6 +458,20 @@ function makeQuestions(lesson,group,count,note=""){
    else add("Điền nội dung phù hợp vào phần “Kết quả công việc” của báo cáo hoạt động tổ.","Nêu việc đã làm và kết quả đạt được.","Điền nội dung báo cáo");
    return true;
   }
+  if(/viết|lập dàn ý|tìm hiểu cách|tìm ý|quan sát|đánh giá, chỉnh sửa|luyện viết/.test(title) && !/đại từ|đồng nghĩa|đa nghĩa|danh từ|động từ|tính từ|dấu gạch ngang|điệp từ|kết từ|câu ghép|liên kết câu/.test(title)){
+   let task="";
+   if(/báo cáo/.test(title)) task="Viết một báo cáo ngắn về công việc của tổ trong tuần theo đúng bố cục đã học.";
+   else if(/chương trình hoạt động/.test(title)) task="Lập/viết chương trình cho một hoạt động của lớp theo đúng các mục đã học.";
+   else if(/kể chuyện/.test(title)) task="Lập dàn ý hoặc viết một đoạn/bài kể chuyện sáng tạo theo yêu cầu của bài học.";
+   else if(/tả phong cảnh/.test(title)) task="Lập dàn ý hoặc viết đoạn/bài văn tả một phong cảnh quen thuộc theo yêu cầu bài học.";
+   else if(/tả người/.test(title)) task="Lập dàn ý hoặc viết đoạn/bài văn tả một người em biết theo yêu cầu bài học.";
+   else if(/giới thiệu nhân vật/.test(title)) task="Viết đoạn văn giới thiệu một nhân vật trong cuốn sách hoặc bộ phim theo yêu cầu bài học.";
+   else if(/thể hiện tình cảm|cảm xúc/.test(title)) task="Viết đoạn văn thể hiện tình cảm, cảm xúc theo đúng đối tượng và yêu cầu của bài học.";
+   else if(/nêu ý kiến/.test(title)) task="Viết đoạn văn nêu ý kiến theo đúng vấn đề và cách trình bày đã học.";
+   else if(/chỉnh sửa/.test(title)) task="Đọc lại bài viết/đoạn văn đã làm và tự chỉnh sửa theo các tiêu chí đã học.";
+   else task="Hoàn thành nhiệm vụ viết của bài học theo đúng yêu cầu và bố cục đã học.";
+   manualAdd(task); return true;
+  }
   if(/luyện từ và câu|luyện tập/.test(title)){
    const samples=["Tìm từ chỉ hoạt động trong câu: “Các bạn chăm chỉ đọc sách.”","Tìm từ chỉ đặc điểm trong câu: “Sân trường sạch đẹp.”","Đặt một câu có từ “chăm chỉ”.","Điền từ thích hợp vào chỗ trống trong câu: “Bạn Lan ______ học bài.”"];
    const s=samples[(i-1)%samples.length];
