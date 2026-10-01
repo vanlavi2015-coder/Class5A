@@ -179,6 +179,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
  <button onclick="show('students')"><b>👩‍🎓</b>HS</button>
  <button onclick="show('stars')"><b>⭐</b>Sao</button>
  <button onclick="show('race')"><b>🏁</b>Đua</button>
+ <button onclick="show('submissions')"><b>📥</b>Bài nộp</button>
  <button onclick="show('accounts')"><b>⚙️</b>Tài khoản</button>
  <button onclick="logout()"><b>🔄</b>Đổi TK</button>
  <button onclick="studentMode()"><b>📱</b>HS làm</button>
@@ -1277,9 +1278,10 @@ function renderAssignments(id){
  el.innerHTML=arr.map(a=>{
    const total=a.sets.reduce((n,s)=>n+studentsForGroup(s.group).length,0);
    const submitted=Object.keys(state.submissions).filter(k=>k.startsWith(a.id+"_")).length;
-   return `<div class="assignment"><h3>${esc(a.subject)} – ${esc(a.lesson)}</h3>${gifBlock(a.gifUrl)}<p><span class="pill good">Đang giao</span> <span class="pill blue">Tuần ${esc(a.week)}</span> · ${a.sets.map(s=>s.group).join(" · ")} · ${submitted}/${total} lượt nộp</p><div class="bar"><i style="width:${total?submitted/total*100:0}%"></i></div><div class="row" style="margin-top:9px"><button class="btn primary" onclick="viewAssignment('${a.id}')">Xem bài</button><button class="btn" onclick="remind('${a.id}')">🔔 Nhắc</button><button class="btn danger" onclick="removeAssignment('${a.id}')">Xóa</button></div></div>`
+   return `<div class="assignment"><h3>${esc(a.subject)} – ${esc(a.lesson)}</h3>${gifBlock(a.gifUrl)}<p><span class="pill good">Đang giao</span> <span class="pill blue">Tuần ${esc(a.week)}</span> · ${a.sets.map(s=>s.group).join(" · ")} · ${submitted}/${total} lượt nộp</p><div class="bar"><i style="width:${total?submitted/total*100:0}%"></i></div><div class="row" style="margin-top:9px"><button class="btn primary" onclick="viewAssignment('${a.id}')">Xem bài</button><button class="btn" onclick="showSubmissionForAssignment('${a.id}')">📥 Xem bài nộp (${submitted})</button><button class="btn" onclick="remind('${a.id}')">🔔 Nhắc</button><button class="btn danger" onclick="removeAssignment('${a.id}')">Xóa</button></div></div>`
  }).join("")
 }
+function showSubmissionForAssignment(id){ show('submissions'); const sel=document.getElementById('submissionAssignmentFilter'); if(sel)sel.value=id; renderSubmissions(); }
 function viewAssignment(id){
  const a=state.assignments.find(x=>x.id===id);document.getElementById("modalBox").innerHTML=`<h2>${esc(a.subject)} – ${esc(a.lesson)}</h2>${gifBlock(a.gifUrl)}${a.sets.map(s=>`<div class="assignment"><h3>${s.group}</h3>${s.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}<button class="btn" onclick="closeModal()">Đóng</button>`;document.getElementById("modal").classList.add("show")
 }
