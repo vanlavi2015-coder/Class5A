@@ -21,7 +21,19 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
 .studentOnly{display:none}
 </style>
 </style>
-</head>
+<style id="laviStudentCSS">
+.student-app{display:none;min-height:100vh;background:linear-gradient(180deg,#eef2ff 0%,#f8fafc 42%,#f8fafc 100%);color:#172033}
+.student-shell{max-width:980px;margin:0 auto;padding:18px 16px 40px}
+.student-top{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e4e7ec;border-radius:20px;padding:14px 16px;box-shadow:0 5px 20px rgba(16,24,40,.06)}
+.student-brand{display:flex;align-items:center;gap:10px}.student-logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:grid;place-items:center;font-size:23px}.student-name{font-weight:900;font-size:18px}.student-sub{font-size:12px;color:#667085;margin-top:2px}
+.student-actions{display:flex;gap:7px}.student-btn{border:1px solid #e4e7ec;background:#fff;border-radius:10px;padding:9px 11px;font-weight:800}.student-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}
+.student-hero{margin-top:14px;background:linear-gradient(135deg,#312e81,#4f46e5);color:#fff;border-radius:22px;padding:20px}.student-hero h1{margin:0 0 4px;font-size:25px}.student-hero p{margin:0;opacity:.88}
+.student-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.student-kpi{background:#fff;border:1px solid #e4e7ec;border-radius:16px;padding:14px}.student-kpi .big{font-size:25px;font-weight:900;margin-top:4px}.student-kpi .small{font-size:12px;color:#667085}
+.student-tabs{display:flex;gap:8px;margin:14px 0;overflow:auto}.student-tab{border:1px solid #dbe2f0;background:#fff;border-radius:999px;padding:9px 14px;font-weight:800;white-space:nowrap}.student-tab.active{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}
+.student-list{display:grid;gap:12px}.student-assignment{background:#fff;border:1px solid #e4e7ec;border-radius:18px;padding:16px;box-shadow:0 3px 12px rgba(16,24,40,.04)}.student-assignment h3{margin:0 0 5px;font-size:17px}.student-meta{font-size:12px;color:#667085}.student-status{display:inline-flex;margin-top:9px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:850}.student-status.pending{background:#fff7ed;color:#9a3412}.student-status.done{background:#ecfdf3;color:#067647}.student-q{background:#f8fafc;border:1px solid #eef2f6;border-radius:14px;padding:13px;margin:10px 0}.student-q b{line-height:1.5}.student-answer{margin-top:8px}.student-footer{margin-top:15px;text-align:center;color:#667085;font-size:12px}
+.student-score{font-size:34px;font-weight:950;color:#3730a3}.student-back{margin-bottom:12px}
+@media(max-width:650px){.student-shell{padding:10px 10px 28px}.student-top{padding:11px}.student-actions .student-btn:not(.logout){display:none}.student-kpis{grid-template-columns:1fr 1fr}.student-kpis .student-kpi:last-child{grid-column:1/-1}.student-hero{padding:17px}.student-hero h1{font-size:21px}}
+</style></head>
 <body>
 <div class="app">
 <aside class="side">
@@ -153,6 +165,16 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
     <div class="sub" style="margin-top:14px;font-size:12px">Bản online dùng tài khoản riêng. Giáo viên có quyền quản lý; học sinh chỉ xem và nộp bài của mình.</div>
   </div>
 </div>
+<div id="studentApp" class="student-app">
+ <div class="student-shell">
+  <div class="student-top">
+   <div class="student-brand"><div class="student-logo">🎓</div><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI 5A · Góc học tập của em</div></div></div>
+   <div class="student-actions"><button class="student-btn logout" onclick="logout()">Đăng xuất</button></div>
+  </div>
+  <div id="studentContent"></div>
+  <div class="student-footer">🌟 Học chăm – Làm thật – Tiến bộ mỗi ngày · LAVI 5A</div>
+ </div>
+</div>
 <div class="modal" id="modal"><div class="modalbox" id="modalBox"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -163,7 +185,13 @@ const GROUPS=["Tốt","Khá","Trung bình","Yếu"];
 let state=JSON.parse(localStorage.getItem("lavi5a_real")||'{"assignments":[],"submissions":{},"stars":{},"awards":[],"schedules":[]}');
 let draft=null, currentStudentGroup="Tất cả";
 
-async function save(){localStorage.setItem("lavi5a_real",JSON.stringify(state));renderAll();if(window.LAVI?.token&&window.LAVI.user?.role==='teacher'){try{await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({state})})}catch(e){toast('Đã lưu máy này; chưa đồng bộ máy chủ')}}}
+async async function save(){
+ localStorage.setItem("lavi5a_real",JSON.stringify(state));renderAll();
+ if(window.LAVI?.token&&window.LAVI.user?.role==='teacher'){
+  try{await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({state})});}
+  catch(e){toast('Đã lưu trên máy này; chưa đồng bộ máy chủ')}
+ }
+}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function toast(s){let t=document.getElementById("toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",2200)}
 function show(id,btn){
@@ -194,58 +222,81 @@ function selectedLesson(){
  return CURRICULUM.filter(x=>x.subject===sub&&x.week===w)[i]
 }
 function difficulty(group){return {Tốt:"vận dụng cao, nhiều bước và có bài toán thực tế",Khá:"vận dụng, 1–2 bước và có số liệu thực tế","Trung bình":"cơ bản, thao tác trực tiếp và số liệu rõ ràng",Yếu:"củng cố kiến thức nền, câu ngắn, số liệu nhỏ và có gợi ý"}[group]}
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=a%b;a=b;b=t}return a||1}
+function frac(n,d){if(d<0){n=-n;d=-d}const g=gcd(n,d);return [n/g,d/g]}
+function fracText(n,d){const f=frac(n,d);return f[1]===1?String(f[0]):f[0]+"/"+f[1]}
+function mixedToImproper(w,n,d){return w*d+n}
+function levelNum(group,base){return group==="Yếu"?base:group==="Trung bình"?base+1:group==="Khá"?base+2:base+3}
 function makeQuestions(lesson,group,count){
- const title=(lesson?.lesson||"Ôn tập").toLowerCase(), subj=lesson?.subject||"";
- let qs=[];
- const math= subj==="Toán";
+ const title=(lesson?.lesson||"").toLowerCase(), subj=lesson?.subject||"";
+ const qs=[], math=subj==="Toán";
+ const simple=group==="Yếu";
  for(let i=1;i<=count;i++){
-   let q,a,type;
-   if(math && /hỗn số/i.test(title)){
-     const n= i%4===1 ? "3 2/5" : i%4===2 ? "4 3/10" : i%4===3 ? "2 1/4" : "5 7/8";
-     q=`Viết hỗn số ${n.replace(" "," ")} thành phân số thích hợp.`;
-     a = n==="3 2/5"?"17/5":n==="4 3/10"?"43/10":n==="2 1/4"?"9/4":"47/8"; type="Tự luận";
-   } else if(math && /phân số/i.test(title)){
-     const x=i+1,y=i+2; q=`Tính: ${x}/${y} + ${y}/${x}. Trình bày các bước làm.`; a="Học sinh quy đồng và tính đúng."; type="Tự luận";
-   } else if(math && /hình thang/i.test(title)){
-     const b1=8+i, b2=5+i, h=4+(i%3); q=`Một hình thang có đáy lớn ${b1} cm, đáy bé ${b2} cm và chiều cao ${h} cm. Tính diện tích hình thang.`; a=`${(b1+b2)*h/2} cm²`; type="Tự luận";
-   } else if(math && /diện tích/i.test(title)){
-     const a1=6+i,b1=4+i; q=`Một hình có chiều dài ${a1} m và chiều rộng ${b1} m. Tính diện tích hình đó.`; a=`${a1*b1} m²`; type="Tự luận";
-   } else if(math && /số tự nhiên/i.test(title)){
-     const a1=1200+i*37,b1=340+i*12; q=`Tính: ${a1} + ${b1} và ${a1} - ${b1}.`; a=`${a1+b1}; ${a1-b1}`; type="Tự luận";
-   } else if(subj==="Tiếng Việt" && /danh từ|động từ|tính từ/i.test(title)){
-     const sent=`Buổi sáng, những chú chim nhỏ hót vang trên cành cây.`;
-     q=`Trong câu “${sent}”, hãy tìm một danh từ, một động từ và một tính từ.`; a="Ví dụ: chim/cành cây; hót; nhỏ."; type="Tự luận";
-   } else if(subj==="Tiếng Việt" && /đại từ/i.test(title)){
-     q=`Đặt 1 câu có sử dụng đại từ để xưng hô phù hợp với bạn bè.`; a="Câu đúng ngữ pháp, dùng đại từ phù hợp."; type="Tự luận";
-   } else if(subj==="Tiếng Việt" && /từ đồng nghĩa/i.test(title)){
-     q=`Tìm một từ đồng nghĩa với từ “chăm chỉ” và đặt câu với từ vừa tìm.`; a="Ví dụ: siêng năng."; type="Tự luận";
-   } else {
-     const nums=[12,15,18,20,24,30,36,42,48,60]; const n=nums[(i-1)%nums.length];
-     q=`Câu ${i}: Dựa vào bài “${lesson?.lesson||"nội dung đã học"}”, hãy trả lời câu hỏi: Nếu có ${n} đơn vị thông tin/sự vật như trong bài, em sẽ phân loại hoặc giải thích chúng như thế nào? Trình bày ngắn gọn, đúng kiến thức bài học.`;
-     a="Câu trả lời phải bám đúng nội dung bài học; giáo viên duyệt đáp án."; type="Tự luận";
-   }
-   if(group==="Yếu") q += " Gợi ý: đọc lại khái niệm/định nghĩa chính của bài trước khi làm.";
-   if(group==="Tốt" && i%3===0) q += " Thử nêu thêm một cách giải thích hoặc tình huống thực tế.";
-   qs.push({id:i,text:q,answer:a,type});
+  let q="",a="",type="Tự luận";
+  const k=(i-1)%8;
+  if(math && /hỗn số/.test(title)){
+   const w=simple?2+(i%3):levelNum(group,2)+(i%3), d=simple?2+(i%2):4+(i%4), n=1+(i%d);
+   if(k%3===0){q="Viết hỗn số "+w+" "+n+"/"+d+" thành phân số.";a=String(mixedToImproper(w,n,d));type="Điền số";}
+   else if(k%3===1){const nn=w*d+n;q="Viết phân số "+nn+"/"+d+" thành hỗn số.";a=w+" "+n+"/"+d;type="Điền số";}
+   else {const w2=w+(i%2?1:2),n2=1+((i+1)%d);q="So sánh hai hỗn số: "+w+" "+n+"/"+d+" và "+w2+" "+n2+"/"+d+".";a="<";type="So sánh";}
+  } else if(math && /phân số thập phân/.test(title)){
+   const den=[10,100,1000][(i-1)%3], num=Math.min(den-1,(i+2)*(den===10?1:den===100?3:7));
+   if(k%2===0){q="Viết phân số thập phân "+num+"/"+den+" dưới dạng số thập phân.";a=(num/den).toString().replace(".",",");type="Đổi dạng";}
+   else {q="Viết số thập phân "+(num/den).toString().replace(".",",")+" dưới dạng phân số thập phân tối giản.";a=fracText(num,den).replace("/", "/");type="Đổi dạng";}
+  } else if(math && /phân số/.test(title)){
+   const d1=simple?4+(i%3):6+(i%5), d2=simple?d1:4+(i%4), n1=1+(i%d1), n2=1+(i%d2);
+   if(/rút gọn/.test(title)){const mult=2+(i%3),n=n1*mult,d=d1*mult;q="Rút gọn phân số "+n+"/"+d+".";a=fracText(n,d);type="Rút gọn";}
+   else if(/so sánh/.test(title)){q="So sánh hai phân số "+n1+"/"+d1+" và "+n2+"/"+d2+".";const x=n1*d2,y=n2*d1;a=x===y?"=":x>y?">":"<";type="So sánh";}
+   else if(/cộng|trừ/.test(title)){const den=d1*d2;const n=n1*d2+(k%2===0?n2*d1:-n2*d1);q="Tính: "+n1+"/"+d1+(k%2===0?" + ":" − ")+n2+"/"+d2+".";a=fracText(n,den);type="Tính";}
+   else if(/nhân|chia/.test(title)){if(k%2===0){q="Tính: "+n1+"/"+d1+" × "+n2+"/"+d2+".";a=fracText(n1*n2,d1*d2)}else{q="Tính: "+n1+"/"+d1+" : "+n2+"/"+d2+".";a=fracText(n1*d2,d1*n2)}type="Tính";}
+   else if(k%4===0){q="Rút gọn phân số "+(n1*2)+"/"+(d1*2)+".";a=fracText(n1*2,d1*2);type="Rút gọn";}
+   else if(k%4===1){q="So sánh "+n1+"/"+d1+" và "+n2+"/"+d2+".";const x=n1*d2,y=n2*d1;a=x===y?"=":x>y?">":"<";type="So sánh";}
+   else if(k%4===2){q="Tính: "+n1+"/"+d1+" + "+n2+"/"+d2+".";a=fracText(n1*d2+n2*d1,d1*d2);type="Tính";}
+   else {const amount=levelNum(group,12)+i*2;q="Tính "+n1+"/"+d1+" của "+amount+".";a=String(amount*n1/d1);type="Tính giá trị phân số";}
+  } else if(math && /số thập phân/.test(title)){
+   const x=(simple?1:2)+(i%5), y=(i%10);
+   if(/làm tròn/.test(title)){const n=(x+"."+String(y).repeat(2));q="Làm tròn số "+n+" đến hàng phần mười.";a=(x+(y>=5?1:0)+",0").replace(",0",y>=5?",0":",0");type="Làm tròn";}
+   else if(/so sánh/.test(title)){const a1=x+(y/100),a2=x+((y+1)/100);q="So sánh hai số "+a1.toString().replace(".",",")+" và "+a2.toString().replace(".",",")+".";a="<";type="So sánh";}
+   else if(/nhân.*10|10.*nhân|chia.*10|10.*chia/.test(title)){const n=(x+"."+y).replace(".",",");if(i%2){q="Tính: "+n+" × 10.";a=String((x+y/10)*10).replace(".",",")}else{q="Tính: "+n+" : 10.";a=String((x+y/10)/10).replace(".",",")}type="Tính";}
+   else if(/cộng|trừ|nhân|chia|phép tính/.test(title)){const a1=x+(y/10),a2=(1+(i%4))+(i%10)/100;if(k%4===0){q="Tính: "+a1.toString().replace(".",",")+" + "+a2.toString().replace(".",",")+".";a=String(a1+a2).replace(".",",")}else if(k%4===1){q="Tính: "+a1.toString().replace(".",",")+" − "+a2.toString().replace(".",",")+".";a=String(a1-a2).replace(".",",")}else if(k%4===2){q="Tính: "+a1.toString().replace(".",",")+" × 2.";a=String(a1*2).replace(".",",")}else{q="Tính: "+a1.toString().replace(".",",")+" : 2.";a=String(a1/2).replace(".",",")}type="Tính";}
+   else if(k%3===0){q="Viết số thập phân "+x+"."+y+" dưới dạng số thập phân có chữ số 0 ở cuối phần thập phân.";a=x+","+y+"0";type="Viết số";}
+   else if(k%3===1){q="Số "+x+","+y+" có chữ số "+y+" ở hàng nào?";a="hàng phần mười";type="Nhận biết";}
+   else {q="Viết số thập phân có phần nguyên "+x+" và phần thập phân "+y+".";a=x+","+y;type="Viết số";}
+  } else if(math && /số tự nhiên/.test(title)){
+   const a1=levelNum(group,120)+i*17,b1=levelNum(group,35)+i*8;
+   if(/so sánh/.test(title)){q="So sánh "+a1+" và "+b1+".";a=a1>b1?">":a1<b1?"<":"=";type="So sánh";}
+   else if(/tìm.*x|thành phần chưa biết/.test(title)){const x=20+i, b=35+i; q="Tìm x: x + "+b+" = "+(x+b)+".";a=String(x);type="Tìm x";}
+   else if(k%3===0){q="Đặt tính rồi tính: "+a1+" + "+b1+".";a=String(a1+b1);type="Đặt tính";}
+   else if(k%3===1){q="Tính: "+a1+" × "+(2+(i%3))+".";a=String(a1*(2+(i%3)));type="Tính";}
+   else {q="Tính: "+(a1+b1)+" − "+b1+".";a=String(a1);type="Tính";}
+  } else if(math && /tỉ số phần trăm|phần trăm/.test(title)){
+   const p=[10,20,25,30,40][(i-1)%5], amount=levelNum(group,40)+i*10;
+   if(/tìm.*phần trăm|tỉ số phần trăm/.test(title)){const a1=20+i,b1=100; q="Tính tỉ số phần trăm của "+a1+" và "+b1+".";a=a1+"%";type="Tính tỉ số";}
+   else {q="Tính "+p+"% của "+amount+".";a=String(amount*p/100);type="Tính";}
+  } else if(math && /hình thang/.test(title)){
+   const b1=levelNum(group,8)+i,b2=levelNum(group,5)+i,h=levelNum(group,3)+(i%3);
+   q="Một hình thang có đáy lớn "+b1+" cm, đáy bé "+b2+" cm và chiều cao "+h+" cm. Tính diện tích hình thang.";
+   a=String((b1+b2)*h/2)+" cm²";type="Bài toán có lời văn";
+  } else if(math && /diện tích hình tam giác|hình tam giác/.test(title)){
+   const b=levelNum(group,6)+i,h=levelNum(group,4)+(i%3);
+   q="Tính diện tích hình tam giác có đáy "+b+" cm và chiều cao "+h+" cm.";a=String(b*h/2)+" cm²";type="Tính";
+  } else if(math && /thể tích/.test(title)){
+   const a1=levelNum(group,4)+i,b1=3+(i%4),h=2+(i%3);q="Tính thể tích hình hộp chữ nhật có chiều dài "+a1+" cm, chiều rộng "+b1+" cm, chiều cao "+h+" cm.";a=String(a1*b1*h)+" cm³";type="Tính";
+  } else if(subj==="Tiếng Việt" && /danh từ|động từ|tính từ/.test(title)){
+   const s="Buổi sáng, những chú chim nhỏ hót vang trên cành cây.";
+   q="Trong câu “"+s+"”, tìm một danh từ, một động từ và một tính từ.";a="Ví dụ: chim; hót; nhỏ.";type="Xác định từ";
+  } else if(subj==="Tiếng Việt" && /đại từ/.test(title)){
+   q="Tìm đại từ trong câu: “Em và Lan cùng học bài. Chúng em cùng cố gắng.”";a="Chúng em";type="Xác định đại từ";
+  } else if(subj==="Tiếng Việt" && /từ đồng nghĩa/.test(title)){
+   q="Tìm một từ đồng nghĩa với “chăm chỉ”.";a="siêng năng";type="Tìm từ";
+  } else if(subj==="Tiếng Việt"){
+   q="Đọc lại bài “"+(lesson?.lesson||"bài học")+"” và trả lời: Em hãy nêu một chi tiết hoặc ý chính quan trọng của bài.";a="Giáo viên chấm theo nội dung bài học.";type="Đọc hiểu";
+  } else {
+   q="Khoanh vào đáp án đúng về nội dung bài “"+(lesson?.lesson||"bài học")+"”.";a="Giáo viên duyệt theo bài học.";type="Trắc nghiệm";
+  }
+  qs.push({id:i,text:q,answer:a,type});
  }
- return qs
-}
-function starsForScore(score,group){
- if(score>=95)return 5;if(score>=85)return 4;if(score>=70)return 3;if(score>=50)return 2;return 1
-}
-function praise(score,group,improved){
- if(improved)return "🌟 Em có tiến bộ rõ rệt! Cố gắng duy trì nhé!";
- if(score>=95)return "🏆 Tuyệt vời! Em hoàn thành bài rất xuất sắc!";
- if(score>=85)return "👏 Rất tốt! Em đã nắm chắc kiến thức.";
- if(score>=70)return "😊 Tốt lắm! Em đã hoàn thành nhiệm vụ.";
- if(score>=50)return "💪 Em đã cố gắng. Hãy xem lại những câu còn sai nhé!";
- return "🌱 Cố lên! Em hãy ôn lại kiến thức và thử lại.";
-}
-function generate(){
- const lesson=selectedLesson(), group=document.getElementById("cGroup").value, count=Math.max(3,Math.min(15,+document.getElementById("cCount").value||8));
- const groups=group==="Cả 4 nhóm"?GROUPS:[group];
- draft={id:"A"+Date.now(),subject:lesson.subject,week:lesson.week,topic:lesson.topic,lesson:lesson.lesson,group,count,due:document.getElementById("cDue").value,note:document.getElementById("cNote").value,sets:groups.map(g=>({group:g,questions:makeQuestions(lesson,g,count)})),status:"Nháp",created:new Date().toISOString()};
- document.getElementById("draft").innerHTML=renderDraft()
+ return qs;
 }
 function renderDraft(){
  if(!draft)return "";
@@ -299,18 +350,37 @@ function renderStats(){
 }
 function studentMode(){
  const sid=window.LAVI?.user?.studentId;
- if(!sid){toast('Hãy đăng nhập bằng tài khoản học sinh để mở khu vực này');return}
- const s=STUDENTS.find(x=>x.id===sid);
- const active=state.assignments.filter(a=>a.status==='Đang giao' && a.sets?.some(set=>set.group==='Cả 4 nhóm'||set.group===s.group));
- const notes=(state.notifications||[]).filter(n=>n.studentId===sid&&!n.read);
- document.getElementById('modalBox').innerHTML=`<h2>📱 Góc học tập của em</h2><p><b>${esc(s.name)}</b> · Nhóm <span class="pill blue">${s.group}</span> · ⭐ ${state.stars[sid]||0}</p>${notes.length?`<div class="assignment"><b>🔔 Thông báo mới</b>${notes.map(n=>`<div style="padding:8px 0;border-bottom:1px dashed var(--line)">${esc(n.message)}<div class="sub">${new Date(n.time).toLocaleString('vi-VN')}</div></div>`).join('')}<button class="btn" onclick="markNotificationsRead(${JSON.stringify(notes.map(n=>n.id))})">Đã đọc</button></div>`:''}<h3>📝 Bài đang giao</h3>${active.length?active.map(a=>{const set=findSet(a,s.group);const sub=state.submissions[a.id+'_'+sid];return `<div class="assignment"><b>${esc(a.subject)} – ${esc(a.lesson)}</b><div class="sub">Tuần ${esc(a.week)} · Hạn: ${a.due?new Date(a.due).toLocaleString('vi-VN'):'Chưa đặt hạn'}</div><div style="margin-top:8px">${sub?`<span class="pill good">Đã nộp · ${sub.score}/100 · +${sub.stars} ⭐</span>`:`<span class="pill yellow">Chưa nộp</span>`}</div><button class="btn primary" style="margin-top:9px" onclick="openStudentAssignment('${a.id}')">${sub?'Xem / làm lại':'Làm bài'}</button></div>`}).join(''):'<div class="empty">Hiện chưa có bài được giao.</div>'}<button class="btn" onclick="closeModal()">Đóng</button>`;
- document.getElementById('modal').classList.add('show')
+ if(!sid||LAVI.user.role!=='student'){toast('Hãy đăng nhập bằng tài khoản học sinh');return}
+ const s=STUDENTS.find(x=>x.id===sid); if(!s)return;
+ document.getElementById('studentApp').style.display='block';
+ document.getElementById('studentHeaderName').textContent=s.name;
+ renderStudentHome();
+}
+function renderStudentHome(){
+ const sid=LAVI.user.studentId,s=STUDENTS.find(x=>x.id===sid);
+ const active=state.assignments.filter(a=>a.status==='Đang giao'&&a.sets?.some(set=>set.group==='Cả 4 nhóm'||set.group===s.group));
+ const done=active.filter(a=>state.submissions[a.id+'_'+sid]).length;
+ const unread=(state.notifications||[]).filter(n=>n.studentId===sid&&!n.read);
+ document.getElementById('studentContent').innerHTML=
+  '<div class="student-hero"><h1>👋 Chào '+esc(s.name)+'!</h1><p>Hôm nay em có '+active.length+' bài tập cần hoàn thành. Cố gắng nhé!</p></div>'+
+  '<div class="student-kpis"><div class="student-kpi">⭐<div class="big">'+(state.stars[sid]||0)+'</div><div class="small">Sao của em</div></div><div class="student-kpi">📚<div class="big">'+active.length+'</div><div class="small">Bài được giao</div></div><div class="student-kpi">✅<div class="big">'+done+'/'+active.length+'</div><div class="small">Đã hoàn thành</div></div></div>'+
+  '<div class="student-tabs"><button class="student-tab active">📚 Bài của em</button><button class="student-tab" onclick="studentShowNotice()">🔔 Thông báo'+(unread.length?' ('+unread.length+')':'')+'</button></div>'+
+  '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3><div class="student-meta">Tuần '+esc(a.week)+' · Nhóm '+esc(s.group)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐':'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
+}
+function studentShowNotice(){
+ const sid=LAVI.user.studentId,ns=(state.notifications||[]).filter(n=>n.studentId===sid);
+ document.getElementById('studentList').innerHTML=ns.length?ns.map(n=>'<div class="student-assignment"><b>🔔 '+esc(n.message)+'</b><div class="student-meta">'+new Date(n.time).toLocaleString('vi-VN')+(n.read?' · Đã đọc':' · Chưa đọc')+'</div></div>').join(''):'<div class="student-assignment" style="text-align:center">Không có thông báo.</div>';
+ ns.filter(n=>!n.read).forEach(n=>n.read=true);
+ if(ns.some(n=>!n.read))fetch('/api/student/read-notifications',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({ids:ns.map(n=>n.id)})});
 }
 function openStudentAssignment(aid){
  const sid=LAVI.user.studentId,s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid),set=findSet(a,s.group),sub=state.submissions[aid+'_'+sid];
- document.getElementById('modalBox').innerHTML=`<h2>📝 ${esc(a.subject)} – ${esc(a.lesson)}</h2><p><b>${esc(s.name)}</b> · Nhóm ${s.group}</p>${set.questions.map((q,i)=>`<div class="question"><b>Câu ${i+1}. ${esc(q.text)}</b><input id="ans${i}" class="answer" value="${esc(sub?.answers?.[i]||'')}" placeholder="Nhập câu trả lời..."></div>`).join('')}<button class="btn primary" onclick="submitOnline('${a.id}',${s.id})">📤 Nộp bài</button> <button class="btn" onclick="studentMode()">↩ Quay lại</button><p class="sub">Bài làm được chấm tự động theo đáp án của bài và lưu trên máy chủ.</p>`;
+ if(!a||!set)return;
+ document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h2><div class="student-meta">'+esc(s.name)+' · Nhóm '+esc(s.group)+'</div>'+
+ (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><b>Kết quả lần trước:</b> <span class="student-score">'+sub.score+'/100</span> · '+sub.stars+' ⭐<br>'+esc(sub.praise||'')+'</div>':'')+
+ set.questions.map((q,i)=>'<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<input id="ans'+i+'" class="student-answer" value="'+esc(sub?.answers?.[i]||'')+'" placeholder="Nhập câu trả lời của em..."></div>').join('')+
+ '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="submitOnline(\''+a.id+'\','+sid+')">📤 Nộp bài</button></div>';
 }
-
 async function submitOnline(aid,sid){
  const s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid),set=findSet(a,s.group);
  const answers={};let correct=0;set.questions.forEach((q,i)=>{const v=(document.getElementById('ans'+i)?.value||'').trim();answers[i]=v;if(v&&normalize(v)===normalize(q.answer))correct++;});
@@ -343,8 +413,20 @@ fillSubjects();fillNotifyTargets();renderAll();
 window.LAVI={token:localStorage.getItem('lavi_token')||'',user:JSON.parse(localStorage.getItem('lavi_user')||'null')};
 async function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;document.getElementById('loginErr').textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Đăng nhập thất bại');LAVI.token=j.token;LAVI.user=j.user;localStorage.setItem('lavi_token',j.token);localStorage.setItem('lavi_user',JSON.stringify(j.user));await loadOnlineState();applyRole();document.getElementById('loginOverlay').style.display='none';document.getElementById('onlineUser').textContent=(j.user.role==='teacher'?'👩‍🏫 Giáo viên':'👨‍🎓 '+(STUDENTS.find(x=>x.id===j.user.studentId)?.name||'Học sinh'));if(j.user.role==='student')studentMode();}catch(e){document.getElementById('loginErr').textContent=e.message}}
 async function loadOnlineState(){if(!LAVI.token)return;try{const r=await fetch('/api/state',{headers:{Authorization:'Bearer '+LAVI.token}});if(!r.ok)throw new Error();const j=await r.json();state=j.state;localStorage.setItem('lavi5a_real',JSON.stringify(state));renderAll();}catch(e){}}
-function applyRole(){if(LAVI.user?.role==='student'){document.querySelectorAll('.section').forEach(x=>x.style.display='none');document.querySelectorAll('.nav button').forEach(x=>x.style.display='none');document.querySelectorAll('.mobilebar button').forEach(x=>x.style.display='none');document.querySelector('.mobilebar').style.display='none';}else{document.querySelectorAll('.section').forEach(x=>x.style.display='');document.querySelectorAll('.nav button').forEach(x=>x.style.display='');}}
-
+function applyRole(){
+ const isStudent=LAVI.user?.role==='student';
+ document.querySelector('.app').style.display=isStudent?'none':'flex';
+ document.querySelector('.mobilebar').style.display=isStudent?'none':'flex';
+ document.getElementById('studentApp').style.display=isStudent?'block':'none';
+ if(isStudent){
+  document.querySelectorAll('.section').forEach(x=>x.style.display='none');
+  document.querySelectorAll('.nav button').forEach(x=>x.style.display='none');
+  studentMode();
+ }else{
+  document.querySelectorAll('.section').forEach(x=>x.style.display='');
+  document.querySelectorAll('.nav button').forEach(x=>x.style.display='');
+ }
+}
 async function changeGroup(id,group){try{const r=await fetch('/api/teacher/group',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({studentId:id,group})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Không đổi được nhóm');const s=STUDENTS.find(x=>x.id===id);s.group=group;renderAll();toast(`Đã chuyển ${s.name} sang nhóm ${group}`)}catch(e){toast(e.message)}}
 async function changePassword(){try{const r=await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({currentPassword:document.getElementById('pwOld').value,newPassword:document.getElementById('pwNew').value})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Không đổi được mật khẩu');document.getElementById('pwOld').value='';document.getElementById('pwNew').value='';toast('Đã đổi mật khẩu thành công')}catch(e){toast(e.message)}}
 async function sendNotification(){const target=document.getElementById('notifyTarget').value;const ids=target==='all'?STUDENTS.map(s=>s.id):[Number(target)];const message=document.getElementById('notifyMessage').value.trim();if(!message)return toast('Nhập nội dung thông báo');try{const r=await fetch('/api/teacher/notify',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({studentIds:ids,message})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Gửi thất bại');document.getElementById('notifyMessage').value='';toast(`Đã gửi thông báo cho ${j.count} học sinh`)}catch(e){toast(e.message)}}
