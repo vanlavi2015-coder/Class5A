@@ -593,7 +593,7 @@ function generate(){
   const gifUrl=safeGifUrl(document.getElementById("cGifUrl")?.value);
   if(!lesson) return toast("Chưa có bài học để tạo bài.");
   const groups=group==="Cả 4 nhóm"?GROUPS:[group];
-  const sets=groups.map(g=>({group:g,questions:applyExtraRequirements(makeQuestions(lesson,g,count,note),lesson,g,note)}));
+  const sets=groups.map(g=>({group:g,questions:applyExtraRequirements(makeQuestions(lesson,g,count,note),lesson,g,note).map(q=>({...q,acceptedAnswers:[String(q.answer??'')].filter(Boolean)}))}));
   draft={
    id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
    subject:lesson.subject,
@@ -618,10 +618,35 @@ function generate(){
   toast("Không tạo được bài: "+(e.message||"lỗi không xác định"));
  }
 }
+function setDraftAnswer(si,qi,value){
+ if(!draft?.sets?.[si]?.questions?.[qi])return;
+ const q=draft.sets[si].questions[qi];
+ q.answer=String(value??'').trim();
+ q.acceptedAnswers=[q.answer,...(q.acceptedAnswers||[])].filter(Boolean);
+ q.acceptedAnswers=[...new Set(q.acceptedAnswers)];
+}
+function setDraftAccepted(si,qi,value){
+ if(!draft?.sets?.[si]?.questions?.[qi])return;
+ const q=draft.sets[si].questions[qi];
+ q.acceptedAnswers=[q.answer,...String(value??'').split(';').map(x=>x.trim()).filter(Boolean)];
+ q.acceptedAnswers=[...new Set(q.acceptedAnswers)];
+}
 function renderDraft(){
  if(!draft)return "";
- return `<div class="card"><h2>📝 Bản nháp: ${esc(draft.subject)} – ${esc(draft.lesson)}</h2><p><span class="pill blue">Tuần ${esc(draft.week)}</span> <span class="pill yellow">${esc(draft.group)}</span></p>${gifBlock(draft.gifUrl)}
- ${draft.note?`<div class="sub" style="margin:8px 0;padding:9px;background:#f5f3ff;border-radius:9px">⚙️ Yêu cầu đã áp dụng: ${esc(draft.note)}</div>`:""}${draft.sets.map(set=>`<div class="assignment"><h3>${esc(set.group)} · ${difficulty(set.group)}</h3>${set.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">Đáp án/gợi ý: ${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}
+ return `<div class="card"><h2>📝 Bản nháp: ${esc(draft.subject)} – ${esc(draft.lesson)}</h2>
+ <p><span class="pill blue">Tuần ${esc(draft.week)}</span> <span class="pill yellow">${esc(draft.group)}</span></p>
+ ${gifBlock(draft.gifUrl)}
+ ${draft.note?`<div class="sub" style="margin:8px 0;padding:9px;background:#f5f3ff;border-radius:9px">⚙️ Yêu cầu đã áp dụng: ${esc(draft.note)}</div>`:""}
+ <div class="sub" style="margin:10px 0;padding:10px;background:#ecfdf3;border-radius:10px">✅ <b>Cô duyệt đáp án trước khi giao.</b> Nếu học sinh trả lời đúng bằng cách khác, LAVI sẽ đối chiếu các đáp án được chấp nhận và giá trị tương đương.</div>
+ ${draft.sets.map((set,si)=>`<div class="assignment"><h3>${esc(set.group)} · ${difficulty(set.group)}</h3>
+ ${set.questions.map((q,qi)=>`<div class="question">
+ <b>Câu ${qi+1}. ${esc(q.text)}</b>
+ <label class="sub" style="display:block;margin-top:9px">Đáp án chuẩn (cô kiểm tra/sửa):</label>
+ <input value="${esc(q.answer)}" onchange="setDraftAnswer(${si},${qi},this.value)" style="width:100%;box-sizing:border-box;margin-top:4px">
+ <label class="sub" style="display:block;margin-top:8px">Đáp án/cách trả lời khác vẫn chấp nhận <span style="font-weight:400">(ngăn cách bằng dấu ;)</span>:</label>
+ <input value="${esc((q.acceptedAnswers||[]).filter(a=>a!==q.answer).join('; '))}" onchange="setDraftAccepted(${si},${qi},this.value)" placeholder="Ví dụ: 0,25; 25/100" style="width:100%;box-sizing:border-box;margin-top:4px">
+ <div class="sub" style="margin-top:5px">LAVI sẽ chấm theo đáp án cô đã duyệt, không tự ý thay đổi đáp án sau khi giao.</div>
+ </div>`).join("")}</div>`).join("")}
  <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">💾 Lưu nháp</button></div></div>`
 }
 async function publish(){
