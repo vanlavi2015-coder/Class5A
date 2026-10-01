@@ -593,10 +593,10 @@ if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.t
      add("Tính bằng cách thuận tiện nhất: "+a+" × "+b+" × "+c+".",String(a*b*c),"Tính thuận tiện – kết hợp");
     }else if(form===2){
      const a=levelBase+i;
-     add("Tính bằng cách thuận tiện nhất: "+a+" × (25 + 75).",String(a*100),"Tính thuận tiện – nhân một số với một tổng");
+     add("Tính bằng cách thuận tiện nhất: "+a+" × 25 + "+a+" × 75.",String(a*100),"Tính thuận tiện – đặt thừa số chung");
     }else{
      const x=levelBase+i;
-     add("Tính bằng cách thuận tiện nhất: "+x+" × (100 − 4).",String(x*96),"Tính thuận tiện – nhân một số với một hiệu");
+     add("Tính bằng cách thuận tiện nhất: "+x+" × 99 + "+x+".",String(x*100),"Tính thuận tiện – đặt thừa số chung");
     }
    }else{
     const bank={Yếu:[48,1,4,6],"Trung bình":[72,1,3,8],Khá:[120,2,5,12],Tốt:[240,3,8,18]},w=bank[group]||bank["Trung bình"],total=w[0],fn=w[1],fd=w[2],extra=w[3],remain=total-(total*fn/fd)-extra;
