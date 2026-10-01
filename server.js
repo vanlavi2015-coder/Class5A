@@ -20,7 +20,8 @@ const db=new DatabaseSync(DB_PATH);
 db.exec(`
 PRAGMA journal_mode=WAL;
 CREATE TABLE IF NOT EXISTS users(username TEXT PRIMARY KEY, role TEXT NOT NULL, student_id INTEGER, password_hash TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS students(id INTEGER PRIMARY KEY, code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, group_name TEXT NOT NULL, source_level TEXT);
+CREATE TABLE IF NOT EXISTS students(id INTEGER PRIMARY KEY, code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, group_name TEXT NOT NULL, source_level TEXT, avatar TEXT DEFAULT '🎓');
+try{db.exec("ALTER TABLE students ADD COLUMN avatar TEXT DEFAULT '🎓'")}catch(e){}
 CREATE TABLE IF NOT EXISTS assignments(id TEXT PRIMARY KEY, payload TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS submissions(k TEXT PRIMARY KEY, assignment_id TEXT NOT NULL, student_id INTEGER NOT NULL, payload TEXT NOT NULL, submitted_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS stars(student_id INTEGER PRIMARY KEY, total INTEGER NOT NULL DEFAULT 0);
@@ -50,7 +51,7 @@ function seed(){
 }
 seed();
 
-function students(){return db.prepare('SELECT id,code,name,group_name AS "group",source_level AS sourceLevel FROM students ORDER BY id').all();}
+function students(){return db.prepare('SELECT id,code,name,group_name AS "group",source_level AS sourceLevel,COALESCE(avatar,\'🎓\') AS avatar FROM students ORDER BY id').all();}
 function stateForTeacher(){
   const assignments=db.prepare('SELECT payload FROM assignments ORDER BY created_at DESC').all().map(x=>JSON.parse(x.payload));
   const submissions={}; for(const r of db.prepare('SELECT k,payload FROM submissions').all()) submissions[r.k]=JSON.parse(r.payload);
@@ -105,6 +106,14 @@ app.post('/api/password',auth,(req,res)=>{const {currentPassword,newPassword}=re
 app.post('/api/teacher/group',auth,(req,res)=>{if(!teacher(req,res))return;const {studentId,group}=req.body||{};if(!['Tốt','Khá','Trung bình','Yếu'].includes(group))return res.status(400).json({error:'Nhóm không hợp lệ'});const s=db.prepare('SELECT * FROM students WHERE id=?').get(Number(studentId));if(!s)return res.status(404).json({error:'Không tìm thấy học sinh'});db.prepare('UPDATE students SET group_name=? WHERE id=?').run(group,s.id);res.json({ok:true,student:students().find(x=>x.id===s.id)});});
 app.post('/api/teacher/grade',auth,(req,res)=>{if(!teacher(req,res))return;const {assignmentId,studentId,score,praise,stars}=req.body||{};const key=String(assignmentId)+'_'+Number(studentId);const r=db.prepare('SELECT payload FROM submissions WHERE k=?').get(key);if(!r)return res.status(404).json({error:'Chưa có bài nộp'});const old=JSON.parse(r.payload);const ns=Math.max(0,Math.min(10,Number(stars)||0));const delta=ns-(Number(old.stars)||0);const updated={...old,score:Math.max(0,Math.min(100,Number(score)||0)),stars:ns,praise:String(praise||old.praise||''),gradedBy:'teacher',gradedAt:now()};db.prepare('UPDATE submissions SET payload=?,submitted_at=? WHERE k=?').run(JSON.stringify(updated),now(),key);db.prepare('INSERT INTO stars(student_id,total) VALUES(?,?) ON CONFLICT(student_id) DO UPDATE SET total=MAX(0,total+excluded.total)').run(Number(studentId),delta);if(delta!==0)db.prepare('INSERT INTO awards(id,student_id,stars,reason,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),Number(studentId),delta,'Cô giáo chấm/điều chỉnh bài',now());res.json({ok:true,submission:updated});});
 app.post('/api/teacher/notify',auth,(req,res)=>{if(!teacher(req,res))return;const {studentIds,message}=req.body||{};if(!String(message||'').trim())return res.status(400).json({error:'Thiếu nội dung'});const ids=Array.isArray(studentIds)&&studentIds.length?studentIds.map(Number):students().map(s=>s.id);const ins=db.prepare('INSERT INTO notifications(id,student_id,message,read,created_at) VALUES(?,?,?,?,?)');for(const id of ids)ins.run(crypto.randomUUID(),id,String(message),0,now());res.json({ok:true,count:ids.length});});
+app.post('/api/student/avatar',auth,(req,res)=>{
+  if(req.user.role!=='student')return res.status(403).json({error:'Chỉ học sinh được đổi ảnh đại diện'});
+  const allowed=['🎓','🧑‍🎓','👩‍🎓','👨‍🎓','🦊','🐼','🐯','🐰','🐨','🐸','🐵','🦄','🐱','🐶','🐻','🐼','🐨','🦁','🐯','🐷','🐙','🦋','🌈','⭐','🚀','⚽','🎨','🎵','📚','🤖'];
+  const avatar=String(req.body?.avatar||'').trim();
+  if(!allowed.includes(avatar))return res.status(400).json({error:'Ảnh đại diện không hợp lệ'});
+  db.prepare('UPDATE students SET avatar=? WHERE id=?').run(avatar,req.user.studentId);
+  res.json({ok:true,avatar});
+});
 app.post('/api/student/read-notifications',auth,(req,res)=>{if(req.user.role!=='student')return res.status(403).json({error:'Không có quyền'});const ids=Array.isArray(req.body?.ids)?req.body.ids:[];if(!ids.length)return res.json({ok:true});db.prepare(`UPDATE notifications SET read=1 WHERE student_id=? AND id IN (${ids.map(()=>'?').join(',')})`).run(req.user.studentId,...ids);res.json({ok:true});});
 function normAnswer(v){
  return String(v??'').toLowerCase().normalize('NFD')
