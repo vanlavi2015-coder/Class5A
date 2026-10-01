@@ -443,10 +443,37 @@ function openStudentAssignment(aid){
  '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="submitOnline(\''+a.id+'\','+sid+')">📤 Nộp bài</button></div>';
 }
 async function submitOnline(aid,sid){
- const s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid),set=findSet(a,s.group);
- const answers={};let correct=0;set.questions.forEach((q,i)=>{const v=(document.getElementById('ans'+i)?.value||'').trim();answers[i]=v;if(v&&normalize(v)===normalize(q.answer))correct++;});
- const score=Math.round(correct/set.questions.length*100);const old=state.submissions[aid+'_'+sid]?.score||0;const improved=score-old>=10;const stars=starsForScore(score,s.group)+(improved?1:0);const p=praise(score,s.group,improved);
- try{const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({assignmentId:aid,answers,score,stars,praise:p})});if(!r.ok)throw new Error();const j=await r.json();state.submissions[aid+'_'+sid]=j.submission;state.stars[sid]=(state.stars[sid]||0)+stars;state.awards.unshift({time:new Date().toISOString(),studentId:sid,stars,reason:'Hoàn thành bài'});renderAll();closeModal();toast(`${s.name}: ${score}/100 · +${stars} ⭐`)}catch(e){toast('Không gửi được bài. Kiểm tra kết nối mạng.')}
+ const btn=event?.currentTarget;
+ if(btn){btn.disabled=true;btn.textContent='⏳ Đang nộp bài...';}
+ try{
+  const s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid);
+  if(!s||!a)throw new Error('Không tìm thấy bài hoặc học sinh');
+  const set=findSet(a,s.group);
+  if(!set?.questions?.length)throw new Error('Bài tập chưa có câu hỏi');
+  if(!LAVI.token)throw new Error('Phiên đăng nhập đã hết. Hãy đăng nhập lại');
+  const answers={};let correct=0;
+  set.questions.forEach((q,i)=>{const v=(document.getElementById('ans'+i)?.value||'').trim();answers[i]=v;if(v&&normalize(v)===normalize(q.answer))correct++;});
+  const score=Math.round(correct/set.questions.length*100);
+  const oldScore=state.submissions[aid+'_'+sid]?.score||0;
+  const improved=score-oldScore>=10;
+  const stars=starsForScore(score,s.group)+(improved?1:0);
+  const p=praise(score,s.group,improved);
+  const r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({assignmentId:aid,answers,score,stars,praise:p})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||('Máy chủ trả lỗi '+r.status));
+  state.submissions[aid+'_'+sid]=j.submission;
+  state.stars[sid]=(state.stars[sid]||0)+stars;
+  state.awards.unshift({time:new Date().toISOString(),studentId:sid,stars,reason:'Hoàn thành bài'});
+  localStorage.setItem('lavi5a_real',JSON.stringify(state));
+  studentMode();
+  toast(s.name+': '+score+'/100 · +'+stars+' ⭐');
+ }catch(e){
+  console.error('submitOnline',e);
+  toast('❌ '+e.message);
+  alert('Nộp bài chưa thành công: '+e.message);
+ }finally{
+  if(btn){btn.disabled=false;btn.textContent='📤 Nộp bài';}
+ }
 }
 function normalize(v){return String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s./-]/g,'').replace(/\s+/g,' ').trim()}
 
