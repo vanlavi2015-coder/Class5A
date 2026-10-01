@@ -1298,62 +1298,91 @@ function renderStars(){
  document.getElementById("badges").innerHTML=badgeDefs.map(x=>`<div class="assignment"><b>${x[0]} ${x[1]}</b><div class="sub">${x[2]}</div></div>`).join("")
 }
 function renderSubmissions(){
+ const el=document.getElementById("submissionList");
+ const all=[...(state.assignments||[])].sort((x,y)=>String(y.createdAt||'').localeCompare(String(x.createdAt||'')));
+ if(!all.length){el.innerHTML='<div class="empty">Chưa có bài giao.</div>';return}
+ const aid=document.getElementById("submissionAssignmentFilter")?.value||all[0].id;
+ const a=all.find(x=>x.id===aid)||all[0];
+ const status=document.getElementById("submissionStatusFilter")?.value||"submitted";
  const rows=[];
- state.assignments.forEach(a=>a.sets.forEach(set=>studentsForGroup(set.group).forEach(s=>{
-   const x=state.submissions[a.id+"_"+s.id];
-   if(x)rows.push(`<tr>
-    <td>${esc(a.lesson)}</td><td><b>${esc(s.name)}</b></td><td>${esc(s.group)}</td>
-    <td>${x.score==null?'Chờ cô chấm':x.score+'/100'}</td>
-    <td>${x.stars||0} ⭐</td><td>${esc(x.praise||'')}</td>
-    <td><button class="btn primary" onclick="viewSubmission('${a.id}',${s.id})">🔎 Xem bài</button></td>
-   </tr>`)
- })));
- document.getElementById("submissionList").innerHTML=rows.length?
- `<div class="sub" style="margin-bottom:10px">Cô có thể bấm <b>“Xem bài”</b> để xem từng câu học sinh đã làm, đáp án đúng, câu sai và chấm phần tự luận.</div>
- <div class="tablewrap"><table><thead><tr><th>Bài</th><th>Học sinh</th><th>Nhóm</th><th>Điểm</th><th>Sao</th><th>Lời khen</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`:'<div class="empty">Chưa có bài nộp.</div>';
+ const students=[...STUDENTS].filter(s=>a.sets?.some(set=>set.group==="Cả 4 nhóm"||set.group===s.group));
+ students.forEach(s=>{
+  const x=state.submissions[a.id+"_"+s.id];
+  if(status==="submitted"&&!x)return;
+  if(status==="pending"&&x)return;
+  rows.push({s,x});
+ });
+ const submitted=students.filter(s=>state.submissions[a.id+"_"+s.id]).length;
+ el.innerHTML=`
+  <div class="grid3" style="margin-bottom:12px">
+   <div class="field"><label>📚 Chọn bài</label><select id="submissionAssignmentFilter" onchange="renderSubmissions()">
+    ${all.map(x=>`<option value="${esc(x.id)}" ${x.id===a.id?'selected':''}>${esc((x.subject||'')+' – '+(x.lesson||x.title||'Bài'))}</option>`).join('')}
+   </select></div>
+   <div class="field"><label>👀 Hiển thị</label><select id="submissionStatusFilter" onchange="renderSubmissions()">
+    <option value="submitted" ${status==='submitted'?'selected':''}>Đã nộp (${submitted})</option>
+    <option value="pending" ${status==='pending'?'selected':''}>Chưa nộp (${students.length-submitted})</option>
+    <option value="all" ${status==='all'?'selected':''}>Tất cả (${students.length})</option>
+   </select></div>
+   <div class="card" style="padding:12px"><b>📥 Tiến độ</b><div style="font-size:24px;font-weight:900;margin-top:4px">${submitted}/${students.length}</div><div class="sub">Cô có thể mở từng bài để xem và sửa điểm.</div></div>
+  </div>
+  <div class="sub" style="margin-bottom:10px">🔐 <b>Quyền giáo viên:</b> xem toàn bộ bài làm, chấm điểm, sửa điểm tự động, chỉnh sao và lời nhận xét.</div>
+  ${rows.length?`<div class="tablewrap"><table><thead><tr><th>Học sinh</th><th>Nhóm</th><th>Trạng thái</th><th>Điểm</th><th>Sao</th><th>Thời gian</th><th></th></tr></thead><tbody>
+   ${rows.map(({s,x})=>`<tr>
+    <td><b>${esc(s.name)}</b></td><td>${esc(s.group)}</td>
+    <td>${x?'<span class="pill good">Đã nộp</span>':'<span class="pill yellow">Chưa nộp</span>'}</td>
+    <td>${x?.score==null?'Chờ cô chấm':x.score+'/100'}</td>
+    <td>${x?.stars||0} ⭐</td>
+    <td>${x?.time?new Date(x.time).toLocaleString('vi-VN'): '—'}</td>
+    <td>${x?`<button class="btn primary" onclick="viewSubmission('${esc(a.id)}',${s.id})">🔎 Xem & chấm</button>`:'—'}</td>
+   </tr>`).join('')}
+  </tbody></table></div>`:'<div class="empty">Không có học sinh phù hợp với bộ lọc.</div>'}`;
 }
 function viewSubmission(aid,sid){
- const a=state.assignments.find(x=>x.id===aid), s=STUDENTS.find(x=>x.id===sid), x=state.submissions[aid+"_"+sid];
+ const a=state.assignments.find(x=>x.id===aid),s=STUDENTS.find(x=>x.id===sid),x=state.submissions[aid+"_"+sid];
  if(!a||!s||!x)return toast("Không tìm thấy bài nộp.");
  const set=a.sets.find(z=>z.group===s.group)||a.sets.find(z=>z.group==="Cả 4 nhóm")||a.sets[0];
- const qs=set?.questions||[], answers=x.answers||{};
+ const qs=set?.questions||[],answers=x.answers||{};
  let auto=0,correct=0,manual=0;
  const items=qs.map((q,qi)=>{
-   const given=answers[qi]??"";
-   const isManual=!!q.manual||/cô chấm/i.test(String(q.type||""));
-   let right=!isManual && Array.isArray(q.acceptedAnswers)?q.acceptedAnswers.some(v=>answersEqual(given,v)):(!isManual&&answersEqual(given,q.answer));
-   if(isManual)manual++; else {auto++;if(right)correct++;}
-   const status=isManual?"🟡 Cô chấm":(right?"✅ Đúng":"❌ Sai");
-   return `<div class="question" style="margin-bottom:10px">
-    <div><b>Câu ${qi+1}. ${esc(q.text)}</b></div>
-    <div style="margin-top:6px"><span class="pill ${isManual?'yellow':right?'good':'bad'}">${status}</span></div>
-    <div class="sub" style="margin-top:5px"><b>Học sinh trả lời:</b> ${esc(String(given||"(chưa trả lời)"))}</div>
-    <div class="sub"><b>Đáp án chuẩn:</b> ${esc(String(q.answer||""))}</div>
-    ${Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length>1?`<div class="sub"><b>Đáp án chấp nhận:</b> ${esc(q.acceptedAnswers.filter(v=>String(v)!==String(q.answer)).join("; "))}</div>`:""}
-   </div>`;
- });
+  const given=answers[qi]??"";
+  const isManual=!!q.manual||/cô chấm/i.test(String(q.type||""));
+  let right=!isManual&&(Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers.some(v=>answersEqual(given,v)):answersEqual(given,q.answer));
+  if(isManual)manual++;else{auto++;if(right)correct++}
+  const status=isManual?"🟡 Cô chấm":(right?"✅ Đúng":"❌ Sai");
+  return `<div class="question" style="margin-bottom:10px">
+   <div><b>Câu ${qi+1}. ${esc(q.text)}</b></div>
+   <div style="margin-top:6px"><span class="pill ${isManual?'yellow':right?'good':'bad'}">${status}</span></div>
+   <div class="sub" style="margin-top:5px"><b>Học sinh trả lời:</b> ${esc(String(given||"(chưa trả lời)"))}</div>
+   <div class="sub"><b>Đáp án chuẩn:</b> ${esc(String(q.answer||""))}</div>
+   ${Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length>1?`<div class="sub"><b>Đáp án chấp nhận:</b> ${esc(q.acceptedAnswers.filter(v=>String(v)!==String(q.answer)).join("; "))}</div>`:""}
+  </div>`;
+ }).join("");
  const autoScore=auto?Math.round(correct/auto*100):null;
  document.getElementById("modalBox").innerHTML=`
-  <h2>📋 ${esc(a.lesson)}</h2>
-  <p><b>Học sinh:</b> ${esc(s.name)} · <b>Nhóm:</b> ${esc(s.group)}</p>
+  <h2>📋 Xem & chấm bài</h2>
+  <p><b>${esc(a.lesson||a.title||'Bài')}</b></p>
+  <p><b>Học sinh:</b> ${esc(s.name)} · <b>Nhóm:</b> ${esc(s.group)} · <b>Nộp lúc:</b> ${x.time?new Date(x.time).toLocaleString('vi-VN'):'—'}</p>
   <div class="grid3" style="margin:10px 0">
    <div class="card" style="padding:10px"><b>Điểm tự động</b><div class="num" style="font-size:24px">${autoScore==null?'—':autoScore+'/100'}</div></div>
    <div class="card" style="padding:10px"><b>Đúng</b><div class="num" style="font-size:24px">${correct}/${auto}</div></div>
-   <div class="card" style="padding:10px"><b>Cô chấm</b><div class="num" style="font-size:24px">${manual}</div></div>
+   <div class="card" style="padding:10px"><b>Câu cô chấm</b><div class="num" style="font-size:24px">${manual}</div></div>
   </div>
-  ${items.join("")}
-  ${manual? `<hr><h3>✍️ Chấm phần tự luận</h3>
+  <div class="card" style="padding:12px;margin-bottom:12px;border:2px solid #c7d2fe">
+   <h3 style="margin:0 0 10px">✍️ Kết quả giáo viên</h3>
    <div class="grid3">
-    <div class="field"><label>Điểm tổng /100</label><input id="gradeScore" type="number" min="0" max="100" value="${x.score==null?'':x.score}"></div>
+    <div class="field"><label>Điểm cuối cùng /100</label><input id="gradeScore" type="number" min="0" max="100" step="1" value="${x.score==null?(autoScore??''):x.score}"></div>
     <div class="field"><label>Số sao</label><input id="gradeStars" type="number" min="0" max="10" value="${x.stars||0}"></div>
     <div class="field"><label>Lời nhận xét</label><input id="gradePraise" value="${esc(x.praise||'')}" placeholder="Ví dụ: Cô khen em..."></div>
    </div>
-   <button class="btn primary" onclick="saveTeacherGrade('${a.id}',${s.id})">💾 Lưu kết quả</button>`:
-   `<div class="row"><button class="btn gold" onclick="saveTeacherGrade('${a.id}',${s.id})">⭐ Lưu sao/nhận xét</button></div>`}
+   <div class="sub" style="margin-top:6px">Cô có thể <b>thay đổi điểm cuối cùng</b> nếu cần sửa kết quả chấm tự động hoặc chấm phần tự luận.</div>
+   <button class="btn primary" style="margin-top:10px" onclick="saveTeacherGrade('${a.id}',${s.id})">💾 Lưu kết quả chấm</button>
+  </div>
+  <h3>📝 Bài làm của học sinh</h3>
+  ${items}
   <button class="btn" style="margin-top:10px" onclick="closeModal()">Đóng</button>`;
  document.getElementById("modal").classList.add("show");
 }
-async function saveTeacherGrade(aid,sid){
+function saveTeacherGrade(aid,sid){
  const scoreEl=document.getElementById("gradeScore"),starsEl=document.getElementById("gradeStars"),praiseEl=document.getElementById("gradePraise");
  const x=state.submissions[aid+"_"+sid]||{};
  const manual=scoreEl?Number(scoreEl.value):Number(x.score)||0, stars=starsEl?Number(starsEl.value):Number(x.stars)||0, praise=praiseEl?String(praiseEl.value||""):String(x.praise||"");
