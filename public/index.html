@@ -458,15 +458,38 @@ function makeQuestions(lesson,group,count,note="",seed=0){
     return true;
    }
    if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.test(title)){
-   const bank={Yếu:[["2,4","24/10","hàng phần mười","4/10"],["3,5","35/10","hàng phần mười","5/10"],["4,2","42/10","hàng phần mười","2/10"],["5,7","57/10","hàng phần mười","7/10"]],"Trung bình":[["3,7","37/10","hàng phần mười","7/10"],["4,25","425/100","hàng phần trăm","5/100"],["5,30","530/100","hàng phần trăm","0/100"],["7,04","704/100","hàng phần trăm","4/100"]],Khá:[["3,75","375/100","hàng phần trăm","5/100"],["4,256","4256/1000","hàng phần nghìn","6/1000"],["5,306","5306/1000","hàng phần nghìn","6/1000"],["7,048","7048/1000","hàng phần nghìn","8/1000"]],Tốt:[["13,705","13705/1000","hàng phần nghìn","5/1000"],["24,056","24056/1000","hàng phần nghìn","6/1000"],["35,408","35408/1000","hàng phần nghìn","8/1000"],["47,125","47125/1000","hàng phần nghìn","5/1000"]]};
-   const b=(bank[group]||bank["Trung bình"])[(i-1)%4]; const m=(i-1)%4;
-   if(m===0)add("Viết số thập phân "+b[0]+" dưới dạng phân số thập phân.",b[1],"Viết số");
-   else if(m===1)add("Trong số "+b[0]+", chữ số "+b[0].slice(-1)+" thuộc hàng nào?",b[2],"Xác định hàng");
-   else if(m===2)add("Trong số "+b[0]+", chữ số "+b[0].slice(-1)+" có giá trị là bao nhiêu?",b[3],"Giá trị chữ số");
-   else manualAdd("Đọc số thập phân "+b[0]+" thành lời. Cô kiểm tra cách đọc và cách dùng đúng thuật ngữ.");
-   return true;
-  }
-  if(/viết số đo đại lượng dưới dạng số thập phân/.test(title)){
+    const m=(i-1)%6;
+    const is3=/tiết\s*3/.test(title);
+    if(!is3){
+      const bank=[
+       ["2,38","2","38","hai phẩy ba mươi tám"],
+       ["325,431","325","431","ba trăm hai mươi lăm phẩy bốn trăm ba mươi mốt"],
+       ["0,73","0","73","không phẩy bảy mươi ba"],
+       ["327,106","327","106","ba trăm hai mươi bảy phẩy một trăm linh sáu"],
+       ["49,251","49","251","bốn mươi chín phẩy hai trăm năm mươi mốt"],
+       ["9,362","9","362","chín phẩy ba trăm sáu mươi hai"]
+      ];
+      const b=bank[(i-1)%bank.length];
+      if(m%3===0)add("Trong số "+b[0]+", phần nguyên là số nào?",b[1],"Xác định phần nguyên");
+      else if(m%3===1)add("Trong số "+b[0]+", phần thập phân là số nào?",b[2],"Xác định phần thập phân");
+      else add("Viết phân số thập phân "+(m+1)+"/10 thành số thập phân.",dec((m+1)/10),"Chuyển phân số thập phân");
+    }else{
+      const bank=[
+       ["415,2","bốn trăm mười lăm phẩy hai"],
+       ["71,84","bảy mươi mốt phẩy tám mươi tư"],
+       ["0,935","không phẩy chín trăm ba mươi lăm"],
+       ["3,1416","ba phẩy một nghìn bốn trăm mười sáu"],
+       ["4,8","bốn phẩy tám"],
+       ["1,25","một phẩy hai mươi lăm"]
+      ];
+      const b=bank[(i-1)%bank.length];
+      if(m%3===0)manualAdd("Đọc số thập phân "+b[0]+" thành lời: "+b[1]+". Cô kiểm tra cách đọc.");
+      else if(m%3===1){const n=48+(i%5)*7;add("Chuyển phân số thập phân "+n+"/10 thành số thập phân.",dec(n/10),"Chuyển phân số thập phân");}
+      else {const a=7,b1=0,c=2;add("Từ các thẻ 7, 0, 2 và dấu phẩy, lập một số thập phân có phần nguyên gồm 1 chữ số và phần thập phân gồm 2 chữ số.", "7,02","Lập số thập phân");}
+    }
+    return true;
+   }
+   if(/viết số đo đại lượng dưới dạng số thập phân/.test(title)){
    const bank=[["1 kg","0,001 tấn"],["564 m","0,564 km"],["3,2 m","3200 mm"],["4,5 kg","4500 g"],["132 mm","13,2 cm"],["7 m 5 dm","7,5 m"],["3 kg 250 g","3,25 kg"],["2 m 35 cm","2,35 m"]];
    const b=bank[(i-1)%bank.length]; add("Viết số đo "+b[0]+" dưới dạng thích hợp.",b[1],"Đổi đơn vị đo"); return true;
   }
