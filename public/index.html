@@ -347,7 +347,25 @@ function makeQuestions(lesson,group,count,note=""){
  function standardMath(i){
   // QUY TẮC TOÁN HKI 2026–2027: bám sát các dạng bài trong giáo án cô đã gửi.
   // Không trộn nội dung của bài khác; nếu chưa có dạng được xác định thì giữ quy tắc hiện có.
-  if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.test(title)){
+  if(/bài\s*8.*ôn tập hình học và đo lường.*tiết\s*2/.test(title)){
+   const level={
+    "Yếu":[[8,5],[6,4],[10,6],[7,3]],
+    "Trung bình":[[12,7],[9,5],[14,8],[10,6]],
+    "Khá":[[15,8],[12,7],[18,10],[14,9]],
+    "Tốt":[[18,9],[15,8],[20,12],[16,10]]
+   };
+   const b=level[group]||level["Trung bình"], m=(i-1)%8;
+   if(m===0){const [d,r]=b[0];add("Một hình chữ nhật có chiều dài "+d+" cm và chiều rộng "+r+" cm. Tính diện tích hình chữ nhật.",dec(d*r)+" cm²","Tính diện tích hình chữ nhật");}
+   else if(m===1){const [a,h]=b[1];add("Một hình tam giác có đáy "+a+" cm và chiều cao "+h+" cm. Tính diện tích hình tam giác.",dec(a*h/2)+" cm²","Tính diện tích hình tam giác");}
+   else if(m===2){const [a,b2,h]=[b[2][0],b[2][1],b[3][1]];add("Một hình thang có đáy lớn "+a+" cm, đáy bé "+b2+" cm và chiều cao "+h+" cm. Tính diện tích hình thang.",dec((a+b2)*h/2)+" cm²","Tính diện tích hình thang");}
+   else if(m===3){const [d,r]=b[0];add("Một hình chữ nhật có chiều dài "+d+" cm và chiều rộng "+r+" cm. Tính chu vi hình chữ nhật.",dec((d+r)*2)+" cm","Tính chu vi hình chữ nhật");}
+   else if(m===4){const [a,h]=b[1];add("Một hình tam giác có diện tích "+dec(a*h/2)+" cm² và đáy "+a+" cm. Tính chiều cao của hình tam giác.",dec(h)+" cm","Tìm chiều cao hình tam giác");}
+   else if(m===5){const [a,b2,h]=[b[2][0],b[2][1],b[3][1]];add("Một hình thang có diện tích "+dec((a+b2)*h/2)+" cm², hai đáy dài "+a+" cm và "+b2+" cm. Tính chiều cao hình thang.",dec(h)+" cm","Tìm chiều cao hình thang");}
+   else if(m===6){add("Đổi 3 m² 25 dm² thành đơn vị mét vuông.", "3,25 m²","Đổi đơn vị diện tích");}
+   else {add("Một mảnh đất hình chữ nhật dài "+(b[0][0]+2)+" m và rộng "+b[0][1]+" m. Người ta dành 1/4 diện tích mảnh đất để trồng hoa. Tính diện tích phần đất trồng hoa.",dec((b[0][0]+2)*b[0][1]/4)+" m²","Bài toán thực tế");}
+   return true;
+  }
+if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.test(title)){
    const bank={Yếu:[["2,4","24/10","hàng phần mười","4/10"],["3,5","35/10","hàng phần mười","5/10"],["4,2","42/10","hàng phần mười","2/10"],["5,7","57/10","hàng phần mười","7/10"]],"Trung bình":[["3,7","37/10","hàng phần mười","7/10"],["4,25","425/100","hàng phần trăm","5/100"],["5,30","530/100","hàng phần trăm","0/100"],["7,04","704/100","hàng phần trăm","4/100"]],Khá:[["3,75","375/100","hàng phần trăm","5/100"],["4,256","4256/1000","hàng phần nghìn","6/1000"],["5,306","5306/1000","hàng phần nghìn","6/1000"],["7,048","7048/1000","hàng phần nghìn","8/1000"]],Tốt:[["13,705","13705/1000","hàng phần nghìn","5/1000"],["24,056","24056/1000","hàng phần nghìn","6/1000"],["35,408","35408/1000","hàng phần nghìn","8/1000"],["47,125","47125/1000","hàng phần nghìn","5/1000"]]};
    const b=(bank[group]||bank["Trung bình"])[(i-1)%4]; const m=(i-1)%4;
    if(m===0)add("Viết số thập phân "+b[0]+" dưới dạng phân số thập phân.",b[1],"Viết số");
