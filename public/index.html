@@ -571,16 +571,26 @@ function makeQuestions(lesson,group,count,note=""){
       return true;
     }
     if(/đại từ/.test(title)){
+      // Dạng câu hỏi phải có một đáp án rõ ràng; tránh câu chứa nhiều đại từ nhưng chỉ có một đáp án.
       const bank=[
-        ["Lan và em cùng làm bài. Chúng em cùng kiểm tra lại bài.","Chúng em"],
-        ["Nam hỏi Mai: “Bạn đã làm xong bài chưa?”","Bạn"],
-        ["Cô giáo gọi Minh và tôi lên bảng. Cô giao cho chúng tôi một bài tập.","tôi"],
-        ["Các bạn trong tổ cùng giúp nhau học tập. Chúng tôi rất vui.","Chúng tôi"]
+        ["Lan hỏi Mai: “Bạn đã làm xong bài chưa?”","Bạn","Từ “Bạn” trong câu trên dùng để xưng hô với người được nói đến.","xưng hô"],
+        ["Nam nói: “Tôi đã hoàn thành bài tập.”","Tôi","Từ “Tôi” trong câu trên là đại từ dùng để xưng hô cho người nói.","xưng hô"],
+        ["Lan nói: “Chúng em đã chuẩn bị xong.”","Chúng em","Từ “Chúng em” trong câu trên là đại từ dùng để xưng hô cho nhóm người nói.","xưng hô"],
+        ["Các bạn hỏi Minh: “Bạn đã đọc sách chưa?”","Bạn","Từ “Bạn” trong câu trên dùng để xưng hô với người được nói đến.","xưng hô"],
+        ["Lan rất chăm học. Bạn ấy luôn hoàn thành bài đúng hạn.","Bạn ấy","Trong câu thứ hai, từ “Bạn ấy” dùng để thay thế cho từ ngữ nào?","Lan"]
       ];
-      const b=tvPick(bank);
-      if(i%3===1)add("Tìm đại từ trong câu: “"+b[0]+"”.",b[1],"Tìm đại từ");
-      else if(i%3===2)tvManual("Từ “"+b[1]+"” trong câu dùng để xưng hô hay thay thế? Giải thích ngắn gọn");
-      else tvManual("Viết lại câu “"+b[0]+"” bằng cách thay đại từ đã tìm bằng từ ngữ thích hợp");
+      const b=tvPick(bank),m=(i-1)%3;
+      if(m===0){
+        add("Tìm đại từ trong câu: “"+b[0]+"”.",b[1],"Tìm đại từ");
+      }else if(m===1){
+        add(b[2],b[3],"Công dụng của đại từ");
+      }else{
+        if(b[1]==="Bạn ấy"){
+          add("Từ “Bạn ấy” trong câu “"+b[0]+"” thay thế cho từ ngữ nào?","Lan","Đại từ thay thế");
+        }else{
+          add("Từ “"+b[1]+"” trong câu “"+b[0]+"” dùng để làm gì?",b[3],"Đại từ xưng hô");
+        }
+      }
       return true;
     }
     if(/danh từ|động từ|tính từ/.test(title)){
