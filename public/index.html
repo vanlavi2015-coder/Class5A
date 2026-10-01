@@ -414,7 +414,7 @@ function makeQuestions(lesson,group,count,note="",seed=0){
   // Không trộn nội dung của bài khác; nếu chưa có dạng được xác định thì giữ quy tắc hiện có.
   // PHẠM VI ĐÃ HỌC HIỆN TẠI (đầu HKI): chỉ Hỗn số và đổi đơn vị đo.
   // Chưa học hình tam giác/hình thang nên TUYỆT ĐỐI không sinh các dạng này ở Bài 8/Bài 9 hiện tại.
-  if(/bài\s*8.*ôn tập hình học và đo lường.*tiết\s*2/.test(title)){
+  if(/bài\s*8\b.*ôn tập hình học và đo lường/.test(title)){
    const bank=[
     ["3 1/2","7/2","Đổi hỗn số thành phân số"],
     ["5 3/4","23/4","Đổi hỗn số thành phân số"],
@@ -1294,8 +1294,9 @@ function finalizeQuestion(q){
  if(/^đọc số/.test(t)){
   q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Đọc số – cô chấm";return q;
  }
-  // Cổng an toàn phạm vi kiến thức hiện tại.
-  if(/bài\s*(?:8|9).*?(?:ôn tập hình học và đo lường|luyện tập chung)/.test(title)
+  // Cổng an toàn: Bài 8/Bài 9 đầu HKI chỉ được phép HỖN SỐ + ĐỔI ĐƠN VỊ ĐO.
+  // Nếu câu đã được sinh sai dạng hình học, loại ngay trước khi lưu/giao bài.
+  if(/bài\s*(?:8|9)\b/.test(title)
      && /hình\s*(?:tam giác|thang)|đáy lớn|đáy bé|chiều cao hình thang/.test(t)){
    q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
   }
