@@ -442,6 +442,21 @@ function openStudentAssignment(aid){
  set.questions.map((q,i)=>'<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<input id="ans'+i+'" class="student-answer" value="'+esc(sub?.answers?.[i]||'')+'" placeholder="Nhập câu trả lời của em..."></div>').join('')+
  '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="submitOnline(\''+a.id+'\','+sid+')">📤 Nộp bài</button></div>';
 }
+function starsForScore(score,group){
+ const n=Number(score)||0;
+ if(n>=90)return 3;
+ if(n>=80)return 2;
+ if(n>=60)return 1;
+ return 0;
+}
+function praise(score,group,improved){
+ const n=Number(score)||0;
+ if(improved)return "🌟 Em đã có tiến bộ rõ rệt! Tiếp tục cố gắng nhé!";
+ if(n>=90)return "🏆 Xuất sắc! Em hoàn thành bài rất tốt!";
+ if(n>=80)return "👏 Rất tốt! Em đã nắm khá chắc kiến thức.";
+ if(n>=60)return "💪 Cố gắng tốt! Em tiếp tục luyện tập để tiến bộ hơn nhé.";
+ return "🌱 Em hãy xem lại bài và luyện thêm từng bước nhé. Cô tin em sẽ tiến bộ!";
+}
 async function submitOnline(aid,sid){
  const btn=event?.currentTarget;
  if(btn){btn.disabled=true;btn.textContent='⏳ Đang nộp bài...';}
