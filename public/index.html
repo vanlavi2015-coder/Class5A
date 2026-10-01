@@ -19,7 +19,7 @@ body.menu-collapsed .main{margin-left:0;width:100%;max-width:none}
 body.menu-collapsed .menuToggle{left:14px}
 body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
 
-@media(max-width:900px){.side{width:70px;padding:12px 8px}.brand{font-size:0;text-align:center;padding:9px 0 18px}.brand span{font-size:19px}.nav button{font-size:0;text-align:center;padding:12px 4px}.nav button:first-letter{font-size:20px}.main{margin-left:70px;width:calc(100% - 70px);padding:14px}.top h1{font-size:21px}.grid4{grid-template-columns:1fr 1fr}.grid3,.grid2{grid-template-columns:1fr}.top{align-items:flex-start}.top .btn{display:none}.top .btn.logoutBtn{display:inline-flex}}
+@media(max-width:900px){.side{width:70px;padding:12px 8px}.brand{font-size:0;text-align:center;padding:9px 0 18px}.brand span{font-size:19px}.nav button{font-size:0;text-align:center;padding:12px 4px}.nav button:first-letter{font-size:20px}.main{margin-left:70px;width:calc(100% - 70px);padding:14px}.top h1{font-size:21px}.grid4{grid-template-columns:1fr 1fr}.grid3,.grid2{grid-template-columns:1fr}.top{align-items:flex-start}.top .btn{display:none}.top .btn.logoutBtn{display:inline-flex}.race-table{width:100%;min-width:0}.race-table th,.race-table td{font-size:13px}.race-me{background:#eef2ff;font-weight:800}.race-medal{font-size:19px}.race-track{height:14px;background:#e5e7eb;border-radius:99px;overflow:hidden}.race-track i{display:block;height:100%;background:var(--p);border-radius:99px;transition:width .35s ease}.race-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.race-stat .card{text-align:center}.student-rank-card{background:linear-gradient(135deg,#eef2ff,#fff);border:1px solid #c7d2fe;border-radius:18px;padding:18px}.student-rank-big{font-size:36px;font-weight:900;color:#3730a3}@media(max-width:650px){.race-stat{grid-template-columns:1fr}.race-table{min-width:620px}}}
 @media(max-width:560px){.side{display:block;width:260px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:8px 0 25px rgba(15,23,42,.18)}.main{margin:0;width:100%;padding:12px;padding-bottom:75px}.menuToggle{left:12px;top:10px}.menuBackdrop{display:block;opacity:0;pointer-events:none;transition:opacity .2s}.menu-open .side{transform:translateX(0)}.menu-open .menuBackdrop{opacity:1;pointer-events:auto}.grid4{grid-template-columns:1fr 1fr}.card{padding:13px}.top{margin-bottom:12px}.mobilebar{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);z-index:30;justify-content:space-around;padding:7px}.mobilebar button{border:0;background:transparent;font-size:11px;color:#475467}.mobilebar b{display:block;font-size:20px}}
 
 #loginOverlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#eef2ff,#f8fafc);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -50,6 +50,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
   <button onclick="show('assign',this)">📤 Bài đang giao</button>
   <button onclick="show('students',this)">👩‍🎓 Học sinh</button>
   <button onclick="show('stars',this)">⭐ Sao & Khen</button>
+  <button onclick="show('race',this)">🏁 Trò chơi & Xếp hạng</button>
   <button onclick="show('submissions',this)">📥 Bài nộp</button>
   <button onclick="show('schedule',this)">🗓️ Lịch</button>
   <button onclick="show('curriculum',this)">📚 Phạm vi kiến thức</button>
@@ -118,6 +119,27 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
   </div>
  </section>
 
+ <section id="race" class="section">
+  <div class="card">
+   <h2>🏁 Đường đua 5A – Trò chơi & Xếp hạng</h2>
+   <p class="sub">Chọn một bài đang giao hoặc đã giao. LAVI tự lấy kết quả bài nộp để tạo bảng xếp hạng. Ưu tiên điểm, sau đó đến thời gian nộp.</p>
+   <div class="grid3">
+    <div class="field"><label>🎯 Bài thi đua</label><select id="raceAssignment" onchange="loadRace()"></select></div>
+    <div class="field"><label>🏆 Cách tính</label><select id="raceMode" onchange="loadRace()"><option value="score">Điểm cao trước</option><option value="speed">Điểm + thời gian</option><option value="stars">Sao thưởng</option></select></div>
+    <div class="field"><label>🔄 Cập nhật</label><button class="btn primary" onclick="loadRace()">↻ Cập nhật bảng</button></div>
+   </div>
+  </div>
+  <div class="race-stat" style="margin-top:14px">
+   <div class="card"><div class="sub">Đã tham gia</div><div class="num" id="raceCount">0/0</div></div>
+   <div class="card"><div class="sub">Điểm cao nhất</div><div class="num" id="raceTop">–</div></div>
+   <div class="card"><div class="sub">Trạng thái</div><div class="num" id="raceStatus" style="font-size:18px">Chưa chọn</div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">🏆 Bảng xếp hạng</h2><div class="sub">Bảng tự cập nhật khi học sinh nộp bài.</div></div><button class="btn" onclick="loadRace()">🔄 Làm mới</button></div>
+   <div id="raceBoard" style="margin-top:12px"><div class="empty">Chọn bài để bắt đầu.</div></div>
+  </div>
+ </section>
+
  <section id="submissions" class="section"><div class="card"><h2>📥 Bài nộp & chấm</h2><div id="submissionList"></div></div></section>
 
  <section id="schedule" class="section">
@@ -154,6 +176,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
  <button onclick="show('create')"><b>➕</b>Tạo bài</button>
  <button onclick="show('students')"><b>👩‍🎓</b>HS</button>
  <button onclick="show('stars')"><b>⭐</b>Sao</button>
+ <button onclick="show('race')"><b>🏁</b>Đua</button>
  <button onclick="show('accounts')"><b>⚙️</b>Tài khoản</button>
  <button onclick="logout()"><b>🔄</b>Đổi TK</button>
  <button onclick="studentMode()"><b>📱</b>HS làm</button>
@@ -177,7 +200,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
  <div class="student-shell">
   <div class="student-top">
    <div class="student-brand"><div class="student-logo">🎓</div><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI 5A · Góc học tập của em</div></div></div>
-   <div class="student-actions"><button class="student-btn logout" onclick="logout()">Đăng xuất</button></div>
+   <div class="student-actions"><button class="student-btn" onclick="studentLeaderboard()">🏁 Xếp hạng</button><button class="student-btn logout" onclick="logout()">Đăng xuất</button></div>
   </div>
   <div id="studentContent"></div>
   <div class="student-footer">🌟 Học chăm – Làm thật – Tiến bộ mỗi ngày · LAVI 5A</div>
@@ -1453,7 +1476,7 @@ function renderHome(){
  renderAssignments("homeAssignments")
 }
 function exportData(){const blob=new Blob([JSON.stringify({students:STUDENTS,curriculum:CURRICULUM,state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="LAVI_5A_du_lieu.json";a.click();URL.revokeObjectURL(a.href)}
-function renderAll(){renderHome();renderAssignments("assignList");renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats()}
+function renderAll(){renderHome();renderAssignments("assignList");renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
 document.getElementById("cDue").value=new Date(Date.now()+86400000).toISOString().slice(0,16);
 fillSubjects();fillNotifyTargets();renderAll();
 
@@ -1474,6 +1497,45 @@ function applyRole(){
   document.querySelectorAll('.nav button').forEach(x=>x.style.display='');
  }
 }
+let raceTimer=null;
+function fillRaceAssignments(){
+ const el=document.getElementById('raceAssignment'); if(!el)return;
+ const arr=[...(state.assignments||[])].filter(a=>a&&a.id).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+ el.innerHTML=arr.length?arr.map(a=>'<option value="'+esc(a.id)+'">'+esc((a.subject||'')+' · '+(a.lesson||a.title||'Bài học'))+'</option>').join(''):'<option value="">Chưa có bài</option>';
+}
+function medal(n){return n===1?'🥇':n===2?'🥈':n===3?'🥉':String(n)}
+async function loadRace(){
+ const el=document.getElementById('raceAssignment'); if(!el)return;
+ if(!el.value)fillRaceAssignments();
+ const aid=el.value;if(!aid){document.getElementById('raceBoard').innerHTML='<div class="empty">Cô hãy giao ít nhất một bài trước.</div>';return}
+ const mode=document.getElementById('raceMode')?.value||'score';
+ try{
+  const r=await fetch('/api/leaderboard?assignmentId='+encodeURIComponent(aid),{headers:{Authorization:'Bearer '+LAVI.token}});
+  const j=await r.json();if(!r.ok)throw new Error(j.error||'Không tải được bảng xếp hạng');
+  let rows=j.leaderboard.slice().filter(x=>x.submitted);
+  if(mode==='stars')rows.sort((a,b)=>Number(b.stars||0)-Number(a.stars||0)||Number(b.score??-1)-Number(a.score??-1));
+  else if(mode==='speed')rows.sort((a,b)=>Number(b.score??-1)-Number(a.score??-1)||(new Date(a.time||'9999-12-31').getTime())-(new Date(b.time||'9999-12-31').getTime()));
+  const total=j.totalStudents||32;
+  document.getElementById('raceCount').textContent=rows.length+'/'+total;
+  document.getElementById('raceTop').textContent=rows.length?((rows[0].score??0)+' điểm'):'–';
+  document.getElementById('raceStatus').textContent=rows.length===total?'🎉 Cả lớp đã hoàn thành':'⏳ Đang thi';
+  const max=Math.max(1,...rows.map(x=>Number(x.score)||0));
+  document.getElementById('raceBoard').innerHTML=rows.length?'<div style="overflow:auto"><table class="race-table"><thead><tr><th>Hạng</th><th>Học sinh</th><th>Nhóm</th><th>Điểm</th><th>Sao</th><th>Tiến độ</th></tr></thead><tbody>'+rows.map((x,i)=>'<tr class="'+(LAVI.user?.role==='student'&&x.studentId===LAVI.user.studentId?'race-me':'')+'"><td class="race-medal">'+medal(i+1)+'</td><td><b>'+esc(x.name)+'</b>'+(LAVI.user?.role==='student'&&x.studentId===LAVI.user.studentId?' <span class="onlineBadge">Em</span>':'')+'</td><td>'+esc(x.group)+'</td><td><b>'+((x.score??0))+'</b></td><td>'+Number(x.stars||0)+' ⭐</td><td><div class="race-track"><i style="width:'+Math.max(4,Math.min(100,(Number(x.score)||0)/max*100))+'%"></i></div></td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Chưa có học sinh nộp bài.</div>';
+ }catch(e){document.getElementById('raceBoard').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+async function studentLeaderboard(){
+ const a=(state.assignments||[]).filter(x=>x&&x.status==='Đang giao'&&x.id).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];
+ const s=STUDENTS.find(x=>x.id===LAVI.user?.studentId);
+ if(!a){document.getElementById('studentContent').innerHTML='<div class="student-rank-card"><h2>🏁 Đường đua 5A</h2><p>Hiện chưa có bài thi đua đang giao.</p><button class="student-btn" onclick="studentMode()">← Quay lại</button></div>';return}
+ try{
+  const r=await fetch('/api/leaderboard?assignmentId='+encodeURIComponent(a.id),{headers:{Authorization:'Bearer '+LAVI.token}});
+  const j=await r.json();if(!r.ok)throw new Error(j.error||'Không tải được xếp hạng');
+  const me=j.leaderboard.find(x=>x.studentId===LAVI.user.studentId);
+  const rows=j.leaderboard.filter(x=>x.submitted).sort((x,y)=>Number(y.score??-1)-Number(x.score??-1)||new Date(x.time||'9999-12-31')-new Date(y.time||'9999-12-31'));
+  const rank=rows.findIndex(x=>x.studentId===LAVI.user.studentId)+1;
+  document.getElementById('studentContent').innerHTML='<div class="student-rank-card"><div class="sub">🏁 Đường đua 5A</div><h2 style="margin:5px 0">'+esc(a.subject||'')+' · '+esc(a.lesson||a.title||'Bài thi đua')+'</h2><div class="student-rank-big">'+(me?.submitted?(rank>0?'Hạng '+rank:'Đang chờ'):'Chưa nộp')+'</div><p>'+esc(s?.name||'')+' · '+(me?.submitted?((me.score??0)+' điểm · '+(me.stars||0)+' ⭐'):'Hãy hoàn thành bài để tham gia!')+'</p><button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button></div><div class="student-assignment" style="margin-top:12px"><h3>🏆 Top hiện tại</h3>'+rows.slice(0,5).map((x,i)=>'<div class="studentcard"><span>'+medal(i+1)+' '+esc(x.name)+'</span><b>'+((x.score??0))+' điểm</b></div>').join('')+'</div>';
+ }catch(e){toast(e.message)}
+}
 async function changeGroup(id,group){try{const r=await fetch('/api/teacher/group',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({studentId:id,group})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Không đổi được nhóm');const s=STUDENTS.find(x=>x.id===id);s.group=group;renderAll();toast(`Đã chuyển ${s.name} sang nhóm ${group}`)}catch(e){toast(e.message)}}
 async function changePassword(){try{const r=await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({currentPassword:document.getElementById('pwOld').value,newPassword:document.getElementById('pwNew').value})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Không đổi được mật khẩu');document.getElementById('pwOld').value='';document.getElementById('pwNew').value='';toast('Đã đổi mật khẩu thành công')}catch(e){toast(e.message)}}
 async function sendNotification(){const target=document.getElementById('notifyTarget').value;const ids=target==='all'?STUDENTS.map(s=>s.id):[Number(target)];const message=document.getElementById('notifyMessage').value.trim();if(!message)return toast('Nhập nội dung thông báo');try{const r=await fetch('/api/teacher/notify',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({studentIds:ids,message})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Gửi thất bại');document.getElementById('notifyMessage').value='';toast(`Đã gửi thông báo cho ${j.count} học sinh`)}catch(e){toast(e.message)}}
@@ -1484,4 +1546,3 @@ if(LAVI.token&&LAVI.user){loadOnlineState().then(()=>{applyRole();document.getEl
 
 </script>
 </body>
-</html>
