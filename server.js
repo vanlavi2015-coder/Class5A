@@ -110,7 +110,11 @@ app.post('/api/game/result',auth,(req,res)=>{
   const used=attempts+1;
   res.json({ok:true,attempts:used,maxAttempts:3,remaining:Math.max(0,3-used)});
 });
-r(x.student_id),{points:Number(x.points)||0,completed:Number(x.completed)||0}]));
+app.get('/api/overall-leaderboard',auth,(req,res)=>{
+  const ss=students();
+  const assignmentRows=db.prepare('SELECT student_id, SUM(CASE WHEN json_extract(payload,\'$.score\') IS NOT NULL THEN CAST(json_extract(payload,\'$.score\') AS REAL) ELSE 0 END) AS points, COUNT(CASE WHEN json_extract(payload,\'$.score\') IS NOT NULL THEN 1 END) AS completed FROM submissions GROUP BY student_id').all();
+  const games=db.prepare('SELECT student_id, game_type, score, stars, correct, total, time_seconds FROM game_results').all();
+  const amap=new Map(assignmentRows.map(x=>[Number(x.student_id),{points:Number(x.points)||0,completed:Number(x.completed)||0}]));
   const gmap=new Map();
   for(const g of games){const id=Number(g.student_id);if(!gmap.has(id))gmap.set(id,{points:0,stars:0,games:0,details:[]});const z=gmap.get(id);z.points+=Number(g.score)||0;z.stars+=Number(g.stars)||0;z.games++;z.details.push({type:g.game_type,score:Number(g.score)||0,stars:Number(g.stars)||0,correct:Number(g.correct)||0,total:Number(g.total)||0,timeSeconds:Number(g.time_seconds)||0});}
   const list=ss.map(s=>{const a=amap.get(s.id)||{points:0,completed:0};const g=gmap.get(s.id)||{points:0,stars:0,games:0,details:[]};return {studentId:s.id,name:s.name,group:s.group,assignmentPoints:a.points,completedAssignments:a.completed,gamePoints:g.points,gameStars:g.stars,playedGames:g.games,totalPoints:a.points+g.points,details:g.details};});
