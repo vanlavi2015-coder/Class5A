@@ -1340,7 +1340,8 @@ function validateQuestionSet(questions){
   // Với đề kết hợp nhiều bài/tiết, các dạng tương tự có thể xuất hiện hợp lệ.
   // Chỉ chặn câu trống, thiếu đáp án bắt buộc hoặc trắc nghiệm không hợp lệ.
   const key=normalizeText(text);
-  if(!seenText.has(key))seenText.set(key,n);
+  if(seenText.has(key)) errors.push("Câu "+n+" bị trùng với Câu "+seenText.get(key)+". LAVI không cho giao đề trùng câu.");
+  else seenText.set(key,n);
   const sh=shape(text),nums=(text.match(/-?\d+(?:[.,]\d+)?/g)||[]).map(x=>x.replace(",",".")),nk=nums.join("|");
   if(nums.length>=2&&!seenShape.has(sh+"|"+nk))seenShape.set(sh+"|"+nk,n);
   if(q?.options&&(!Array.isArray(q.options)||q.options.length!==4||!["A","B","C","D"].includes(String(q.answer))))errors.push("Câu "+n+" có trắc nghiệm không hợp lệ.");
@@ -1360,14 +1361,32 @@ function generate(){
   const groups=group==="Cả 4 nhóm"?GROUPS:[group];
   const makeMultiQuestions=(g)=>{
    const base=Math.floor(count/lessons.length),extra=count%lessons.length;
-   const all=[];
+   const all=[],seen=new Set();
+   const normQ=v=>String(v||"").toLowerCase().normalize("NFD")
+     .replace(/[\\u0300-\\u036f]/g,"").replace(/\\s+/g," ").trim();
+   const addUnique=q=>{
+    if(!q)return false;
+    const key=normQ(q.text);
+    if(!key||seen.has(key))return false;
+    seen.add(key);all.push({...q});return true;
+   };
    lessons.forEach((lesson,idx)=>{
     const n=Math.max(1,base+(idx<extra?1:0));
-    const generated=makeQuestions(lesson,g,n,note);
-    const customized=applyExtraRequirements(generated,lesson,g,note);
-    all.push(...customized);
+    const pool=applyExtraRequirements(
+      makeQuestions(lesson,g,n+8,note),lesson,g,note
+    );
+    for(const q of pool){if(all.length>=count)break;addUnique(q);}
    });
-   return all.map((q,i)=>({...q,id:i+1}));
+   if(all.length<count){
+    for(const lesson of lessons){
+     if(all.length>=count)break;
+     const pool=applyExtraRequirements(
+       makeQuestions(lesson,g,count+12,note),lesson,g,note
+     );
+     for(const q of pool){if(all.length>=count)break;addUnique(q);}
+    }
+   }
+   return all.slice(0,count).map((q,i)=>({...q,id:i+1}));
   };
   let sets;
   if(group==="Tất cả"){
