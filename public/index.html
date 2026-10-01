@@ -1290,6 +1290,29 @@ function applyExtraRequirements(questions,lesson,group,note){
  }
  return out;
 }
+function validateKnownVietnameseQuestion(q){
+ if(!q)return q;
+ const t=String(q.text||"").toLowerCase();
+ const exact={
+  "du khách muốn ______ vẻ đẹp của vịnh.":"chiêm ngưỡng",
+  "du khách muốn ______ vẻ đẹp của thiên nhiên.":"chiêm ngưỡng",
+  "mọi người ______ bên sân trường để dự lễ.":"quây quần",
+  "ngôi nhà được xây dựng rất ______.":"vững chãi",
+  "thầy giáo luôn giữ vẻ ______ khi giải quyết công việc.":"trầm lặng",
+  "lan rất ______ học tập.":"chăm chỉ",
+  "cây cổ thụ có thân hình ______.":"to lớn"
+ };
+ for(const [fragment,expected] of Object.entries(exact)){
+  if(t.includes(fragment)){
+   q.answer=expected;
+   q.manual=false;
+   q.type="Điền từ";
+   q.acceptedAnswers=[expected];
+   return q;
+  }
+ }
+ return q;
+}
 function finalizeQuestion(q){
  if(!q)return null;
  q={...q,text:String(q.text||"").trim(),answer:String(q.answer??"").trim()};
