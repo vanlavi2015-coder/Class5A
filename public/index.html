@@ -337,6 +337,66 @@ function makeQuestions(lesson,group,count,note=""){
   if(/ôn tập đo lường/.test(title)){
    const bank=[["173 cm","1,73 m"],["82 dm","8,2 m"],["800 kg","0,8 tấn"],["3 m²","30000 cm²"],["2,5 kg","2500 g"]],b=bank[(i-1)%bank.length]; add("Viết số thích hợp: "+b[0]+" = ___ "+b[1].replace(/[0-9, ]+/,"").trim()+".",b[1].split(" ")[0],"Đổi đơn vị đo"); return true;
   }
+  // TOÁN HKII 2026–2027: quy tắc theo đúng dạng bài trong giáo án tuần 19–35.
+  if(/tỉ số.*tỉ số phần trăm/.test(title) && !/tìm giá trị/.test(title) && !/ôn tập/.test(title)){
+   const bank=[["3","5","3:5","60%"],["4","5","4:5","80%"],["7","10","7:10","70%"],["9","20","9:20","45%"]],b=bank[(i-1)%bank.length];
+   if(i%2===1)add("Viết tỉ số của "+b[0]+" và "+b[1]+".",b[2],"Viết tỉ số"); else add("Viết tỉ số "+b[2]+" thành tỉ số phần trăm.",b[3],"Viết tỉ số phần trăm"); return true;
+  }
+  if(/tìm hai số khi biết tổng và tỉ số/.test(title)){
+   const bank=[[60,2,3],[84,3,4],[105,2,5],[144,5,7]],b=bank[(i-1)%bank.length],sum=b[0],p=b[1],q=b[2],small=sum*p/(p+q),large=sum*q/(p+q); add("Tìm hai số khi biết tổng của hai số là "+sum+" và tỉ số của hai số đó là "+p+":"+q+".",small+" và "+large,"Tìm hai số khi biết tổng và tỉ số"); return true;
+  }
+  if(/tìm giá trị phần trăm của một số/.test(title) && !/luyện tập chung/.test(title)){
+   const bank=[[120,70,"m²"],[300,10,"kg"],[350000,10,"đồng"],[15,20,"kg"],[250000,15,"đồng"]],b=bank[(i-1)%bank.length],ans=b[0]*b[1]/100; add("Tìm "+b[1]+"% của "+b[0]+".",dec(ans)+" "+b[2],"Tìm giá trị phần trăm"); return true;
+  }
+  if(/luyện tập chung/.test(title) && /tỉ số phần trăm|tìm hai số/.test(title)){
+   const m=(i-1)%3;
+   if(m===0){const a=49+i,b=70+i;add("Tính tỉ số phần trăm của "+a+" và "+b+".",dec(a/b*100)+"%","Tính tỉ số phần trăm");}
+   else if(m===1){const a=200+i*10,p=[10,15,20][(i-1)%3];add("Tìm "+p+"% của "+a+".",dec(a*p/100),"Tìm giá trị phần trăm");}
+   else {const diff=30+i*2,p=2,q=5,small=diff*p/(q-p),large=small+diff;add("Tìm hai số biết hiệu của hai số là "+diff+" và tỉ số của hai số đó là "+p+":"+q+".",small+" và "+large,"Tìm hai số khi biết hiệu và tỉ số");} return true;
+  }
+  if(/mét khối/.test(title)){
+   const bank=[["1 m³","1000 dm³"],["2 m³","2000000 cm³"],["3500 dm³","3,5 m³"],["0,8 m³","800 dm³"]],b=bank[(i-1)%bank.length];
+   if(i%2===1)add("Đổi: "+b[0]+" = ?.",b[1],"Đổi đơn vị thể tích"); else add("Một bể nước có thể tích 2 m³. Hỏi bể có bao nhiêu dm³ nước khi đầy?","2000 dm³","Bài toán thể tích"); return true;
+  }
+  if(/diện tích xung quanh và diện tích toàn phần của hình hộp chữ nhật/.test(title)){
+   const l=20+i,w=10+(i%4),h=8+(i%3),sxq=(l+w)*2*h,stp=sxq+2*l*w;
+   if(/tiết 1/.test(title))add("Tính diện tích xung quanh hình hộp chữ nhật dài "+l+" cm, rộng "+w+" cm, cao "+h+" cm.",sxq+" cm²","Diện tích xung quanh"); else add("Tính diện tích toàn phần hình hộp chữ nhật dài "+l+" cm, rộng "+w+" cm, cao "+h+" cm.",stp+" cm²","Diện tích toàn phần"); return true;
+  }
+  if(/thể tích của hình hộp chữ nhật/.test(title)){
+   const l=8+i%5,w=4+i%3,h=3+i%2,v=l*w*h;
+   if(i%3===1)add("Tính thể tích hình hộp chữ nhật có chiều dài "+l+" cm, chiều rộng "+w+" cm, chiều cao "+h+" cm.",v+" cm³","Tính thể tích"); else if(i%3===2)add("Một hình hộp chữ nhật có thể tích "+v+" cm³, dài "+l+" cm, rộng "+w+" cm. Chiều cao là bao nhiêu?",h+" cm","Tìm chiều cao"); else add("Một khối gồm 6 hình hộp chữ nhật giống nhau, mỗi hình có kích thước "+l+" cm × "+w+" cm × "+h+" cm. Tính thể tích khối.",(v*6)+" cm³","Bài toán thể tích"); return true;
+  }
+  if(/luyện tập chung/.test(title) && /hình khai triển|hình lập phương|hình hộp/.test(title)){
+   const a=3+i%4,sxq=4*a*a,stp=6*a*a;
+   if(i%3===1)add("Một hình lập phương có cạnh "+a+" cm. Tính diện tích xung quanh.",sxq+" cm²","Diện tích xung quanh hình lập phương"); else if(i%3===2)add("Một hình lập phương có cạnh "+a+" cm. Tính diện tích toàn phần.",stp+" cm²","Diện tích toàn phần hình lập phương"); else add("Một hình hộp chữ nhật dài "+(a+4)+" cm, rộng "+(a+2)+" cm, cao "+a+" cm. Tính thể tích.",((a+4)*(a+2)*a)+" cm³","Tính thể tích"); return true;
+  }
+  if(/cộng, trừ số đo thời gian/.test(title)){
+   const bank=[[19,15,1,30,"+"],[10,30,9,20,"-"],[8,25,2,40,"+"],[12,10,3,45,"-"]],b=bank[(i-1)%bank.length]; let total=b[0]*60+b[1],other=b[2]*60+b[3],ans=b[4]==="+"?total+other:total-other; const hh=Math.floor(ans/60),mm=ans%60; add("Tính: "+b[0]+" giờ "+b[1]+" phút "+b[4]+" "+b[2]+" giờ "+b[3]+" phút.",hh+" giờ "+mm+" phút","Cộng trừ số đo thời gian"); return true;
+  }
+  if(/vận tốc của một chuyển động đều/.test(title)){
+   const bank=[[210,2,"km","km/giờ"],[500,100,"m","m/giây"],[180,3,"km","km/giờ"],[600,120,"m","m/giây"]],b=bank[(i-1)%bank.length],v=b[0]/b[1]; add("Một chuyển động đi được "+b[0]+" "+b[2]+" trong "+b[1]+" giờ/giây. Tính vận tốc.",dec(v)+" "+b[3],"Tính vận tốc"); return true;
+  }
+  if(/thực hành tính toán và ước lượng về vận tốc, quãng đường, thời gian/.test(title)){
+   const m=(i-1)%3; if(m===0){const v=5+i%4,t=20+i*5;add("Một bạn đi với vận tốc "+v+" m/s trong "+t+" giây. Tính quãng đường.",(v*t)+" m","Tính quãng đường");} else if(m===1){const s=400+i*20,v=5;add("Một người đi quãng đường "+s+" m với vận tốc "+v+" m/s. Tính thời gian.",(s/v)+" giây","Tính thời gian");} else {const s=600+i*20,t=120;add("Một người đi "+s+" m trong "+t+" giây. Tính vận tốc.",dec(s/t)+" m/s","Tính vận tốc");} return true;
+  }
+  if(/thu thập, phân loại, sắp xếp các số liệu/.test(title)){
+   const data=[12,8,15,10,8,14,12],sorted=[...data].sort((a,b)=>a-b); if(i%3===1)add("Cho dãy số liệu: 12, 8, 15, 10, 8, 14, 12. Sắp xếp các số liệu theo thứ tự từ bé đến lớn.",sorted.join(", "),"Sắp xếp số liệu"); else if(i%3===2)add("Cho dãy số liệu: 12, 8, 15, 10, 8, 14, 12. Số liệu lớn nhất là bao nhiêu?","15","So sánh số liệu"); else add("Cho dãy số liệu: 12, 8, 15, 10, 8, 14, 12. Có bao nhiêu số liệu bằng 12?","2","Đếm số liệu"); return true;
+  }
+  if(/thực hành và trải nghiệm thu thập, phân tích, biểu diễn các số liệu thống kê/.test(title)){
+   if(i%2===1)manualAdd("Khảo sát 10 bạn trong lớp về phương tiện các bạn dùng để đến trường. Lập bảng số liệu và nêu nhận xét từ kết quả khảo sát.","Khảo sát – lập bảng – nhận xét"); else manualAdd("Dựa vào một bảng số liệu do cô cung cấp, hãy đọc số liệu, nêu ít nhất 2 nhận xét và đề xuất 1 việc làm phù hợp với lớp/trường.","Đọc bảng – nhận xét – đề xuất"); return true;
+  }
+  if(/ôn tập các phép tính với số tự nhiên, phân số, số thập phân/.test(title)){
+   const m=(i-1)%4; if(m===0){const a=125+i,b=37+i;add("Tính: "+a+" + "+b+".",String(a+b),"Tính số tự nhiên");} else if(m===1){const d=2+(i%4),a=1+(i%3);add("Tính: "+a+"/"+d+" + 1/"+d+".",fracText(a+1,d),"Tính phân số");} else if(m===2){const a=12.5+i/10,b=3.25;add("Tính: "+dec(a)+" + "+dec(b)+".",dec(a+b),"Tính số thập phân");} else {const a=12.5+i/10,b=3.25;add("Tính thuận tiện: "+dec(a)+" + "+dec(b)+" − "+dec(b)+".",dec(a),"Tính thuận tiện");} return true;
+  }
+  if(/ôn tập tỉ số, tỉ số phần trăm/.test(title)){
+   const m=(i-1)%3; if(m===0){const a=49+i,b=70+i;add("Tính tỉ số phần trăm của "+a+" và "+b+".",dec(a/b*100)+"%","Tỉ số phần trăm");} else if(m===1){const p=[10,15,20][(i-1)%3],a=350000;add("Tìm "+p+"% của "+a+" đồng.",dec(a*p/100)+" đồng","Giá trị phần trăm");} else {const price=250000+i*1000,p=15;add("Một món hàng giá "+price+" đồng được giảm "+p+"%. Số tiền được giảm là bao nhiêu?",dec(price*p/100)+" đồng","Giảm giá");} return true;
+  }
+  if(/ôn tập đo lường/.test(title)){
+   const bank=[["3,5 m","350 cm"],["2,4 kg","2400 g"],["3 m²","30000 cm²"],["2,5 m³","2500 dm³"]],b=bank[(i-1)%bank.length]; add("Đổi "+b[0]+" = ?.",b[1],"Đổi đơn vị đo"); return true;
+  }
+  if(/ôn tập một số yếu tố thống kê và xác suất/.test(title)){
+   const m=(i-1)%4; if(m===0)add("Khi gieo một con xúc xắc thông thường, mặt 7 chấm là khả năng gì?","Không thể","Xác suất"); else if(m===1)add("Khi tung một đồng xu, xuất hiện mặt sấp là khả năng gì?","Có thể","Xác suất"); else if(m===2)add("Gieo xúc xắc 20 lần, mặt 6 chấm xuất hiện 4 lần. Tỉ số số lần xuất hiện mặt 6 chấm so với tổng số lần gieo là bao nhiêu?","4/20","Tỉ số số lần xuất hiện"); else add("Trong một túi chỉ có bóng đỏ. Lấy ngẫu nhiên một quả bóng, lấy được bóng đỏ là khả năng gì?","Chắc chắn","Xác suất"); return true;
+  }
   const groupOffset={Yếu:0,"Trung bình":1,Khá:2,Tốt:4}[group]||0;
   const k=(i-1+groupOffset)%8;
   if(/bài\s*9[.\-:]?\s*luyện\s*tập\s*chung/.test(title)){
