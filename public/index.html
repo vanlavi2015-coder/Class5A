@@ -102,7 +102,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
    <div class="grid3">
     <div class="field"><label>Môn</label><select id="cSubject" onchange="fillWeeks()"></select></div>
     <div class="field"><label>Tuần</label><select id="cWeek" onchange="fillLessons()"></select></div>
-    <div class="field"><label>Bài học / tiết <span class="sub">(có thể chọn nhiều)</span></label><div id="cLessonPicker" class="lesson-picker"></div><div class="sub">☑️ Tích chọn một hoặc nhiều bài/tiết muốn đưa vào cùng một đề.</div></div>
+    <div class="field"><label>Bài học / tiết <span class="sub">(có thể chọn nhiều)</span></label><div id="cLessonPicker" style="border:1px solid #d0d5dd;border-radius:10px;background:#fff;max-height:260px;overflow-y:auto;padding:6px"></div><div class="sub">☑️ Tích chọn một hoặc nhiều bài/tiết muốn đưa vào cùng một đề. Có thể bỏ/chọn lại bất cứ lúc nào.</div></div>
    </div>
    <div class="grid3">
     <div class="field"><label>Đối tượng giao bài</label><select id="cGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option>Tất cả</option></select></div>
@@ -350,7 +350,7 @@ function fillLessons(){
  const el=document.getElementById("cLessonPicker");
  if(!el)return;
  if(!items.length){el.innerHTML='<div class="lesson-picker-empty">Chưa có bài/tiết trong tuần này.</div>';return;}
- el.innerHTML=items.map((x,i)=>'<label class="lesson-pick-item"><input type="checkbox" class="lessonPick" value="'+i+'"><span>'+esc(x.lesson)+'</span></label>').join("");
+ el.innerHTML=items.map((x,i)=>'<label class="lesson-pick-item" style="display:flex;align-items:flex-start;gap:9px;padding:10px;border-radius:8px;cursor:pointer"><input type="checkbox" class="lessonPick" style="width:18px;height:18px;flex:none;margin-top:2px" value="'+i+'"><span>'+esc(x.lesson)+'</span></label>').join("");
 }
 function selectedLessons(){
  const sub=document.getElementById("cSubject").value,w=document.getElementById("cWeek").value;
