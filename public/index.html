@@ -275,35 +275,56 @@ function makeQuestions(lesson,group,count,note=""){
    else if(k%4===2){q="Tính: "+n1+"/"+d1+" + "+n2+"/"+d2+".";a=fracText(n1*d2+n2*d1,d1*d2);type="Tính";}
    else {const amount=levelNum(group,12)+i*2;q="Tính "+n1+"/"+d1+" của "+amount+".";a=String(amount*n1/d1);type="Tính giá trị phân số";}
   } else if(math && /số thập phân/.test(title)){
-   const nums=[
-    ["3,1","3,10"],["4,2","hàng phần mười"],["5,3","5,3"],["6,4","6,40"],
-    ["2,5","hàng phần mười"],["3,6","3,6"],["4,7","4,70"],["5,8","hàng phần mười"],
-    ["7,2","7,20"],["8,5","hàng phần mười"]
+   // Bài 10: Khái niệm số thập phân — phủ đủ hàng phần mười, phần trăm, phần nghìn.
+   const bank=[
+    {n:"3,7", frac:"7/10", place:"hàng phần mười", value:"7 phần mười"},
+    {n:"4,25", frac:"25/100", place:"hàng phần trăm", value:"5 phần trăm"},
+    {n:"5,306", frac:"306/1000", place:"hàng phần nghìn", value:"6 phần nghìn"},
+    {n:"7,04", frac:"4/100", place:"hàng phần trăm", value:"4 phần trăm"},
+    {n:"8,125", frac:"125/1000", place:"hàng phần nghìn", value:"5 phần nghìn"},
+    {n:"2,509", frac:"509/1000", place:"hàng phần nghìn", value:"9 phần nghìn"},
+    {n:"6,38", frac:"38/100", place:"hàng phần trăm", value:"8 phần trăm"},
+    {n:"9,407", frac:"407/1000", place:"hàng phần nghìn", value:"7 phần nghìn"},
+    {n:"1,6", frac:"6/10", place:"hàng phần mười", value:"6 phần mười"},
+    {n:"3,072", frac:"72/1000", place:"hàng phần nghìn", value:"2 phần nghìn"},
+    {n:"5,40", frac:"40/100", place:"hàng phần trăm", value:"0 phần trăm"},
+    {n:"7,008", frac:"8/1000", place:"hàng phần nghìn", value:"8 phần nghìn"}
    ];
-   const b=nums[(i-1)%nums.length], mode=(i-1)%8;
+   const b=bank[(i-1)%bank.length], mode=(i-1)%12;
    if(/làm tròn/.test(title)){
-    const n=(2+i)+","+(i%10)+((i+1)%10); const digit=Number(n.split(",")[1][0]);
-    q="Làm tròn số "+n+" đến hàng phần mười.";a=String(Number(n.split(",")[0])+(digit>=5?1:0))+",0";type="Làm tròn";
+    const x=(2+i)+","+(i%10)+((i+1)%10); const digit=Number(x.split(",")[1][0]);
+    q="Làm tròn số "+x+" đến hàng phần mười.";a=String(Number(x.split(",")[0])+(digit>=5?1:0))+",0";type="Làm tròn";
    } else if(/so sánh/.test(title)){
-    const x=2+i/10,y=x+0.1;q="So sánh hai số "+x.toFixed(1).replace(".",",")+" và "+y.toFixed(1).replace(".",",")+".";a="<";type="So sánh";
+    const x=2+(i%6)/10,y=x+0.01;q="So sánh hai số "+x.toFixed(2).replace(".",",")+" và "+y.toFixed(2).replace(".",",")+".";a="<";type="So sánh";
    } else if(/nhân.*10|chia.*10/.test(title)){
     const x=2+(i%5)/10;q=i%2?"Tính: "+x.toFixed(1).replace(".",",")+" × 10.":"Tính: "+x.toFixed(1).replace(".",",")+" : 10.";a=(i%2?x*10:x/10).toString().replace(".",",");type="Tính";
    } else if(mode===0){
-    q="Viết số thập phân 3,1 dưới dạng số thập phân có chữ số 0 ở cuối phần thập phân.";a="3,10";type="Viết số";
+    q="Viết số thập phân "+b.n+" dưới dạng phân số thập phân.";a=b.frac;type="Viết số";
    } else if(mode===1){
-    q="Số 4,2 có chữ số 2 ở hàng nào?";a="hàng phần mười";type="Xác định hàng";
+    q="Viết phân số thập phân "+b.frac+" dưới dạng số thập phân.";a=b.n;type="Viết số";
    } else if(mode===2){
-    q="Viết số thập phân có phần nguyên 5 và phần thập phân 3.";a="5,3";type="Viết số";
+    q="Trong số "+b.n+", chữ số "+b.n.slice(-1)+" thuộc hàng nào?";a=b.place;type="Xác định hàng";
    } else if(mode===3){
-    q="Điền chữ số thích hợp vào chỗ chấm: 6,4 = 6,4…";a="0";type="Điền số";
+    q="Trong số "+b.n+", chữ số "+b.n.slice(-1)+" có giá trị là bao nhiêu?";a=b.value;type="Giá trị chữ số";
    } else if(mode===4){
-    q="Số 2,5 gồm 2 đơn vị và bao nhiêu phần mười?";a="5 phần mười";type="Phân tích số";
+    q="Đọc số thập phân "+b.n+".";a=b.n;type="Đọc số";
    } else if(mode===5){
-    q="Chọn số thập phân bằng với 3,6.";a="3,60";type="Chọn số bằng nhau";
+    const parts=b.n.split(",");
+    q="Viết số thập phân gồm "+parts[0]+" đơn vị và "+(parts[1].length===1?parts[1]+" phần mười":parts[1].length===2?parts[1]+" phần trăm":parts[1]+" phần nghìn")+".";a=b.n;type="Cấu tạo số";
    } else if(mode===6){
-    q="Viết số 4,7 dưới dạng số thập phân có chữ số 0 ở cuối phần thập phân.";a="4,70";type="Viết số";
+    q="Điền số thích hợp: "+b.n+" = "+b.frac+".";a="=";type="Điền";
+   } else if(mode===7){
+    q="Chọn số thập phân có chữ số "+b.n.slice(-1)+" ở "+b.place+".";a=b.n;type="Nhận biết";
+   } else if(mode===8){
+    const padded=b.n.split(",")[1].padEnd(3,"0");
+    q="Viết số "+b.n+" với đủ 3 chữ số ở phần thập phân.";a=b.n.split(",")[0]+","+padded;type="Viết số";
+   } else if(mode===9){
+    const equivalent=b.n.split(",")[0]+","+b.n.split(",")[1].padEnd(3,"0");
+    q="Viết một số thập phân bằng "+b.n+" và có 3 chữ số ở phần thập phân.";a=equivalent;type="Số thập phân bằng nhau";
+   } else if(mode===10){
+    q="Phần thập phân của số "+b.n+" có bao nhiêu chữ số?";a=String(b.n.split(",")[1].length);type="Nhận biết";
    } else {
-    q="Trong số 5,8, chữ số 8 có giá trị là bao nhiêu?";a="8 phần mười";type="Giá trị chữ số";
+    q="Số "+b.n+" gồm "+b.n.split(",")[0]+" đơn vị và bao nhiêu phần của đơn vị?";a=b.frac;type="Cấu tạo số";
    }
   } else if(math && /số tự nhiên/.test(title)){
    const a1=levelNum(group,120)+i*17,b1=levelNum(group,35)+i*8;
