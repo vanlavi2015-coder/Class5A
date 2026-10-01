@@ -437,10 +437,24 @@ function studentShowNotice(){
 function openStudentAssignment(aid){
  const sid=LAVI.user.studentId,s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid),set=findSet(a,s.group),sub=state.submissions[aid+'_'+sid];
  if(!a||!set)return;
+ const hasResult=!!sub;
+ const resultQuestions=set.questions.map((q,i)=>{
+   const studentAns=String(sub?.answers?.[i]??'').trim();
+   const correct=studentAns!==''&&normalize(studentAns)===normalize(q.answer);
+   if(!hasResult){
+     return '<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<input id="ans'+i+'" class="student-answer" value="'+esc(sub?.answers?.[i]||'')+'" placeholder="Nhập câu trả lời của em..."></div>';
+   }
+   return '<div class="student-q" style="border-left:5px solid '+(correct?'#16a34a':'#dc2626')+'">'+
+    '<b>Câu '+(i+1)+'.</b> '+esc(q.text)+
+    '<div style="margin-top:9px;font-weight:900;color:'+(correct?'#15803d':'#b91c1c')+'">'+(correct?'✅ ĐÚNG':'❌ SAI')+'</div>'+
+    '<div style="margin-top:5px"><b>Em trả lời:</b> '+(studentAns?esc(studentAns):'<i>Chưa trả lời</i>')+'</div>'+
+    (!correct?'<div style="margin-top:5px;color:#166534"><b>Đáp án đúng:</b> '+esc(q.answer)+'</div>':'')+
+    '</div>';
+ }).join('');
  document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h2><div class="student-meta">'+esc(s.name)+' · Nhóm '+esc(s.group)+'</div>'+
- (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><b>Kết quả lần trước:</b> <span class="student-score">'+sub.score+'/100</span> · '+sub.stars+' ⭐<br>'+esc(sub.praise||'')+'</div>':'')+
- set.questions.map((q,i)=>'<div class="student-q"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<input id="ans'+i+'" class="student-answer" value="'+esc(sub?.answers?.[i]||'')+'" placeholder="Nhập câu trả lời của em..."></div>').join('')+
- '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="submitOnline(\''+a.id+'\','+sid+')">📤 Nộp bài</button></div>';
+ (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><b>KẾT QUẢ:</b> <span class="student-score">'+sub.score+'/100</span> · '+sub.stars+' ⭐<br>'+esc(sub.praise||'')+'<div style="margin-top:8px;font-weight:800">📊 Xem chi tiết từng câu bên dưới</div></div>':'')+
+ resultQuestions+
+ '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="'+(hasResult?'studentMode()':'submitOnline(\''+a.id+'\','+sid+')')+'">'+(hasResult?'← Về danh sách bài':'📤 Nộp bài')+'</button></div>';
 }
 function starsForScore(score,group){
  const n=Number(score)||0;
