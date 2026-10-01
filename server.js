@@ -43,6 +43,7 @@ const STUDENTS=[
 ];
 function now(){return new Date().toISOString();}
 
+let startupPromise;
 const BACKUP_TOKEN=process.env.LAVI_BACKUP_TOKEN||'';
 const BACKUP_REPO=process.env.LAVI_BACKUP_REPO||'vanlavi2015-coder/Class5A';
 const BACKUP_PATH=process.env.LAVI_BACKUP_PATH||'backup/lavi5a.enc.json';
@@ -111,7 +112,7 @@ function seed(){
     for(let i=0;i<STUDENTS.length;i++)ins.run('hs'+STUDENTS[i][0],'student',i+1,bcrypt.hashSync('1234',10));
   }
 }
-awaitableStartup();
+startupPromise=awaitableStartup();
 
 async function awaitableStartup(){try{const restored=await restoreBackupIfEmpty();if(restored)console.log('LAVI: đã khôi phục dữ liệu từ backup GitHub mã hóa.');}catch(e){console.error('LAVI RESTORE ERROR:',e.message);}seed();}
 
@@ -322,4 +323,4 @@ app.get('/api/teacher/overview',auth,(req,res)=>{if(!teacher(req,res))return;con
 app.get('/api/teacher/export',auth,(req,res)=>{if(!teacher(req,res))return;res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Content-Disposition','attachment; filename="lavi5a-backup.json"');res.end(JSON.stringify({version:3,exportedAt:now(),students:students(),state:stateForTeacher()},null,2));});
 app.post('/api/teacher/restore',auth,(req,res)=>{if(!teacher(req,res))return;const data=req.body;if(!data?.state)return res.status(400).json({error:'File sao lưu không hợp lệ'});res.json({ok:true,note:'Hãy dùng PUT /api/state để phục hồi dữ liệu tương thích.'});});
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-app.listen(PORT,()=>console.log(`LAVI 5A Online v3 running on http://localhost:${PORT}`));
+startupPromise.then(()=>app.listen(PORT,()=>console.log(`LAVI 5A Online v3 running on http://localhost:${PORT}`))).catch(e=>{console.error('LAVI STARTUP ERROR:',e);process.exit(1);});
