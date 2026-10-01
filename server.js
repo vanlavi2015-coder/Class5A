@@ -159,7 +159,7 @@ function answersEqual(a,b){
  return !!nx && !!ny && nx.unit===ny.unit && Math.abs(nx.v-ny.v)<1e-9;
 }
 app.post('/api/submit',auth,(req,res)=>{if(req.user.role!=='student')return res.status(403).json({error:'Chỉ tài khoản học sinh được nộp bài'});const {assignmentId,answers}=req.body||{};if(!assignmentId)return res.status(400).json({error:'Thiếu assignmentId'});const arow=db.prepare('SELECT payload,status FROM assignments WHERE id=?').get(String(assignmentId));if(!arow||arow.status!=='Đang giao')return res.status(404).json({error:'Bài không còn được giao'});const a=JSON.parse(arow.payload);const sid=req.user.studentId;const ss=students().find(x=>x.id===sid);const set=(a.sets||[]).find(x=>x.group==='Cả 4 nhóm'||x.group===ss?.group)||(a.sets||[])[0];if(!set?.questions?.length)return res.status(400).json({error:'Bài chưa có câu hỏi'});const qs=set.questions;const aa=answers||{};let correct=0,autoTotal=0,manualTotal=0;for(let i=0;i<qs.length;i++){
- if(qs[i].manual||/cô chấm/i.test(String(qs[i].type||''))){manualTotal++;continue;}
+ if(qs[i].manual||/cô chấm|tự luận|tự\s*luận|essay/i.test(String(qs[i].type||''))){manualTotal++;continue;}
  autoTotal++;
  const accepted=Array.isArray(qs[i].acceptedAnswers)&&qs[i].acceptedAnswers.length?qs[i].acceptedAnswers:[qs[i].answer];
  if(accepted.some(expected=>answersEqual(aa[i],expected))&&String(aa[i]??'').trim()!=='')correct++;
