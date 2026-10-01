@@ -1013,6 +1013,66 @@ function applyExtraRequirements(questions,lesson,group,note){
  }
  return out;
 }
+function finalizeQuestion(q){
+ if(!q)return null;
+ q={...q,text:String(q.text||"").trim(),answer:String(q.answer??"").trim()};
+ const type=String(q.type||"");
+ const t=q.text.toLowerCase();
+ const manual=!!q.manual||/cô chấm|tự luận/i.test(type);
+ const bad=[
+  "người được nhắc đến trong câu","đáp án đúng","câu đúng ngữ pháp và dùng đúng từ",
+  "tùy câu trả lời","nêu đúng nội dung","theo bài học","học sinh xác định theo câu cụ thể"
+ ];
+ // Tự luận/mở: không ép một đáp án mẫu.
+ if(manual || /^(đặt câu|viết|hãy viết|nêu tác dụng|giải thích|trình bày|thực hiện|lập dàn ý)/.test(t)){
+  if(!/^(đặt tính|viết số|viết số đo|viết tỉ số|viết phân số|đặt dấu|viết số thích hợp)/.test(t)){
+   q.manual=true;q.answer="";q.acceptedAnswers=[];q.type=type||"Tự luận – cô chấm";return q;
+  }
+ }
+ // Các câu hỏi liệt kê nhiều ý không được chấm bằng một đáp án đơn.
+ if(/\b(tìm|nêu|xác định|phân loại|liệt kê)\b/.test(t) && /\b(và|các|những)\b/.test(t) && q.answer.includes(";")===false && !q.options){
+  q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
+ }
+ // Đáp án placeholder hoặc rỗng -> cô chấm.
+ if(!q.answer || bad.some(x=>q.answer.toLowerCase()===x)){
+  q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
+ }
+ // Tìm đại từ/từ loại: đáp án phải xuất hiện trong chính ngữ liệu.
+ if(/tìm đại từ|tìm (một )?(danh từ|động từ|tính từ)/.test(t)){
+  if(!q.text.toLowerCase().includes(q.answer.toLowerCase())){
+   q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
+  }
+ }
+ // Trắc nghiệm phải có đủ 4 lựa chọn và đáp án A/B/C/D khớp đúng một lựa chọn.
+ if(q.options || /trắc nghiệm|chọn đáp án|khoanh/.test(type.toLowerCase())){
+  if(!Array.isArray(q.options)||q.options.length!==4||!["A","B","C","D"].includes(q.answer)){
+   q.manual=true;q.answer="";q.options=undefined;q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
+  }
+  const idx=["A","B","C","D"].indexOf(q.answer);
+  if(q.options[idx]==null){
+   q.manual=true;q.answer="";q.options=undefined;q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
+  }
+ }
+ // Không để đáp án A/B/C/D đứng một mình nếu không có phương án.
+ if(/^[ABCD]$/.test(q.answer)&&!Array.isArray(q.options)){
+  q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
+ }
+ // Các câu có nhiều đáp án liệt kê phải được khai báo rõ hoặc chuyển cô chấm.
+ if(q.answer.includes(";") && !q.options && !/lần lượt|gồm|các ý|nhiều đáp án/.test(t)){
+  q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
+ }
+ // Đọc số bằng chữ là dạng cô kiểm tra, không dùng đáp án là chính số.
+ if(/^đọc số/.test(t)){
+  q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Đọc số – cô chấm";return q;
+ }
+ q.manual=false;
+ q.acceptedAnswers=[q.answer,...(Array.isArray(q.acceptedAnswers)?q.acceptedAnswers:[])].map(x=>String(x).trim()).filter(Boolean);
+ q.acceptedAnswers=[...new Set(q.acceptedAnswers)];
+ return q;
+}
+function finalizeQuestionSet(questions){
+ return (questions||[]).map(finalizeQuestion).filter(Boolean).map((q,i)=>({...q,id:i+1}));
+}
 function generate(){
  try{
   const lesson=selectedLesson();
