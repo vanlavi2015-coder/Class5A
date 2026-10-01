@@ -1235,6 +1235,16 @@ function setDraftAnswer(si,qi,value){
  q.acceptedAnswers=[q.answer,...(q.acceptedAnswers||[])].filter(Boolean);
  q.acceptedAnswers=[...new Set(q.acceptedAnswers)];
 }
+function saveDraftAnswer(si,qi){
+ if(!draft?.sets?.[si]?.questions?.[qi])return;
+ const answerEl=document.getElementById("draftAnswer_"+si+"_"+qi);
+ const accEl=document.getElementById("draftAccepted_"+si+"_"+qi);
+ setDraftAnswer(si,qi,answerEl?.value||"");
+ setDraftAccepted(si,qi,accEl?.value||"");
+ const msg=document.getElementById("draftAnswerMsg_"+si+"_"+qi);
+ if(msg)msg.textContent="✅ Đã lưu đáp án Câu "+(qi+1)+" vào bản nháp.";
+ toast("✅ Đã lưu đáp án Câu "+(qi+1));
+}
 function setDraftAccepted(si,qi,value){
  if(!draft?.sets?.[si]?.questions?.[qi])return;
  const q=draft.sets[si].questions[qi];
@@ -1253,10 +1263,11 @@ function renderDraft(){
  <label class="sub" style="display:block;font-weight:800">✏️ Nội dung câu hỏi (cô có thể sửa):</label>
  <textarea oninput="setDraftText(${si},${qi},this.value)" style="width:100%;box-sizing:border-box;margin-top:4px;min-height:76px;resize:vertical">${esc(q.text)}</textarea>
  <label class="sub" style="display:block;margin-top:9px">Đáp án chuẩn (cô kiểm tra/sửa):</label>
- <input value="${esc(q.answer)}" onchange="setDraftAnswer(${si},${qi},this.value)" style="width:100%;box-sizing:border-box;margin-top:4px">
+ <input id="draftAnswer_${si}_${qi}" value="${esc(q.answer)}" oninput="setDraftAnswer(${si},${qi},this.value)" style="width:100%;box-sizing:border-box;margin-top:4px">
  <label class="sub" style="display:block;margin-top:8px">Đáp án/cách trả lời khác vẫn chấp nhận <span style="font-weight:400">(ngăn cách bằng dấu ;)</span>:</label>
- <input value="${esc((q.acceptedAnswers||[]).filter(a=>a!==q.answer).join('; '))}" onchange="setDraftAccepted(${si},${qi},this.value)" placeholder="Ví dụ: 0,25; 25/100" style="width:100%;box-sizing:border-box;margin-top:4px">
- <div class="sub" style="margin-top:5px">LAVI sẽ chấm theo đáp án cô đã duyệt, không tự ý thay đổi đáp án sau khi giao.</div>
+ <input id="draftAccepted_${si}_${qi}" value="${esc((q.acceptedAnswers||[]).filter(a=>a!==q.answer).join('; '))}" oninput="setDraftAccepted(${si},${qi},this.value)" placeholder="Ví dụ: 0,25; 25/100" style="width:100%;box-sizing:border-box;margin-top:4px">
+ <button class="btn success" style="margin-top:8px" onclick="saveDraftAnswer(${si},${qi})">💾 Lưu đáp án Câu ${qi+1}</button>
+ <div id="draftAnswerMsg_${si}_${qi}" class="sub" style="margin-top:5px">✏️ Cô nhập đáp án; LAVI lưu ngay vào bản nháp. Khi bấm <b>📤 Giao bài</b>, đáp án này mới được áp dụng cho học sinh.</div>
  </div>`).join("")}</div>`).join("")}
  <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">💾 Lưu nháp</button></div></div>`
 }
