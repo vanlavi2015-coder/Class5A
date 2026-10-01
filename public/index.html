@@ -35,7 +35,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
 .student-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.student-kpi{background:#fff;border:1px solid #e4e7ec;border-radius:16px;padding:14px}.student-kpi .big{font-size:25px;font-weight:900;margin-top:4px}.student-kpi .small{font-size:12px;color:#667085}
 .student-tabs{display:flex;gap:8px;margin:14px 0;overflow:auto}.student-tab{border:1px solid #dbe2f0;background:#fff;border-radius:999px;padding:9px 14px;font-weight:800;white-space:nowrap}.student-tab.active{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}
 .student-list{display:grid;gap:12px}.student-assignment{background:#fff;border:1px solid #e4e7ec;border-radius:18px;padding:16px;box-shadow:0 3px 12px rgba(16,24,40,.04)}.student-assignment h3{margin:0 0 5px;font-size:17px}.student-meta{font-size:12px;color:#667085}.student-status{display:inline-flex;margin-top:9px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:850}.student-status.pending{background:#fff7ed;color:#9a3412}.student-status.done{background:#ecfdf3;color:#067647}.student-q{background:#f8fafc;border:1px solid #eef2f6;border-radius:14px;padding:13px;margin:10px 0}.student-q b{line-height:1.5}.student-answer{margin-top:8px}.student-footer{margin-top:15px;text-align:center;color:#667085;font-size:12px}
-.student-score{font-size:34px;font-weight:950;color:#3730a3}.student-back{margin-bottom:12px}
+.gif-card{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:14px;background:#f8fafc;text-align:center}.gif-card img{max-width:100%;max-height:220px;border-radius:10px;object-fit:contain}.gif-card a{color:#4338ca;text-decoration:none;font-weight:700}.gif-preview{margin-top:8px}.student-score{font-size:34px;font-weight:950;color:#3730a3}.student-back{margin-bottom:12px}
 @media(max-width:650px){.student-shell{padding:10px 10px 28px}.student-top{padding:11px}.student-actions .student-btn:not(.logout){display:none}.student-kpis{grid-template-columns:1fr 1fr}.student-kpis .student-kpi:last-child{grid-column:1/-1}.student-hero{padding:17px}.student-hero h1{font-size:21px}}
 </style></head>
 <body>
@@ -94,6 +94,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
     <div class="field"><label>Hạn nộp</label><input id="cDue" type="datetime-local"></div>
    </div>
    <div class="field"><label>Yêu cầu thêm</label><textarea id="cNote" placeholder="Ví dụ: Có số liệu cụ thể, ưu tiên bài toán thực tế; không vượt phạm vi bài đã chọn."></textarea></div>
+   <div class="field"><label>🎞️ GIF minh họa từ Gifhut</label><input id="cGifUrl" type="url" placeholder="Dán liên kết GIF/ảnh từ Gifhut (https://...) " oninput="previewGif(this.value)"><div id="gifPreview" class="gif-preview"></div><div class="sub">GIF là tùy chọn. Nếu Gifhut cung cấp liên kết trực tiếp tới ảnh/GIF, LAVI sẽ hiển thị ngay trong bài.</div></div>
    <div class="row"><button class="btn primary" onclick="generate()">✨ Tạo bài</button><button class="btn" onclick="clearDraft()">Xóa nháp</button></div>
   </div>
   <div id="draft" style="margin-top:14px"></div>
@@ -311,6 +312,18 @@ function makeQuestions(lesson,group,count){
  }
  return qs;
 }
+function safeGifUrl(v){
+ try{const u=new URL(String(v||"").trim());return /^https?:$/.test(u.protocol)?u.href:""}catch(e){return""}
+}
+function previewGif(v){
+ const url=safeGifUrl(v),el=document.getElementById("gifPreview");
+ if(!el)return;
+ el.innerHTML=url?'<div class="gif-card"><img src="'+esc(url)+'" alt="GIF minh họa" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"><div style="display:none" class="sub">Liên kết đã lưu nhưng không phải liên kết ảnh/GIF trực tiếp. Học sinh có thể mở liên kết.</div></div>':'';
+}
+function gifBlock(url){
+ const u=safeGifUrl(url); if(!u)return "";
+ return '<div class="gif-card"><img src="'+esc(u)+'" alt="GIF minh họa" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"><div style="display:none" class="sub">Không hiển thị được ảnh trực tiếp; <a href="'+esc(u)+'" target="_blank" rel="noopener">Mở GIF từ Gifhut ↗</a></div><div class="sub">🎞️ GIF minh họa · <a href="'+esc(u)+'" target="_blank" rel="noopener">Mở từ Gifhut ↗</a></div></div>';
+}
 function generate(){
  try{
   const lesson=selectedLesson();
@@ -318,6 +331,7 @@ function generate(){
   const count=Math.max(3,Math.min(15,Number(document.getElementById("cCount").value)||8));
   const due=document.getElementById("cDue").value;
   const note=(document.getElementById("cNote").value||"").trim();
+  const gifUrl=safeGifUrl(document.getElementById("cGifUrl")?.value);
   if(!lesson) return toast("Chưa có bài học để tạo bài.");
   const groups=group==="Cả 4 nhóm"?GROUPS:[group];
   const sets=groups.map(g=>({group:g,questions:makeQuestions(lesson,g,count)}));
@@ -332,6 +346,7 @@ function generate(){
    count,
    due:due||"",
    note,
+   gifUrl,
    sets,
    status:"Nháp",
    createdAt:new Date().toISOString()
@@ -346,7 +361,7 @@ function generate(){
 }
 function renderDraft(){
  if(!draft)return "";
- return `<div class="card"><h2>📝 Bản nháp: ${esc(draft.subject)} – ${esc(draft.lesson)}</h2><p><span class="pill blue">Tuần ${esc(draft.week)}</span> <span class="pill yellow">${esc(draft.group)}</span></p>
+ return `<div class="card"><h2>📝 Bản nháp: ${esc(draft.subject)} – ${esc(draft.lesson)}</h2><p><span class="pill blue">Tuần ${esc(draft.week)}</span> <span class="pill yellow">${esc(draft.group)}</span></p>${gifBlock(draft.gifUrl)}
  ${draft.sets.map(set=>`<div class="assignment"><h3>${esc(set.group)} · ${difficulty(set.group)}</h3>${set.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">Đáp án/gợi ý: ${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}
  <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">💾 Lưu nháp</button></div></div>`
 }
@@ -360,11 +375,11 @@ function renderAssignments(id){
  el.innerHTML=arr.map(a=>{
    const total=a.sets.reduce((n,s)=>n+studentsForGroup(s.group).length,0);
    const submitted=Object.keys(state.submissions).filter(k=>k.startsWith(a.id+"_")).length;
-   return `<div class="assignment"><h3>${esc(a.subject)} – ${esc(a.lesson)}</h3><p><span class="pill good">Đang giao</span> <span class="pill blue">Tuần ${esc(a.week)}</span> · ${a.sets.map(s=>s.group).join(" · ")} · ${submitted}/${total} lượt nộp</p><div class="bar"><i style="width:${total?submitted/total*100:0}%"></i></div><div class="row" style="margin-top:9px"><button class="btn primary" onclick="viewAssignment('${a.id}')">Xem bài</button><button class="btn" onclick="remind('${a.id}')">🔔 Nhắc</button><button class="btn danger" onclick="removeAssignment('${a.id}')">Xóa</button></div></div>`
+   return `<div class="assignment"><h3>${esc(a.subject)} – ${esc(a.lesson)}</h3>${gifBlock(a.gifUrl)}<p><span class="pill good">Đang giao</span> <span class="pill blue">Tuần ${esc(a.week)}</span> · ${a.sets.map(s=>s.group).join(" · ")} · ${submitted}/${total} lượt nộp</p><div class="bar"><i style="width:${total?submitted/total*100:0}%"></i></div><div class="row" style="margin-top:9px"><button class="btn primary" onclick="viewAssignment('${a.id}')">Xem bài</button><button class="btn" onclick="remind('${a.id}')">🔔 Nhắc</button><button class="btn danger" onclick="removeAssignment('${a.id}')">Xóa</button></div></div>`
  }).join("")
 }
 function viewAssignment(id){
- const a=state.assignments.find(x=>x.id===id);document.getElementById("modalBox").innerHTML=`<h2>${esc(a.subject)} – ${esc(a.lesson)}</h2>${a.sets.map(s=>`<div class="assignment"><h3>${s.group}</h3>${s.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}<button class="btn" onclick="closeModal()">Đóng</button>`;document.getElementById("modal").classList.add("show")
+ const a=state.assignments.find(x=>x.id===id);document.getElementById("modalBox").innerHTML=`<h2>${esc(a.subject)} – ${esc(a.lesson)}</h2>${gifBlock(a.gifUrl)}${a.sets.map(s=>`<div class="assignment"><h3>${s.group}</h3>${s.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}<button class="btn" onclick="closeModal()">Đóng</button>`;document.getElementById("modal").classList.add("show")
 }
 function remind(id){const a=state.assignments.find(x=>x.id===id);let pending=0;a.sets.forEach(s=>pending+=studentsForGroup(s.group).filter(st=>!state.submissions[id+"_"+st.id]).length);toast(`Đã tạo lời nhắc cho ${pending} học sinh chưa nộp`)}
 function removeAssignment(id){if(confirm("Xóa bài giao này?")){state.assignments=state.assignments.filter(a=>a.id!==id);save()}}
@@ -411,7 +426,7 @@ function renderStudentHome(){
   '<div class="student-hero"><h1>👋 Chào '+esc(s.name)+'!</h1><p>Hôm nay em có '+active.length+' bài tập cần hoàn thành. Cố gắng nhé!</p></div>'+
   '<div class="student-kpis"><div class="student-kpi">⭐<div class="big">'+(state.stars[sid]||0)+'</div><div class="small">Sao của em</div></div><div class="student-kpi">📚<div class="big">'+active.length+'</div><div class="small">Bài được giao</div></div><div class="student-kpi">✅<div class="big">'+done+'/'+active.length+'</div><div class="small">Đã hoàn thành</div></div></div>'+
   '<div class="student-tabs"><button class="student-tab active">📚 Bài của em</button><button class="student-tab" onclick="studentShowNotice()">🔔 Thông báo'+(unread.length?' ('+unread.length+')':'')+'</button></div>'+
-  '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3><div class="student-meta">Tuần '+esc(a.week)+' · Nhóm '+esc(s.group)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐':'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
+  '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3>'+gifBlock(a.gifUrl)+'<div class="student-meta">Tuần '+esc(a.week)+' · Nhóm '+esc(s.group)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐':'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
 }
 function studentShowNotice(){
  const sid=LAVI.user.studentId,ns=(state.notifications||[]).filter(n=>n.studentId===sid);
