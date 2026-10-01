@@ -43,9 +43,9 @@ const STUDENTS=[
 function now(){return new Date().toISOString();}
 
 const BACKUP_TOKEN=process.env.LAVI_BACKUP_TOKEN||'';
-const BACKUP_REPO=process.env.LAVI_BACKUP_REPO||'';
+const BACKUP_REPO=process.env.LAVI_BACKUP_REPO||'vanlavi2015-coder/Class5A';
 const BACKUP_PATH=process.env.LAVI_BACKUP_PATH||'backup/lavi5a.enc.json';
-const BACKUP_BRANCH=process.env.LAVI_BACKUP_BRANCH||'main';
+const BACKUP_BRANCH=process.env.LAVI_BACKUP_BRANCH||'lavi-data';
 const BACKUP_KEY=String(process.env.LAVI_BACKUP_KEY||'');
 let backupQueue=Promise.resolve();
 function backupEnabled(){return !!(BACKUP_TOKEN&&BACKUP_REPO&&BACKUP_KEY);}
