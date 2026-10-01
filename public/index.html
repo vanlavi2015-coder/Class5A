@@ -403,7 +403,7 @@ function makeQuestions(lesson,group,count,note="",seed=0){
  const wantWord=/bài toán thực tế|thực tế|có lời văn/.test(req);
 
  function add(text,answer,type,options){
-  const q={id:qs.length+1,text,answer,type};
+  const q={id:qs.length+1,text,answer,type,lessonTitle:title};
   if(options) q.options=options;
   qs.push(q);
  }
@@ -1245,6 +1245,7 @@ function applyExtraRequirements(questions,lesson,group,note){
 function finalizeQuestion(q){
  if(!q)return null;
  q={...q,text:String(q.text||"").trim(),answer:String(q.answer??"").trim()};
+ const lessonTitle=String(q.lessonTitle||"").toLowerCase().replace(/[\u00a0\u2000-\u200b]/g," ").replace(/\s+/g," ").trim();
  const type=String(q.type||"");
  const t=q.text.toLowerCase();
  const manual=!!q.manual||/cô chấm|tự luận/i.test(type);
@@ -1296,7 +1297,7 @@ function finalizeQuestion(q){
  }
   // Cổng an toàn: Bài 8/Bài 9 đầu HKI chỉ được phép HỖN SỐ + ĐỔI ĐƠN VỊ ĐO.
   // Nếu câu đã được sinh sai dạng hình học, loại ngay trước khi lưu/giao bài.
-  if(/bài\s*(?:8|9)\b/.test(title)
+  if(/bài\s*(?:8|9)\b/.test(lessonTitle)
      && /hình\s*(?:tam giác|thang)|đáy lớn|đáy bé|chiều cao hình thang/.test(t)){
    q.manual=true;q.answer="";q.acceptedAnswers=[];q.type="Tự luận – cô chấm";return q;
   }
