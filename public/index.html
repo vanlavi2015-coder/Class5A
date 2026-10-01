@@ -814,7 +814,7 @@ function renderStudentHome(){
   '<div class="student-hero"><h1>👋 Chào '+esc(s.name)+'!</h1><p>Hôm nay em có '+active.length+' bài tập cần hoàn thành. Cố gắng nhé!</p></div>'+
   '<div class="student-kpis"><div class="student-kpi">⭐<div class="big">'+(state.stars[sid]||0)+'</div><div class="small">Sao của em</div></div><div class="student-kpi">📚<div class="big">'+active.length+'</div><div class="small">Bài được giao</div></div><div class="student-kpi">✅<div class="big">'+done+'/'+active.length+'</div><div class="small">Đã hoàn thành</div></div></div>'+
   '<div class="student-tabs"><button class="student-tab active">📚 Bài của em</button><button class="student-tab" onclick="studentShowNotice()">🔔 Thông báo'+(unread.length?' ('+unread.length+')':'')+'</button></div>'+
-  '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3>'+gifBlock(a.gifUrl)+'<div class="student-meta">Tuần '+esc(a.week)+' · Nhóm '+esc(s.group)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐':'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
+  '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3>'+gifBlock(a.gifUrl)+'<div class="student-meta">Tuần '+esc(a.week)+' · Nhóm '+esc(s.group)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?(sub.score==null?'📝 Đã nộp · Chờ cô chấm':'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐'):'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
 }
 function studentShowNotice(){
  const sid=LAVI.user.studentId,ns=(state.notifications||[]).filter(n=>n.studentId===sid);
@@ -826,11 +826,11 @@ function openStudentAssignment(aid){
  const sid=LAVI.user.studentId,s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid),set=findSet(a,s.group),sub=state.submissions[aid+'_'+sid];
  if(!a||!set)return;
  const hasResult=!!sub;
- const resultTotal=Number(sub?.total)||set.questions.length;
+ const manualCount=set.questions.filter(q=>q.manual||/cô chấm/i.test(String(q.type||''))).length; const resultTotal=Number(sub?.autoTotal)||Math.max(0,(Number(sub?.total)||set.questions.length)-manualCount);
  const resultCorrect=Number.isFinite(Number(sub?.correct))?Number(sub.correct):set.questions.reduce((n,q,i)=>n+(sub?.answers?.[i]&&normalize(sub.answers[i])===normalize(q.answer)?1:0),0);
  const resultWrong=Math.max(0,resultTotal-resultCorrect);
- const resultCorrectPercent=Number.isFinite(Number(sub?.correctPercent))?Number(sub.correctPercent):Math.round(resultCorrect/resultTotal*100);
- const resultWrongPercent=Number.isFinite(Number(sub?.wrongPercent))?Number(sub.wrongPercent):100-resultCorrectPercent;
+ const resultCorrectPercent=Number.isFinite(Number(sub?.correctPercent))?Number(sub.correctPercent):(resultTotal?Math.round(resultCorrect/resultTotal*100):null);
+ const resultWrongPercent=Number.isFinite(Number(sub?.wrongPercent))?Number(sub.wrongPercent):(resultTotal?100-resultCorrectPercent:null);
  const resultQuestions=set.questions.map((q,i)=>{
    const studentAns=String(sub?.answers?.[i]??'').trim();
    const accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];
