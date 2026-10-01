@@ -1389,19 +1389,8 @@ async function saveTeacherGrade(aid,sid){
  const set=a?.sets?.find(z=>z.group===st?.group)||a?.sets?.find(z=>z.group==="Cả 4 nhóm")||a?.sets?.[0],qs=set?.questions||[];
  const questionGrades={};let hasManual=false;
  qs.forEach((q,i)=>{if(q.manual||/cô chấm/i.test(String(q.type||""))){const el=document.getElementById("gradeQ"+i);if(el&&el.value!==""){questionGrades[i]={score:Math.max(0,Math.min(10,Number(el.value))),max:10};hasManual=true;}}});
- let finalScore=scoreEl?Number(scoreEl.value):Number(x.score)||0;
- if(hasManual){
-  let earned=0;
-  qs.forEach((q,i)=>{
-   const manual=!!q.manual||/cô chấm/i.test(String(q.type||""));
-   if(manual)earned+=Number(questionGrades[i]?.score||0)/10;
-   else{
-    const given=x.answers?.[i]??"",accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];
-    if(accepted.some(v=>answersEqual(given,v))&&String(given).trim()!=="")earned+=1;
-   }
-  });
-  finalScore=Math.round(earned/Math.max(1,qs.length)*100);
- }
+ let finalScore=scoreEl&&scoreEl.value!==""?Number(scoreEl.value):Number(x.score)||0;
+ if(!Number.isFinite(finalScore))finalScore=Number(x.score)||0;
  const stars=starsEl?Math.max(0,Math.min(10,Number(starsEl.value)||0)):Number(x.stars)||0;
  const praise=praiseEl?String(praiseEl.value||""):String(x.praise||"");
  try{
@@ -1411,7 +1400,8 @@ async function saveTeacherGrade(aid,sid){
   state.submissions[aid+"_"+sid]=j.submission;
   state.stars[sid]=(state.stars[sid]||0)-(Number(x.stars)||0)+stars;
   localStorage.setItem("lavi5a_real",JSON.stringify(state));
-  renderAll();viewSubmission(aid,sid);toast("✅ Đã lưu kết quả chấm");
+  try{await loadOnlineState();}catch(_){}
+  viewSubmission(aid,sid);toast("✅ Đã lưu kết quả chấm: "+finalScore+"/100 · "+stars+" ⭐");
  }catch(e){toast(e.message)}
 }
 function addSchedule(){state.schedules.push({day:document.getElementById("sDay").value,time:document.getElementById("sTime").value,subject:document.getElementById("sSubject").value,note:document.getElementById("sNote").value});save();toast("Đã thêm lịch")}
