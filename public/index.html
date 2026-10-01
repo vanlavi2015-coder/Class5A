@@ -1697,7 +1697,7 @@ function renderStudentHome(){
   '<div class="student-hero"><h1>👋 Chào '+esc(s.name)+'!</h1><p>Hôm nay em có '+active.length+' bài tập cần hoàn thành. Cố gắng nhé!</p></div>'+
   '<div class="student-kpis"><div class="student-kpi">⭐<div class="big">'+(state.stars[sid]||0)+'</div><div class="small">Sao của em</div></div><div class="student-kpi">📚<div class="big">'+active.length+'</div><div class="small">Bài được giao</div></div><div class="student-kpi">✅<div class="big">'+done+'/'+active.length+'</div><div class="small">Đã hoàn thành</div></div></div>'+
   '<div class="student-tabs"><button class="student-tab active">📚 Bài của em</button><button class="student-tab" onclick="studentShowNotice()">🔔 Thông báo'+(unread.length?' ('+unread.length+')':'')+'</button></div>'+
-  '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3>'+gifBlock(a.gifUrl)+'<div class="student-meta">Tuần '+esc(a.week)+' · Nhóm '+esc(s.group)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?(sub.score==null?'📝 Đã nộp · Chờ cô chấm':'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐'):'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
+  '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3>'+gifBlock(a.gifUrl)+'<div class="student-meta">Tuần '+esc(a.week)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?(sub.score==null?'📝 Đã nộp · Chờ cô chấm':'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐'):'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
 }
 function studentShowNotice(){
  document.body.classList.add('student-mode');
@@ -1736,7 +1736,7 @@ function openStudentAssignment(aid){
     (!correct?'<div style="margin-top:5px;color:#166534"><b>Đáp án đúng:</b> '+esc(q.answer)+'</div>':'')+
     '</div>';
  }).join('');
- document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h2><div class="student-meta">'+esc(s.name)+' · Nhóm '+esc(s.group)+'</div>'+
+ document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h2><div class="student-meta">'+esc(s.name)+'</div>'+
  (sub?'<div style="margin:13px 0;padding:13px;background:#ecfdf3;border-radius:13px"><div style="font-size:18px;font-weight:900;color:#166534;margin-bottom:7px">💬 '+esc(sub.praise||'Cố gắng lên em nhé!')+'</div><b>KẾT QUẢ:</b> <span class="student-score">'+(sub.score==null?'CHỜ CÔ CHẤM':sub.score+'/100')+'</span> · '+sub.stars+' ⭐'+
  '<div style="margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="padding:9px;background:#dcfce7;border-radius:10px"><b>✅ Đúng: '+resultCorrect+'/'+resultTotal+'</b><br>'+resultCorrectPercent+'%</div><div style="padding:9px;background:#fee2e2;border-radius:10px"><b>❌ Sai: '+resultWrong+'/'+resultTotal+'</b><br>'+resultWrongPercent+'%</div></div>'+
  '<div style="margin-top:8px;font-weight:800">📊 '+resultCorrectPercent+'% câu đúng · '+resultWrongPercent+'% câu sai</div><div style="margin-top:5px">'+esc(sub.praise||'')+'</div></div>':'')+
@@ -1964,7 +1964,7 @@ async function loadOverallRace(){
   const r=await fetch('/api/overall-leaderboard',{headers:{Authorization:'Bearer '+LAVI.token}});
   const j=await r.json();if(!r.ok)throw new Error(j.error||'Không tải được xếp hạng tổng');
   const rows=j.leaderboard||[],max=Math.max(1,...rows.map(x=>Number(x.totalPoints)||0));
-  box.innerHTML='<div style="overflow:auto"><table class="race-table"><thead><tr><th>Hạng</th><th>Học sinh</th><th>Nhóm</th><th>Bài tập</th><th>Trò chơi</th><th>Tổng điểm</th></tr></thead><tbody>'+rows.map(x=>'<tr class="'+(LAVI.user?.role==='student'&&x.studentId===LAVI.user.studentId?'race-me':'')+'"><td class="race-medal">'+medal(x.rank)+'</td><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.group)+'</td><td>'+x.assignmentPoints+'</td><td>'+x.gamePoints+'</td><td><b>'+x.totalPoints+'</b><div class="race-track"><i style="width:'+Math.max(4,Math.min(100,(Number(x.totalPoints)||0)/max*100))+'%"></i></div></td></tr>').join('')+'</tbody></table></div>';
+  box.innerHTML='<div style="overflow:auto"><table class="race-table"><thead><tr><th>Hạng</th><th>Học sinh</th><th>Bài tập</th><th>Trò chơi</th><th>Tổng điểm</th></tr></thead><tbody>'+rows.map(x=>'<tr class="'+(LAVI.user?.role==='student'&&x.studentId===LAVI.user.studentId?'race-me':'')+'"><td class="race-medal">'+medal(x.rank)+'</td><td><b>'+esc(x.name)+'</b></td><td>'+x.assignmentPoints+'</td><td>'+x.gamePoints+'</td><td><b>'+x.totalPoints+'</b><div class="race-track"><i style="width:'+Math.max(4,Math.min(100,(Number(x.totalPoints)||0)/max*100))+'%"></i></div></td></tr>').join('')+'</tbody></table></div>';
  }catch(e){box.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
 async function loadRace(){
@@ -1983,7 +1983,7 @@ async function loadRace(){
   document.getElementById('raceTop').textContent=rows.length?((rows[0].score??0)+' điểm'):'–';
   document.getElementById('raceStatus').textContent=rows.length===total?'🎉 Cả lớp đã hoàn thành':'⏳ Đang thi';
   const max=Math.max(1,...rows.map(x=>Number(x.score)||0));
-  document.getElementById('raceBoard').innerHTML=rows.length?'<div style="overflow:auto"><table class="race-table"><thead><tr><th>Hạng</th><th>Học sinh</th><th>Nhóm</th><th>Điểm</th><th>Sao</th><th>Tiến độ</th></tr></thead><tbody>'+rows.map((x,i)=>'<tr class="'+(LAVI.user?.role==='student'&&x.studentId===LAVI.user.studentId?'race-me':'')+'"><td class="race-medal">'+medal(i+1)+'</td><td><b>'+esc(x.name)+'</b>'+(LAVI.user?.role==='student'&&x.studentId===LAVI.user.studentId?' <span class="onlineBadge">Em</span>':'')+'</td><td>'+esc(x.group)+'</td><td><b>'+((x.score??0))+'</b></td><td>'+Number(x.stars||0)+' ⭐</td><td><div class="race-track"><i style="width:'+Math.max(4,Math.min(100,(Number(x.score)||0)/max*100))+'%"></i></div></td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Chưa có học sinh nộp bài.</div>';
+  document.getElementById('raceBoard').innerHTML=rows.length?'<div style="overflow:auto"><table class="race-table"><thead><tr><th>Hạng</th><th>Học sinh</th><th>Điểm</th><th>Sao</th><th>Tiến độ</th></tr></thead><tbody>'+rows.map((x,i)=>'<tr class="'+(LAVI.user?.role==='student'&&x.studentId===LAVI.user.studentId?'race-me':'')+'"><td class="race-medal">'+medal(i+1)+'</td><td><b>'+esc(x.name)+'</b>'+(LAVI.user?.role==='student'&&x.studentId===LAVI.user.studentId?' <span class="onlineBadge">Em</span>':'')+'</td><td><b>'+((x.score??0))+'</b></td><td>'+Number(x.stars||0)+' ⭐</td><td><div class="race-track"><i style="width:'+Math.max(4,Math.min(100,(Number(x.score)||0)/max*100))+'%"></i></div></td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Chưa có học sinh nộp bài.</div>';
  }catch(e){document.getElementById('raceBoard').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
 async function studentLeaderboard(){
@@ -2004,7 +2004,7 @@ async function studentLeaderboard(){
   const rankCard=document.createElement('div');
   rankCard.className='student-assignment';
   rankCard.style.marginTop='12px';
-  rankCard.innerHTML='<h3>🥇 Bảng xếp hạng 5A</h3>'+rows.map(x=>'<div class="studentcard '+(x.studentId===meId?'race-me':'')+'"><span>'+medal(x.rank)+' <b>'+esc(x.name)+'</b><small style="display:block;color:#64748b">'+esc(x.group)+'</small></span><b>'+x.totalPoints+' điểm</b></div>').join('');
+  rankCard.innerHTML='<h3>🥇 Bảng xếp hạng 5A</h3>'+rows.map(x=>'<div class="studentcard '+(x.studentId===meId?'race-me':'')+'"><span>'+medal(x.rank)+' <b>'+esc(x.name)+'</b></span><b>'+x.totalPoints+' điểm</b></div>').join('');
   const gameCard=document.querySelector('#studentContent .student-assignment');
   content.insertBefore(rankCard,gameCard);
  }catch(e){
