@@ -76,7 +76,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
   </div>
   <div class="grid2" style="margin-top:14px">
    <div class="hero"><div>⭐ Tổng sao của lớp</div><div class="big" id="heroStars">0 ⭐</div><div style="opacity:.85">Tặng sao theo mức hoàn thành và sự tiến bộ.</div></div>
-   <div class="card"><h2>⚡ Giao bài nhanh</h2><p class="sub">Chọn phạm vi trong chương trình rồi tạo bài phân hóa theo Tốt – Khá – Trung bình – Yếu.</p><div class="row"><button class="btn primary" onclick="show('create')">＋ Tạo bài</button><button class="btn" onclick="show('race')">🏁 Trò chơi & Xếp hạng</button></div></div>
+   <div class="card"><h2>⚡ Giao bài nhanh</h2><p class="sub">Chọn phạm vi rồi giao bài theo Tốt – Khá – Trung bình – Yếu, hoặc chọn Tất cả để giao cùng một đề cho cả lớp.</p><div class="row"><button class="btn primary" onclick="show('create')">＋ Tạo bài</button><button class="btn" onclick="show('race')">🏁 Trò chơi & Xếp hạng</button></div></div>
   </div>
   <div class="grid2" style="margin-top:14px">
    <div class="card"><h2>🎯 Nhóm học tập</h2><div id="groupSummary"></div></div>
@@ -94,7 +94,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
     <div class="field"><label>Bài học</label><select id="cLesson"></select></div>
    </div>
    <div class="grid3">
-    <div class="field"><label>Nhóm học sinh</label><select id="cGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option></select></div>
+    <div class="field"><label>Đối tượng giao bài</label><select id="cGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option>Tất cả</option></select></div>
     <div class="field"><label>Số câu</label><input id="cCount" type="number" min="3" max="15" value="8"></div>
     <div class="field"><label>Hạn nộp</label><input id="cDue" type="datetime-local"></div>
    </div>
@@ -302,7 +302,7 @@ async function saveStudentAvatar(avatar){
   syncStudentAvatar(); closeModal(); toast('✅ Đã đổi ảnh đại diện!');
  }catch(e){toast(e.message)}
 }
-function studentsForGroup(g){return g==="Cả 4 nhóm"?STUDENTS:STUDENTS.filter(s=>s.group===g)}
+function studentsForGroup(g){return g==="Cả 4 nhóm"||g==="Tất cả"?STUDENTS:STUDENTS.filter(s=>s.group===g)}
 function subjectList(){return [...new Set(CURRICULUM.map(x=>x.subject))]}
 function fillSubjects(){
  const s=document.getElementById("cSubject"), ss=document.getElementById("sSubject");
@@ -1185,12 +1185,20 @@ function generate(){
   const gifUrl=safeGifUrl(document.getElementById("cGifUrl")?.value);
   if(!lesson) return toast("Chưa có bài học để tạo bài.");
   const groups=group==="Cả 4 nhóm"?GROUPS:[group];
-  const sets=groups.map(g=>{
-   const generated=makeQuestions(lesson,g,count,note);
-   const customized=applyExtraRequirements(generated,lesson,g,note);
+  let sets;
+  if(group==="Tất cả"){
+   const generated=makeQuestions(lesson,"Khá",count,note);
+   const customized=applyExtraRequirements(generated,lesson,"Khá",note);
    const questions=finalizeQuestionSet(customized);
-   return {group:g,questions};
-  });
+   sets=[{group:"Tất cả",questions}];
+  }else{
+   sets=groups.map(g=>{
+    const generated=makeQuestions(lesson,g,count,note);
+    const customized=applyExtraRequirements(generated,lesson,g,note);
+    const questions=finalizeQuestionSet(customized);
+    return {group:g,questions};
+   });
+  }
   draft={
    id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
    subject:lesson.subject,
@@ -1209,7 +1217,7 @@ function generate(){
   };
   document.getElementById("draft").innerHTML=renderDraft();
   document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});
-  toast("Đã tạo bản nháp "+sets.length+" nhóm");
+  toast(group==="Tất cả"?"Đã tạo bài chung cho cả lớp":"Đã tạo bản nháp "+sets.length+" nhóm");
  }catch(e){
   console.error(e);
   toast("Không tạo được bài: "+(e.message||"lỗi không xác định"));
@@ -1236,7 +1244,7 @@ function setDraftAccepted(si,qi,value){
 function renderDraft(){
  if(!draft)return "";
  return `<div class="card"><h2>📝 Bản nháp: ${esc(draft.subject)} – ${esc(draft.lesson)}</h2>
- <p><span class="pill blue">Tuần ${esc(draft.week)}</span> <span class="pill yellow">${esc(draft.group)}</span></p>
+ <p><span class="pill blue">Tuần ${esc(draft.week)}</span> <span class="pill yellow">${esc(draft.group)}</span>${draft.group==="Tất cả"?' <span class="pill good">👥 Chung cả lớp</span>':""}</p>
  ${gifBlock(draft.gifUrl)}
  ${draft.note?`<div class="sub" style="margin:8px 0;padding:9px;background:#f5f3ff;border-radius:9px">⚙️ Yêu cầu đã áp dụng: ${esc(draft.note)}</div>`:""}
  <div class="sub" style="margin:10px 0;padding:10px;background:#ecfdf3;border-radius:10px">✅ <b>Cô duyệt đáp án trước khi giao.</b> Nếu học sinh trả lời đúng bằng cách khác, LAVI sẽ đối chiếu các đáp án được chấp nhận và giá trị tương đương.</div>
@@ -1260,7 +1268,7 @@ async function publish(){
   await save();
   draft=null;
   document.getElementById("draft").innerHTML="";
-  toast("✅ Đã giao bài theo nhóm trình độ");
+  toast(item.group==="Tất cả"?"✅ Đã giao bài chung cho cả lớp":"✅ Đã giao bài theo nhóm trình độ");
  }catch(e){
   state.assignments=state.assignments.filter(a=>a.id!==item.id);
   localStorage.setItem("lavi5a_real",JSON.stringify(state));
@@ -1271,7 +1279,7 @@ async function publish(){
 }
 function saveLibrary(){if(!draft)return;draft.status="Kho bài";state.assignments.unshift({...draft});draft=null;document.getElementById("draft").innerHTML="";save();toast("Đã lưu vào kho")}
 function clearDraft(){draft=null;document.getElementById("draft").innerHTML=""}
-function findSet(a,g){return a.sets.find(x=>x.group===g)||a.sets[0]}
+function findSet(a,g){return a.sets.find(x=>x.group===g)||a.sets.find(x=>x.group==="Tất cả")||a.sets.find(x=>x.group==="Cả 4 nhóm")||a.sets[0]}
 function renderAssignments(id){
  const el=document.getElementById(id), arr=state.assignments.filter(a=>a.status==="Đang giao");
  if(!arr.length){el.innerHTML='<div class="empty">Chưa có bài đang giao.</div>';return}
@@ -1499,7 +1507,7 @@ function studentMode(){
 }
 function renderStudentHome(){
  const sid=LAVI.user.studentId,s=STUDENTS.find(x=>x.id===sid);
- const active=state.assignments.filter(a=>a.status==='Đang giao'&&a.sets?.some(set=>set.group==='Cả 4 nhóm'||set.group===s.group));
+ const active=state.assignments.filter(a=>a.status==='Đang giao'&&a.sets?.some(set=>set.group==='Tất cả'||set.group==='Cả 4 nhóm'||set.group===s.group));
  const done=active.filter(a=>state.submissions[a.id+'_'+sid]).length;
  const unread=(state.notifications||[]).filter(n=>n.studentId===sid&&!n.read);
  document.getElementById('studentContent').innerHTML=
