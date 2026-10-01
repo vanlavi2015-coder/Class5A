@@ -1094,8 +1094,72 @@ function renderStars(){
  document.getElementById("badges").innerHTML=badgeDefs.map(x=>`<div class="assignment"><b>${x[0]} ${x[1]}</b><div class="sub">${x[2]}</div></div>`).join("")
 }
 function renderSubmissions(){
- const rows=[];state.assignments.forEach(a=>a.sets.forEach(set=>studentsForGroup(set.group).forEach(s=>{const x=state.submissions[a.id+"_"+s.id];if(x)rows.push(`<tr><td>${esc(a.lesson)}</td><td>${esc(s.name)}</td><td>${s.group}</td><td>${x.score==null?'Chờ cô chấm':x.score+'/100'}</td><td>${x.stars} ⭐</td><td>${esc(x.praise)}</td></tr>`)})));
- document.getElementById("submissionList").innerHTML=rows.length?`<div class="tablewrap"><table><thead><tr><th>Bài</th><th>Học sinh</th><th>Nhóm</th><th>Điểm</th><th>Sao</th><th>Lời khen</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`:'<div class="empty">Chưa có bài nộp.</div>'
+ const rows=[];
+ state.assignments.forEach(a=>a.sets.forEach(set=>studentsForGroup(set.group).forEach(s=>{
+   const x=state.submissions[a.id+"_"+s.id];
+   if(x)rows.push(`<tr>
+    <td>${esc(a.lesson)}</td><td><b>${esc(s.name)}</b></td><td>${esc(s.group)}</td>
+    <td>${x.score==null?'Chờ cô chấm':x.score+'/100'}</td>
+    <td>${x.stars||0} ⭐</td><td>${esc(x.praise||'')}</td>
+    <td><button class="btn primary" onclick="viewSubmission('${a.id}',${s.id})">🔎 Xem bài</button></td>
+   </tr>`)
+ })));
+ document.getElementById("submissionList").innerHTML=rows.length?
+ `<div class="sub" style="margin-bottom:10px">Cô có thể bấm <b>“Xem bài”</b> để xem từng câu học sinh đã làm, đáp án đúng, câu sai và chấm phần tự luận.</div>
+ <div class="tablewrap"><table><thead><tr><th>Bài</th><th>Học sinh</th><th>Nhóm</th><th>Điểm</th><th>Sao</th><th>Lời khen</th><th></th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`:'<div class="empty">Chưa có bài nộp.</div>';
+}
+function viewSubmission(aid,sid){
+ const a=state.assignments.find(x=>x.id===aid), s=STUDENTS.find(x=>x.id===sid), x=state.submissions[aid+"_"+sid];
+ if(!a||!s||!x)return toast("Không tìm thấy bài nộp.");
+ const set=a.sets.find(z=>z.group===s.group)||a.sets.find(z=>z.group==="Cả 4 nhóm")||a.sets[0];
+ const qs=set?.questions||[], answers=x.answers||{};
+ let auto=0,correct=0,manual=0;
+ const items=qs.map((q,qi)=>{
+   const given=answers[qi]??"";
+   const isManual=!!q.manual||/cô chấm/i.test(String(q.type||""));
+   let right=!isManual && Array.isArray(q.acceptedAnswers)?q.acceptedAnswers.some(v=>answersEqual(given,v)):(!isManual&&answersEqual(given,q.answer));
+   if(isManual)manual++; else {auto++;if(right)correct++;}
+   const status=isManual?"🟡 Cô chấm":(right?"✅ Đúng":"❌ Sai");
+   return `<div class="question" style="margin-bottom:10px">
+    <div><b>Câu ${qi+1}. ${esc(q.text)}</b></div>
+    <div style="margin-top:6px"><span class="pill ${isManual?'yellow':right?'good':'bad'}">${status}</span></div>
+    <div class="sub" style="margin-top:5px"><b>Học sinh trả lời:</b> ${esc(String(given||"(chưa trả lời)"))}</div>
+    <div class="sub"><b>Đáp án chuẩn:</b> ${esc(String(q.answer||""))}</div>
+    ${Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length>1?`<div class="sub"><b>Đáp án chấp nhận:</b> ${esc(q.acceptedAnswers.filter(v=>String(v)!==String(q.answer)).join("; "))}</div>`:""}
+   </div>`;
+ });
+ const autoScore=auto?Math.round(correct/auto*100):null;
+ document.getElementById("modalBox").innerHTML=`
+  <h2>📋 ${esc(a.lesson)}</h2>
+  <p><b>Học sinh:</b> ${esc(s.name)} · <b>Nhóm:</b> ${esc(s.group)}</p>
+  <div class="grid3" style="margin:10px 0">
+   <div class="card" style="padding:10px"><b>Điểm tự động</b><div class="num" style="font-size:24px">${autoScore==null?'—':autoScore+'/100'}</div></div>
+   <div class="card" style="padding:10px"><b>Đúng</b><div class="num" style="font-size:24px">${correct}/${auto}</div></div>
+   <div class="card" style="padding:10px"><b>Cô chấm</b><div class="num" style="font-size:24px">${manual}</div></div>
+  </div>
+  ${items.join("")}
+  ${manual? `<hr><h3>✍️ Chấm phần tự luận</h3>
+   <div class="grid3">
+    <div class="field"><label>Điểm tổng /100</label><input id="gradeScore" type="number" min="0" max="100" value="${x.score==null?'':x.score}"></div>
+    <div class="field"><label>Số sao</label><input id="gradeStars" type="number" min="0" max="10" value="${x.stars||0}"></div>
+    <div class="field"><label>Lời nhận xét</label><input id="gradePraise" value="${esc(x.praise||'')}" placeholder="Ví dụ: Cô khen em..."></div>
+   </div>
+   <button class="btn primary" onclick="saveTeacherGrade('${a.id}',${s.id})">💾 Lưu kết quả</button>`:
+   `<div class="row"><button class="btn gold" onclick="saveTeacherGrade('${a.id}',${s.id})">⭐ Lưu sao/nhận xét</button></div>`}
+  <button class="btn" style="margin-top:10px" onclick="closeModal()">Đóng</button>`;
+ document.getElementById("modal").classList.add("show");
+}
+async function saveTeacherGrade(aid,sid){
+ const scoreEl=document.getElementById("gradeScore"),starsEl=document.getElementById("gradeStars"),praiseEl=document.getElementById("gradePraise");
+ const x=state.submissions[aid+"_"+sid]||{};
+ const manual=scoreEl?Number(scoreEl.value):Number(x.score)||0, stars=starsEl?Number(starsEl.value):Number(x.stars)||0, praise=praiseEl?String(praiseEl.value||""):String(x.praise||"");
+ try{
+  if(!LAVI.token)throw new Error("Chưa đăng nhập tài khoản giáo viên");
+  const r=await fetch('/api/teacher/grade',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({assignmentId:aid,studentId:sid,score:manual,praise,stars})});
+  const j=await r.json(); if(!r.ok)throw new Error(j.error||"Không lưu được kết quả");
+  state.submissions[aid+"_"+sid]=j.submission; state.stars[sid]=(state.stars[sid]||0)-(Number(x.stars)||0)+stars;
+  renderAll(); viewSubmission(aid,sid); toast("Đã lưu kết quả cho "+(STUDENTS.find(z=>z.id===sid)?.name||"học sinh"));
+ }catch(e){toast(e.message)}
 }
 function addSchedule(){state.schedules.push({day:document.getElementById("sDay").value,time:document.getElementById("sTime").value,subject:document.getElementById("sSubject").value,note:document.getElementById("sNote").value});save();toast("Đã thêm lịch")}
 function renderSchedules(){document.getElementById("scheduleList").innerHTML=state.schedules.length?state.schedules.map((s,i)=>`<div class="assignment"><b>${s.day} · ${s.time}</b><p>${esc(s.subject)} · ${esc(s.note)}</p><button class="btn danger" onclick="state.schedules.splice(${i},1);save()">Xóa</button></div>`).join(""):'<div class="empty">Chưa có lịch.</div>'}
