@@ -458,7 +458,6 @@ function makeQuestions(lesson,group,count,note="",seed=0){
     return true;
    }
    if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.test(title)){
-    const m=(i-1)%6;
     const is3=/tiết\s*3/.test(title);
     if(!is3){
       const bank=[
@@ -475,7 +474,8 @@ function makeQuestions(lesson,group,count,note="",seed=0){
        ["7,306","7","306","bảy phẩy ba trăm linh sáu"],
        ["250,018","250","18","hai trăm năm mươi phẩy mười tám"]
       ];
-      const b=bank[(i-1)%bank.length];
+      const m=(i-1)%bank.length;
+      const b=bank[m];
       if(m%3===0)add("Trong số "+b[0]+", phần nguyên là số nào?",b[1],"Xác định phần nguyên");
       else if(m%3===1)add("Trong số "+b[0]+", phần thập phân là số nào?",b[2],"Xác định phần thập phân");
       else add("Viết phân số thập phân "+(m+1)+"/10 thành số thập phân.",dec((m+1)/10),"Chuyển phân số thập phân");
@@ -494,7 +494,8 @@ function makeQuestions(lesson,group,count,note="",seed=0){
        ["120,05","một trăm hai mươi phẩy không năm"],
        ["36,72","ba mươi sáu phẩy bảy mươi hai"]
       ];
-      const b=bank[(i-1)%bank.length];
+      const m=(i-1)%bank.length;
+      const b=bank[m];
       if(m%3===0)manualAdd("Đọc số thập phân "+b[0]+" thành lời: "+b[1]+". Cô kiểm tra cách đọc.");
       else if(m%3===1){const n=48+(i%5)*7;add("Chuyển phân số thập phân "+n+"/10 thành số thập phân.",dec(n/10),"Chuyển phân số thập phân");}
       else {const a=7,b1=0,c=2;add("Từ các thẻ 7, 0, 2 và dấu phẩy, lập một số thập phân có phần nguyên gồm 1 chữ số và phần thập phân gồm 2 chữ số.", "7,02","Lập số thập phân");}
