@@ -37,7 +37,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
 
 #loginOverlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#eef2ff,#f8fafc);display:flex;align-items:center;justify-content:center;padding:20px}
 .loginBox{width:min(430px,100%);background:#fff;border:1px solid #e4e7ec;border-radius:24px;box-shadow:0 20px 60px rgba(15,23,42,.14);padding:28px}.loginBox h1{margin:0 0 6px}.loginBox .sub{margin-bottom:18px}.loginBox input{width:100%;padding:13px 14px;border:1px solid #d0d5dd;border-radius:12px;margin:6px 0 12px;font-size:16px}.loginBox button{width:100%;margin-top:6px}.loginErr{color:#dc2626;min-height:22px;margin:8px 0;font-size:14px}.onlineBadge{display:inline-flex;gap:6px;align-items:center;background:#ecfdf3;color:#067647;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700}.logoutBtn{margin-left:8px}
-.studentOnly{display:none}
+.studentOnly{display:none}\n.lesson-picker{border:1px solid #d0d5dd;border-radius:10px;background:#fff;max-height:220px;overflow:auto;padding:7px}.lesson-pick-item{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer}.lesson-pick-item:hover{background:#f5f3ff}.lesson-pick-item input{width:17px;height:17px;margin-top:2px;flex:none;accent-color:#4f46e5}.lesson-pick-item span{line-height:1.4;font-weight:600}.lesson-picker-empty{padding:12px;color:var(--muted);font-size:13px}
 
 .student-app{display:none;min-height:100vh;background:linear-gradient(180deg,#eef2ff 0%,#f8fafc 42%,#f8fafc 100%);color:#172033}
 .student-shell{max-width:980px;margin:0 auto;padding:18px 16px 40px}
@@ -102,7 +102,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
    <div class="grid3">
     <div class="field"><label>Môn</label><select id="cSubject" onchange="fillWeeks()"></select></div>
     <div class="field"><label>Tuần</label><select id="cWeek" onchange="fillLessons()"></select></div>
-    <div class="field"><label>Bài học / tiết <span class="sub">(có thể chọn nhiều)</span></label><select id="cLesson" multiple size="5"></select><div class="sub">Giữ Ctrl (Windows) hoặc ⌘ (Mac) để chọn nhiều tiết.</div></div>
+    <div class="field"><label>Bài học / tiết <span class="sub">(có thể chọn nhiều)</span></label><div id="cLessonPicker" class="lesson-picker"></div><div class="sub">☑️ Tích chọn một hoặc nhiều bài/tiết muốn đưa vào cùng một đề.</div></div>
    </div>
    <div class="grid3">
     <div class="field"><label>Đối tượng giao bài</label><select id="cGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option>Tất cả</option></select></div>
@@ -347,14 +347,16 @@ function fillWeeks(){
 function fillLessons(){
  const sub=document.getElementById("cSubject").value,w=document.getElementById("cWeek").value;
  const items=CURRICULUM.filter(x=>x.subject===sub && x.week===w);
- document.getElementById("cLesson").innerHTML=items.map((x,i)=>`<option value="${i}">${esc(x.lesson)}</option>`).join("")
+ const el=document.getElementById("cLessonPicker");
+ if(!el)return;
+ if(!items.length){el.innerHTML='<div class="lesson-picker-empty">Chưa có bài/tiết trong tuần này.</div>';return;}
+ el.innerHTML=items.map((x,i)=>'<label class="lesson-pick-item"><input type="checkbox" class="lessonPick" value="'+i+'"><span>'+esc(x.lesson)+'</span></label>').join("");
 }
 function selectedLessons(){
  const sub=document.getElementById("cSubject").value,w=document.getElementById("cWeek").value;
  const items=CURRICULUM.filter(x=>x.subject===sub&&x.week===w);
- const el=document.getElementById("cLesson");
- const vals=[...(el?.selectedOptions||[])].map(o=>Number(o.value)).filter(Number.isFinite);
- return (vals.length?vals:[0]).map(i=>items[i]).filter(Boolean);
+ const vals=[...document.querySelectorAll(".lessonPick:checked")].map(x=>Number(x.value)).filter(Number.isFinite);
+ return vals.map(i=>items[i]).filter(Boolean);
 }
 function selectedLesson(){return selectedLessons()[0]}
 function difficulty(group){return {Tốt:"vận dụng cao, nhiều bước và có bài toán thực tế",Khá:"vận dụng, 1–2 bước và có số liệu thực tế","Trung bình":"cơ bản, thao tác trực tiếp và số liệu rõ ràng",Yếu:"củng cố kiến thức nền, câu ngắn, số liệu nhỏ và có gợi ý"}[group]}
