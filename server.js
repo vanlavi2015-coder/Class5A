@@ -8,7 +8,9 @@ const {DatabaseSync}=require('node:sqlite');
 
 const app=express();
 app.use(express.json({limit:'4mb'}));
-app.use(express.static(path.join(__dirname,'public')));
+// Luôn lấy bản LAVI mới nhất để tránh trình duyệt giữ giao diện chấm bài cũ.
+app.use((req,res,next)=>{if(req.path==='/'||req.path==='/index.html')res.set('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');next();});
+app.use(express.static(path.join(__dirname,'public'),{etag:false,maxAge:0}));
 const PORT=process.env.PORT||3000;
 const SECRET=process.env.LAVI_JWT_SECRET;
 if(!SECRET){ console.error('Thiếu LAVI_JWT_SECRET. Hãy đặt biến môi trường trước khi chạy.'); process.exit(1); }
