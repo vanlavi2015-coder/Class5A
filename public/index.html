@@ -1320,11 +1320,13 @@ function validateQuestionSet(questions){
   const n=i+1,text=String(q?.text||"").trim(),answer=String(q?.answer??"").trim();
   if(!text)errors.push("Câu "+n+" chưa có nội dung.");
   if(!q?.manual&&!answer)errors.push("Câu "+n+" chưa có đáp án.");
+  // Không chặn giao đề chỉ vì hai câu có cùng cấu trúc dạng toán.
+  // Với đề kết hợp nhiều bài/tiết, các dạng tương tự có thể xuất hiện hợp lệ.
+  // Chỉ chặn câu trống, thiếu đáp án bắt buộc hoặc trắc nghiệm không hợp lệ.
   const key=normalizeText(text);
-  if(seenText.has(key))errors.push("Câu "+n+" trùng nội dung với Câu "+seenText.get(key)+"."); else seenText.set(key,n);
+  if(!seenText.has(key))seenText.set(key,n);
   const sh=shape(text),nums=(text.match(/-?\d+(?:[.,]\d+)?/g)||[]).map(x=>x.replace(",",".")),nk=nums.join("|");
-  if(nums.length>=2&&seenShape.has(sh+"|"+nk))errors.push("Câu "+n+" lặp đúng mẫu và bộ số liệu với Câu "+seenShape.get(sh+"|"+nk)+".");
-  else if(nums.length>=2)seenShape.set(sh+"|"+nk,n);
+  if(nums.length>=2&&!seenShape.has(sh+"|"+nk))seenShape.set(sh+"|"+nk,n);
   if(q?.options&&(!Array.isArray(q.options)||q.options.length!==4||!["A","B","C","D"].includes(String(q.answer))))errors.push("Câu "+n+" có trắc nghiệm không hợp lệ.");
  });
  if((questions||[]).length<3)errors.push("Bộ đề chưa đủ 3 câu hợp lệ.");
