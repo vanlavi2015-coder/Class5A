@@ -1384,7 +1384,7 @@ function viewSubmission(aid,sid){
   <button class="btn" style="margin-top:10px" onclick="closeModal()">Đóng</button>`;
  document.getElementById("modal").classList.add("show");
 }
-function saveTeacherGrade(aid,sid){
+async function saveTeacherGrade(aid,sid){
  const scoreEl=document.getElementById("gradeScore"),starsEl=document.getElementById("gradeStars"),praiseEl=document.getElementById("gradePraise");
  const x=state.submissions[aid+"_"+sid]||{};
  const manual=scoreEl?Number(scoreEl.value):Number(x.score)||0, stars=starsEl?Number(starsEl.value):Number(x.stars)||0, praise=praiseEl?String(praiseEl.value||""):String(x.praise||"");
