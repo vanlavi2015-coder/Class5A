@@ -1378,7 +1378,7 @@ function finalizeQuestion(q){
  return q;
 }
 function finalizeQuestionSet(questions,targetCount=0,lessonFallbacks=[]){
- const out=(questions||[]).map(finalizeQuestion).filter(Boolean);
+ const out=(questions||[]).map(finalizeQuestion).filter(Boolean).map(validateKnownVietnameseQuestion);
  // HARD GUARANTEE: sau mọi bước lọc/chuẩn hóa vẫn phải đủ đúng số câu cô yêu cầu.
  // Câu bổ sung là tự luận để cô chấm, nội dung bám đúng tiết/bài đã chọn.
  let k=0;
