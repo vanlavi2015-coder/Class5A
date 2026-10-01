@@ -225,6 +225,10 @@ body.menu-collapsed .menuToggle{left:14px}
     <div class="field"><label>Mật khẩu mới</label><input id="pwNew" type="password"></div>
     <button class="btn primary" onclick="changePassword()">🔐 Đổi mật khẩu</button>
    </div>
+   <div class="card"><h2>💾 Bảo vệ dữ liệu LAVI</h2><p class="sub">Sao lưu ngay toàn bộ bài giao, bài nộp, điểm, sao, phần thưởng, trò chơi và lịch sử điểm lên bản sao lưu của LAVI.</p>
+    <button class="btn gold" id="backupNowBtn" onclick="backupNow()">💾 Sao lưu dữ liệu ngay</button>
+    <p class="sub" style="margin-top:8px">Nên bấm nút này trước khi cô yêu cầu cập nhật hoặc Deploy hệ thống.</p>
+   </div>
    <div class="card"><h2>🔔 Gửi thông báo</h2><p class="sub">Thông báo sẽ xuất hiện khi học sinh đăng nhập.</p>
     <div class="field"><label>Đối tượng</label><select id="notifyTarget"><option value="all">Cả lớp</option></select></div>
     <div class="field"><label>Nội dung</label><textarea id="notifyMessage" placeholder="Ví dụ: Tối nay nhớ hoàn thành bài Toán trước 20:00 nhé!"></textarea></div>
@@ -2492,6 +2496,17 @@ async function studentLeaderboard(){
 }
 async function changeGroup(id,group){try{const r=await fetch('/api/teacher/group',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({studentId:id,group})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Không đổi được nhóm');const s=STUDENTS.find(x=>x.id===id);s.group=group;renderAll();toast(`Đã chuyển ${s.name} sang nhóm ${group}`)}catch(e){toast(e.message)}}
 async function changePassword(){try{const r=await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({currentPassword:document.getElementById('pwOld').value,newPassword:document.getElementById('pwNew').value})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Không đổi được mật khẩu');document.getElementById('pwOld').value='';document.getElementById('pwNew').value='';toast('Đã đổi mật khẩu thành công')}catch(e){toast(e.message)}}
+async function backupNow(){
+ const btn=document.getElementById('backupNowBtn');
+ if(btn){btn.disabled=true;btn.textContent='⏳ Đang sao lưu...'}
+ try{
+  const r=await fetch('/api/teacher/backup-now',{method:'POST',headers:{'Authorization':'Bearer '+LAVI.token}});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||('Sao lưu lỗi '+r.status));
+  toast('✅ Đã sao lưu toàn bộ dữ liệu LAVI');
+ }catch(e){toast('❌ '+e.message);alert('Chưa sao lưu được. '+e.message)}
+ finally{if(btn){btn.disabled=false;btn.textContent='💾 Sao lưu dữ liệu ngay'}}
+}
 async function sendNotification(){const target=document.getElementById('notifyTarget').value;const ids=target==='all'?STUDENTS.map(s=>s.id):[Number(target)];const message=document.getElementById('notifyMessage').value.trim();if(!message)return toast('Nhập nội dung thông báo');try{const r=await fetch('/api/teacher/notify',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({studentIds:ids,message})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Gửi thất bại');document.getElementById('notifyMessage').value='';toast(`Đã gửi thông báo cho ${j.count} học sinh`)}catch(e){toast(e.message)}}
 function fillNotifyTargets(){const el=document.getElementById('notifyTarget');if(!el)return;el.innerHTML='<option value="all">Cả lớp</option>'+STUDENTS.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}
 async function markNotificationsRead(ids){try{await fetch('/api/student/read-notifications',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({ids})});(state.notifications||[]).forEach(n=>{if(ids.includes(n.id))n.read=true});studentMode()}catch(e){toast('Không cập nhật được thông báo')}}
