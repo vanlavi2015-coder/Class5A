@@ -1083,7 +1083,12 @@ function generate(){
   const gifUrl=safeGifUrl(document.getElementById("cGifUrl")?.value);
   if(!lesson) return toast("Chưa có bài học để tạo bài.");
   const groups=group==="Cả 4 nhóm"?GROUPS:[group];
-  const sets=groups.map(g=>({group:g,questions:applyExtraRequirements(makeQuestions(lesson,g,count,note),lesson,g,note).map(q=>({...q,acceptedAnswers:[String(q.answer??'')].filter(Boolean)}))}));
+  const sets=groups.map(g=>{
+   const generated=makeQuestions(lesson,g,count,note);
+   const customized=applyExtraRequirements(generated,lesson,g,note);
+   const questions=finalizeQuestionSet(customized);
+   return {group:g,questions};
+  });
   draft={
    id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
    subject:lesson.subject,
