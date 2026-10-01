@@ -82,6 +82,7 @@ body.menu-collapsed .menuToggle{left:14px}
   <button onclick="show('schedule',this)">🗓️ Lịch</button>
   <button onclick="show('curriculum',this)">📚 Phạm vi kiến thức</button>
   <button onclick="show('stats',this)">📈 Thống kê</button>
+  <button onclick="show('monthly',this);loadMonthlyScores()">📅 Xếp loại tháng</button>
   <button onclick="show('accounts',this)">⚙️ Tài khoản</button>
   <button onclick="studentMode()">📱 Học sinh</button>
  </div>
@@ -200,6 +201,23 @@ body.menu-collapsed .menuToggle{left:14px}
 
  <section id="stats" class="section"><div class="card"><h2>📈 Thống kê lớp</h2><div id="statsBox"></div></div></section>
 
+ <section id="monthly" class="section">
+  <div class="card">
+   <div class="row" style="justify-content:space-between;align-items:center">
+    <div><h2 style="margin:0">📅 Xếp loại theo tháng</h2><div class="sub">LAVI lưu riêng lịch sử điểm của từng học sinh theo từng tháng, không làm mất điểm các tháng trước.</div></div>
+    <div class="field" style="min-width:180px;margin:0"><label>Tháng</label><input id="monthlyMonth" type="month" onchange="loadMonthlyScores()"></div>
+   </div>
+   <div class="row" style="margin-top:12px;gap:8px">
+    <span class="badge">🏆 Tốt: ≥ 90</span>
+    <span class="badge">🌟 Khá: 80–89</span>
+    <span class="badge">👍 Trung bình: 65–79</span>
+    <span class="badge">🌱 Yếu: &lt; 65</span>
+   </div>
+   <div id="monthlySummary" style="margin-top:14px"></div>
+   <div id="monthlyTable" style="margin-top:14px"></div>
+  </div>
+ </section>
+
  <section id="accounts" class="section">
   <div class="grid2">
    <div class="card"><h2>⚙️ Tài khoản của cô</h2><p class="sub">Đổi mật khẩu đăng nhập LAVI.</p>
@@ -225,6 +243,7 @@ body.menu-collapsed .menuToggle{left:14px}
  <button onclick="show('race')"><b>🏁</b>Đua</button>
  <button onclick="show('submissions')"><b>📥</b>Bài nộp</button>
  <button onclick="show('accounts')"><b>⚙️</b>Tài khoản</button>
+ <button onclick="show('monthly');loadMonthlyScores()"><b>📅</b>Tháng</button>
  <button onclick="logout()"><b>🔄</b>Đổi TK</button>
  <button onclick="studentMode()"><b>📱</b>HS làm</button>
 </div>
@@ -2036,6 +2055,39 @@ function renderHome(){
  renderAssignments("homeAssignments")
 }
 function exportData(){const blob=new Blob([JSON.stringify({students:STUDENTS,curriculum:CURRICULUM,state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="LAVI_5A_du_lieu.json";a.click();URL.revokeObjectURL(a.href)}
+async function loadMonthlyScores(){
+ const input=document.getElementById('monthlyMonth');
+ const month=input?.value||new Date().toISOString().slice(0,7);
+ if(input&&!input.value) input.value=month;
+ const box=document.getElementById('monthlyTable'), summary=document.getElementById('monthlySummary');
+ if(!box)return;
+ box.innerHTML='<div class="empty">⏳ Đang tải dữ liệu tháng '+esc(month)+'...</div>';
+ try{
+  const r=await fetch('/api/teacher/monthly-scores?month='+encodeURIComponent(month),{headers:{Authorization:'Bearer '+LAVI.token}});
+  const j=await r.json();
+  if(!r.ok)throw new Error(j.error||'Không tải được dữ liệu');
+  const rows=(j.students||[]).map(x=>{
+   const s=STUDENTS.find(z=>z.id===Number(x.studentId));
+   const records=x.records||[];
+   const scores=records.map(r=>Number(r.score)).filter(Number.isFinite);
+   const avg=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:0;
+   const stars=records.reduce((a,b)=>a+(Number(b.stars)||0),0);
+   let rank='Chưa có dữ liệu', cls='Chưa có dữ liệu';
+   if(scores.length){cls=avg>=90?'Tốt':avg>=80?'Khá':avg>=65?'Trung bình':'Yếu';}
+   return {id:Number(x.studentId),name:s?.name||('HS '+x.studentId),group:s?.group||'',count:scores.length,avg,stars,cls};
+  });
+  const has=rows.filter(x=>x.count);
+  const dist={Tốt:0,Khá:0,'Trung bình':0,Yếu:0};
+  has.forEach(x=>dist[x.cls]++);
+  summary.innerHTML='<div class="grid4">'+
+   ['Tốt','Khá','Trung bình','Yếu'].map(k=>'<div class="card kpi"><div>'+k+'</div><div class="num">'+dist[k]+'</div><div class="label">học sinh</div></div>').join('')+
+   '</div><div class="sub" style="margin-top:8px">Có dữ liệu: '+has.length+'/'+rows.length+' học sinh · Tháng '+esc(month)+'</div>';
+  const badge=x=>x==='Tốt'?'🏆 Tốt':x==='Khá'?'🌟 Khá':x==='Trung bình'?'👍 Trung bình':x==='Yếu'?'🌱 Yếu':'— Chưa có';
+  box.innerHTML='<div style="overflow:auto"><table class="race-table" style="width:100%"><thead><tr><th>STT</th><th>Học sinh</th><th>Nhóm</th><th>Số kết quả</th><th>Điểm TB tháng</th><th>Sao</th><th>Xếp loại</th></tr></thead><tbody>'+
+   rows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.group)+'</td><td>'+x.count+'</td><td>'+(x.count?x.avg.toFixed(1):'—')+'</td><td>'+x.stars+' ⭐</td><td><b>'+badge(x.cls)+'</b></td></tr>').join('')+
+   '</tbody></table></div>';
+ }catch(e){box.innerHTML='<div class="empty">⚠️ '+esc(e.message||'Không tải được dữ liệu')+'</div>';if(summary)summary.innerHTML='';}
+}
 function renderAll(){renderHome();renderAssignments("assignList");renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
 document.getElementById("cDue").value=new Date(Date.now()+86400000).toISOString().slice(0,16);
 fillSubjects();fillNotifyTargets();renderAll();
