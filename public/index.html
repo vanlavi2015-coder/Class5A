@@ -765,7 +765,8 @@ function openStudentAssignment(aid){
  const resultWrongPercent=Number.isFinite(Number(sub?.wrongPercent))?Number(sub.wrongPercent):100-resultCorrectPercent;
  const resultQuestions=set.questions.map((q,i)=>{
    const studentAns=String(sub?.answers?.[i]??'').trim();
-   const correct=studentAns!==''&&normalize(studentAns)===normalize(q.answer);
+   const accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];
+   const correct=studentAns!==''&&accepted.some(expected=>answersEqual(studentAns,expected));
    if(!hasResult){
      if(q.type==="Trắc nghiệm 4 đáp án"&&Array.isArray(q.options)){
       const prev=String(sub?.answers?.[i]||"").trim().toUpperCase();
@@ -842,7 +843,12 @@ async function submitOnline(aid,sid){
   if(btn){btn.disabled=false;btn.textContent='📤 Nộp bài';}
  }
 }
-function normalize(v){return String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s./-]/g,'').replace(/\s+/g,' ').trim()}
+function normalize(v){return String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/,/g,'.').replace(/²/g,'2').replace(/³/g,'3').replace(/\s+/g,' ').trim().replace(/[^a-z0-9\s./%²³-]/g,'').trim()}
+function answersEqual(a,b){
+ const x=normalize(a),y=normalize(b); if(x===y)return true;
+ function n(v){const s=String(v).replace(/,/g,'.').trim();const unit=(s.match(/(cm²|m²|cm³|m³|kg|g|km|m|cm|mm|l|ml|%)$/i)||[])[1]||'';const core=s.slice(0,s.length-unit.length).trim();const f=core.match(/^(-?\d+)\s*\/\s*(\d+)$/);if(f&&Number(f[2]))return {v:Number(f[1])/Number(f[2]),unit};if(/^-?\d+(?:\.\d+)?$/.test(core))return {v:Number(core),unit};return null}
+ const nx=n(x),ny=n(y);return !!nx&&!!ny&&nx.unit===ny.unit&&Math.abs(nx.v-ny.v)<1e-9;
+}
 
 function submitDemo(aid,sid){
  const s=STUDENTS.find(x=>x.id===sid),a=state.assignments.find(x=>x.id===aid);
