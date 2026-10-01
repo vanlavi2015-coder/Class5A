@@ -558,16 +558,16 @@ function makeQuestions(lesson,group,count,note=""){
     }
     if(/từ đa nghĩa/.test(title)){
       const bank=[
-        ["chân","Bộ phận cơ thể dùng để đi, đứng.","Nghĩa gốc"],
-        ["chân","Bộ phận phía dưới của đồ vật, có tác dụng nâng đỡ.","Nghĩa chuyển"],
-        ["cao","Có khoảng cách lớn theo chiều thẳng đứng.","Nghĩa gốc"],
-        ["cao","Có mức vượt trên mức bình thường về số lượng hoặc chất lượng.","Nghĩa chuyển"],
-        ["hạt","Phần nằm trong quả, có thể nảy mầm thành cây con.","Nghĩa gốc"],
-        ["hạt","Phần nhỏ có hình giống hạt, như hạt mưa, hạt nắng.","Nghĩa chuyển"]
+        ["chân","Bé bị đau chân sau khi chạy.","Nghĩa gốc"],
+        ["chân","Chiếc bàn có bốn chân rất chắc chắn.","Nghĩa chuyển"],
+        ["cao","Ngọn núi này rất cao.","Nghĩa gốc"],
+        ["cao","Năm nay giá rau cao hơn năm trước.","Nghĩa chuyển"],
+        ["mũi","Em bị đau ở mũi.","Nghĩa gốc"],
+        ["mũi","Mũi thuyền rẽ sóng ra khơi.","Nghĩa chuyển"]
       ];
       const b=tvPick(bank);
-      if(i%2===1)add("Từ “"+b[0]+"” trong trường hợp này được dùng với nghĩa nào?",b[2],"Nghĩa gốc/nghĩa chuyển");
-      else tvManual("Đặt 2 câu để phân biệt hai nghĩa của từ “"+b[0]+"”");
+      if(i%2===1)add("Từ “"+b[0]+"” trong câu “"+b[1]+"” được dùng với nghĩa nào?",b[2],"Nghĩa gốc/nghĩa chuyển");
+      else tvManual("Đặt 2 câu để phân biệt nghĩa gốc và nghĩa chuyển của từ “"+b[0]+"”");
       return true;
     }
     if(/đại từ/.test(title)){
