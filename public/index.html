@@ -31,7 +31,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
 .student-app{display:none;min-height:100vh;background:linear-gradient(180deg,#eef2ff 0%,#f8fafc 42%,#f8fafc 100%);color:#172033}
 .student-shell{max-width:980px;margin:0 auto;padding:18px 16px 40px}
 .student-top{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e4e7ec;border-radius:20px;padding:14px 16px;box-shadow:0 5px 20px rgba(16,24,40,.06)}
-.student-brand{display:flex;align-items:center;gap:10px}.student-logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:grid;place-items:center;font-size:23px}.student-name{font-weight:900;font-size:18px}.student-sub{font-size:12px;color:#667085;margin-top:2px}
+.student-brand{display:flex;align-items:center;gap:10px}.student-avatar-btn{border:0;padding:0;background:transparent}.student-logo{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:grid;place-items:center;font-size:23px}.student-name{font-weight:900;font-size:18px}.avatar-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:15px 0}.avatar-choice{width:54px;height:54px;border:2px solid #e4e7ec;border-radius:16px;background:#fff;font-size:29px;display:grid;place-items:center}.avatar-choice:hover,.avatar-choice.selected{border-color:#6366f1;background:#eef2ff;transform:scale(1.04)}.student-sub{font-size:12px;color:#667085;margin-top:2px}
 .student-actions{display:flex;gap:7px;flex-wrap:wrap}.student-btn{border:1px solid #e4e7ec;background:#fff;border-radius:10px;padding:9px 11px;font-weight:800}.student-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}.student-nav{display:flex;gap:8px;margin:12px 0;overflow:auto}.student-nav-btn{border:1px solid #dbe2f0;background:#fff;border-radius:999px;padding:9px 13px;font-weight:800;white-space:nowrap}.student-nav-btn.active{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}.student-mode #menuToggle,.student-mode #menuBackdrop,.student-mode .mobilebar{display:none!important}
 .student-hero{margin-top:14px;background:linear-gradient(135deg,#312e81,#4f46e5);color:#fff;border-radius:22px;padding:20px}.student-hero h1{margin:0 0 4px;font-size:25px}.student-hero p{margin:0;opacity:.88}
 .student-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.student-kpi{background:#fff;border:1px solid #e4e7ec;border-radius:16px;padding:14px}.student-kpi .big{font-size:25px;font-weight:900;margin-top:4px}.student-kpi .small{font-size:12px;color:#667085}
@@ -201,7 +201,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
 <div id="studentApp" class="student-app">
  <div class="student-shell">
   <div class="student-top">
-   <div class="student-brand"><div class="student-logo">🎓</div><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI 5A · Góc học tập của em</div></div></div>
+   <div class="student-brand"><button class="student-avatar-btn" onclick="openAvatarPicker()" title="Đổi ảnh đại diện"><div class="student-logo" id="studentAvatar">🎓</div></button><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI 5A · Góc học tập của em</div></div></div>
    <div class="student-actions"><button class="student-btn" onclick="studentMode()">📚 Bài của em</button><button class="student-btn" onclick="studentLeaderboard()">🏁 Xếp hạng</button><button class="student-btn logout" onclick="logout()">Đăng xuất</button></div>
   </div>
   <div class="student-nav">
@@ -250,6 +250,26 @@ function show(id,btn){
  renderAll()
 }
 function closeModal(){document.getElementById("modal").classList.remove("show")}
+const AVATARS=['🎓','🧑‍🎓','👩‍🎓','👨‍🎓','🦊','🐼','🐯','🐰','🐨','🐸','🐵','🦄','🐱','🐶','🐻','🦁','🐷','🐙','🦋','🌈','⭐','🚀','⚽','🎨','🎵','📚','🤖'];
+function currentStudent(){return STUDENTS.find(x=>x.id===LAVI.user?.studentId)}
+function syncStudentAvatar(){
+ const s=currentStudent(), el=document.getElementById('studentAvatar');
+ if(s&&el)el.textContent=s.avatar||'🎓';
+}
+function openAvatarPicker(){
+ if(LAVI.user?.role!=='student')return;
+ const s=currentStudent(), current=s?.avatar||'🎓';
+ document.getElementById("modalBox").innerHTML='<h2 style="margin-top:0">🖼️ Chọn ảnh đại diện</h2><p class="sub">Em hãy chọn một hình đại diện cho tài khoản của mình.</p><div class="avatar-picker">'+AVATARS.map(a=>'<button class="avatar-choice '+(a===current?'selected':'')+'" onclick="saveStudentAvatar('+JSON.stringify(a)+')" title="Chọn '+a+'">'+a+'</button>').join('')+'</div><button class="btn" onclick="closeModal()">Đóng</button>';
+ document.getElementById("modal").classList.add("show");
+}
+async function saveStudentAvatar(avatar){
+ try{
+  const r=await fetch('/api/student/avatar',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({avatar})});
+  const j=await r.json(); if(!r.ok)throw new Error(j.error||'Không đổi được ảnh đại diện');
+  const s=currentStudent(); if(s)s.avatar=j.avatar;
+  syncStudentAvatar(); closeModal(); toast('✅ Đã đổi ảnh đại diện!');
+ }catch(e){toast(e.message)}
+}
 function studentsForGroup(g){return g==="Cả 4 nhóm"?STUDENTS:STUDENTS.filter(s=>s.group===g)}
 function subjectList(){return [...new Set(CURRICULUM.map(x=>x.subject))]}
 function fillSubjects(){
@@ -1355,6 +1375,7 @@ function studentMode(){
  document.getElementById('menuBackdrop').style.display='none';
  document.getElementById('studentApp').style.display='block';
  document.getElementById('studentHeaderName').textContent=s.name;
+ syncStudentAvatar();
  renderStudentHome();
 }
 function renderStudentHome(){
@@ -1496,7 +1517,7 @@ fillSubjects();fillNotifyTargets();renderAll();
 
 window.LAVI={token:localStorage.getItem('lavi_token')||'',user:JSON.parse(localStorage.getItem('lavi_user')||'null')};
 async function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;document.getElementById('loginErr').textContent='';try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Đăng nhập thất bại');LAVI.token=j.token;LAVI.user=j.user;localStorage.setItem('lavi_token',j.token);localStorage.setItem('lavi_user',JSON.stringify(j.user));await loadOnlineState();applyRole();document.getElementById('loginOverlay').style.display='none';document.getElementById('onlineUser').textContent=(j.user.role==='teacher'?'👩‍🏫 Giáo viên':'👨‍🎓 '+(STUDENTS.find(x=>x.id===j.user.studentId)?.name||'Học sinh'));if(j.user.role==='student')studentMode();}catch(e){document.getElementById('loginErr').textContent=e.message}}
-async function loadOnlineState(){if(!LAVI.token)return;try{const r=await fetch('/api/state',{headers:{Authorization:'Bearer '+LAVI.token}});if(!r.ok)throw new Error();const j=await r.json();state=j.state;localStorage.setItem('lavi5a_real',JSON.stringify(state));renderAll();}catch(e){}}
+async function loadOnlineState(){if(!LAVI.token)return;try{const r=await fetch('/api/state',{headers:{Authorization:'Bearer '+LAVI.token}});if(!r.ok)throw new Error();const j=await r.json();if(Array.isArray(j.students))j.students.forEach(x=>{const s=STUDENTS.find(y=>y.id===x.id);if(s)Object.assign(s,x)});state=j.state;localStorage.setItem('lavi5a_real',JSON.stringify(state));renderAll();syncStudentAvatar();}catch(e){}}
 function applyRole(){
  const isStudent=LAVI.user?.role==='student';
  document.body.classList.toggle('student-mode',isStudent);
