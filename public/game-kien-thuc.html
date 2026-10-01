@@ -41,6 +41,7 @@ input,select{padding:11px;border:1px solid #d0d5dd;border-radius:10px;width:100%
 <div class="row"><div><span class="badge" id="scopeBadge">Đang tải phạm vi</span></div><div style="text-align:right"><b id="attemptText"></b></div></div>
 <h2 style="margin-top:12px">🧠 Kiến thức tổng hợp</h2>
 <p class="muted">Toán • Tiếng Việt • Khoa học • Lịch sử & Địa lí • Công nghệ • Giáo dục địa phương • Kỹ năng sống</p>
+<div class="notice" style="margin-top:10px">🔄 <b>Mỗi lượt là một bộ câu hỏi khác.</b> Mỗi ngày LAVI tạo bộ mới từ đúng phạm vi kiến thức cô đã chọn, ưu tiên trải đều các mạch kiến thức.</div>
 <div id="scope" class="notice"></div><br>
 <button id="startBtn" onclick="startGame()">🎯 Bắt đầu chơi</button>
 </div>
@@ -129,8 +130,49 @@ function renderTopics(){const saved=getSavedTopics();document.getElementById('to
 function getSavedTopics(){const a=(state?.assignments||[]).find(x=>x.id==='LAVI_KNOWLEDGE_SCOPE');return Array.isArray(a?.topics)&&a.topics.length?a.topics:TOPICS.map(x=>x.id)}
 async function saveTopics(){const topics=[...document.querySelectorAll('#topicList input:checked')].map(x=>x.value);if(!topics.length){alert('Cô hãy chọn ít nhất một nội dung đã học.');return}const fresh=await get('/api/state');const assignments=fresh.state.assignments||[];const obj={id:'LAVI_KNOWLEDGE_SCOPE',topics,updatedAt:new Date().toISOString(),status:'Cấu hình'};const i=assignments.findIndex(x=>x.id===obj.id);if(i>=0)assignments[i]=obj;else assignments.push(obj);const st=fresh.state;st.assignments=assignments;const r=await fetch('/api/state',{method:'PUT',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({state:st})});const d=await r.json();if(!r.ok)throw Error(d.error||'Không lưu được');state=st;document.getElementById('saveMsg').textContent=' ✓ Đã lưu';setTimeout(()=>document.getElementById('saveMsg').textContent='',2000)}
 async function showStudent(){document.getElementById('student').classList.remove('hidden');const topics=getSavedTopics();document.getElementById('scope').innerHTML=topics.map(x=>'<span class="badge" style="margin:3px">'+esc(topicName(x))+'</span>').join('');document.getElementById('scopeBadge').textContent=topics.length+' nội dung đã học';await refreshAttempts()}
-async function refreshAttempts(){try{const d=await get('/api/game/status?gameType=knowledge');document.getElementById('attemptText').textContent='Còn '+d.remaining+'/3 lượt';document.getElementById('startBtn').disabled=d.remaining<=0;document.getElementById('startBtn').textContent=d.remaining<=0?'Đã hết 3 lượt':'🎯 Bắt đầu chơi'}catch(e){}}
-function startGame(){const topics=getSavedTopics();let pool=BANK.filter(q=>topics.includes(q[0]));if(pool.length<5){alert('Phạm vi kiến thức đã chọn chưa có đủ câu hỏi. Cô hãy chọn thêm nội dung.');return}pool.sort(()=>Math.random()-.5);questions=pool.slice(0,Math.min(10,pool.length));idx=0;score=0;correct=0;document.getElementById('game').classList.remove('hidden');document.getElementById('result').classList.add('hidden');renderQ()}
+async function refreshAttempts(){try{const d=await get('/api/game/status?gameType=knowledge');const today=new Date().toLocaleDateString('vi-VN');document.getElementById('attemptText').textContent='Hôm nay '+today+' · Đã chơi '+d.attempts+'/3 lượt · Còn '+d.remaining+' lượt';document.getElementById('startBtn').disabled=d.remaining<=0;document.getElementById('startBtn').textContent=d.remaining<=0?'Đã hết 3 lượt':'🎯 Bắt đầu chơi'}catch(e){}}
+function hashSeed(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function seededRandom(seed){let t=seed>>>0;t+=0x6D2B79F5;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296}
+function seededShuffle(arr,seed){const out=arr.slice();for(let i=out.length-1;i>0;i--){const j=Math.floor(seededRandom(seed+i*2654435761)*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function topicOrder(topics,seed){return seededShuffle(topics,seed)}
+function buildDailyQuestions(topics,attemptNo){
+ const day=todayKey(),seed=hashSeed('LAVI5A|'+day+'|knowledge|'+attemptNo);
+ const orderedTopics=topicOrder(topics,seed);
+ const byTopic=new Map(orderedTopics.map(t=>[t,seededShuffle(BANK.filter(q=>q[0]===t),seed^hashSeed(t))]));
+ const picked=[];
+ let round=0;
+ while(picked.length<10){
+  let added=false;
+  for(const t of orderedTopics){
+   const arr=byTopic.get(t)||[];
+   const q=arr[round];
+   if(q){picked.push(q);added=true;if(picked.length>=10)break}
+  }
+  if(!added)break;
+  round++;
+ }
+ if(picked.length<10){
+  const pool=seededShuffle(BANK.filter(q=>topics.includes(q[0])),seed^0x9e3779b9);
+  for(const q of pool)if(!picked.includes(q)){picked.push(q);if(picked.length>=10)break}
+ }
+ return seededShuffle(picked,seed^0xA5A5A5A5).slice(0,Math.min(10,picked.length));
+}
+async function startGame(){
+ const topics=getSavedTopics();
+ if(topics.length<1){alert('Cô chưa chọn phạm vi kiến thức đã học.');return}
+ try{
+  const status=await get('/api/game/status?gameType=knowledge');
+  if(Number(status.remaining)<=0){alert('Em đã dùng đủ 3 lượt cho trò chơi này.');refreshAttempts();return}
+  const attemptNo=Number(status.attempts||0);
+  questions=buildDailyQuestions(topics,attemptNo);
+  if(questions.length<5){alert('Phạm vi kiến thức đã chọn chưa có đủ câu hỏi. Cô hãy chọn thêm nội dung.');return}
+  idx=0;score=0;correct=0;
+  document.getElementById('scopeBadge').textContent='Bộ câu hỏi hôm nay · Lượt '+(attemptNo+1)+'/3';
+  document.getElementById('scope').innerHTML='<b>📚 Mạch kiến thức:</b> '+topics.map(x=>'<span class="badge" style="margin:3px">'+esc(topicName(x))+'</span>').join('')+'<div class="muted" style="margin-top:7px">🔄 Bộ câu hỏi được thay đổi theo ngày và theo từng lượt chơi.</div>';
+  document.getElementById('game').classList.remove('hidden');document.getElementById('result').classList.add('hidden');renderQ();
+ }catch(e){alert(e.message||'Không tải được lượt chơi.');}
+}
 function renderQ(){const q=questions[idx];answered=false;document.getElementById('counter').textContent='Câu '+(idx+1)+'/'+questions.length;document.getElementById('liveScore').textContent=score+' điểm';document.getElementById('bar').style.width=(idx/questions.length*100)+'%';document.getElementById('subject').textContent=TOPICS.find(x=>x.id===q[0]).s;document.getElementById('topic').textContent=topicName(q[0]);document.getElementById('question').textContent=q[1];document.getElementById('feedback').textContent='';document.getElementById('answers').innerHTML=q[2].map((a,i)=>'<button onclick="answer('+i+')">'+esc(a)+'</button>').join('')}
 function answer(n){if(answered)return;answered=true;const q=questions[idx],bs=[...document.querySelectorAll('#answers button')];bs[q[3]].classList.add('correct');if(n===q[3]){correct++;score+=10;document.getElementById('feedback').className='notice ok';document.getElementById('feedback').textContent='✅ Chính xác! +10 điểm'}else{bs[n].classList.add('wrong');document.getElementById('feedback').className='notice err';document.getElementById('feedback').textContent='❌ Chưa đúng. Đáp án đúng: '+q[2][q[3]]}document.getElementById('liveScore').textContent=score+' điểm';setTimeout(()=>{idx++;if(idx<questions.length)renderQ();else finish()},900)}
 async function finish(){document.getElementById('bar').style.width='100%';const total=questions.length;const stars=score>=90?5:score>=70?4:score>=50?3:score>=30?2:1;try{const d=await fetch('/api/game/result',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({gameType:'knowledge',score,correct,total,stars,timeSeconds:0})}).then(r=>r.json());if(d.error)throw Error(d.error)}catch(e){alert(e.message)}document.getElementById('game').classList.add('hidden');const r=document.getElementById('result');r.classList.remove('hidden');r.innerHTML='<h2>🎉 Hoàn thành!</h2><div class="score">'+score+'</div><p>Đúng <b>'+correct+'/'+total+'</b> câu</p><p>🏆 Sao nhận được: <b>'+stars+'</b></p><button onclick="startGame()">🔄 Chơi lại</button> <button class="secondary" onclick="location.reload()">🏠 Về trang đầu</button>';refreshAttempts()}
