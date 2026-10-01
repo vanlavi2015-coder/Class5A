@@ -1593,7 +1593,9 @@ async function submitOnline(aid,sid){
    let v="";
    if(q.type==="Trắc nghiệm 4 đáp án")v=document.querySelector('input[name="ans'+i+'"]:checked')?.value||"";
    else v=(document.getElementById('ans'+i)?.value||'').trim();
-   answers[i]=v;if(v&&normalize(v)===normalize(q.answer))correct++;
+   answers[i]=v;
+   const manual=!!q.manual||/cô chấm|tự luận|tự\s*luận|essay/i.test(String(q.type||""));
+   if(!manual&&v){const accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];if(accepted.some(x=>answersEqual(v,x)))correct++;}
   });
   const score=Math.round(correct/set.questions.length*100);
   const oldScore=state.submissions[aid+'_'+sid]?.score||0;
