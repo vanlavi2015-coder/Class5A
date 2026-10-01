@@ -1437,31 +1437,28 @@ function generate(){
      for(const q of pool){if(all.length>=count)break;addUnique(q);}
     }
    }
-   // LAVI SAFETY: luôn đủ đúng số câu cô yêu cầu.
-   // Nếu ngân hàng tự động của một bài/tiết không còn đủ câu khác nhau,
-   // bổ sung câu tự luận bám đúng tên bài để cô chấm, thay vì trả về thiếu câu.
-   if(all.length<count){
-    let k=0;
-    while(all.length<count && k<60){
-     const lesson=lessons[k%lessons.length];
-     const lessonName=String(lesson?.lesson||"bài học").trim();
-     const key=normQ("Tự luận "+lessonName+" "+k);
-     if(!seen.has(key)){
-      seen.add(key);
-      all.push({
-       text:"Câu "+(all.length+1)+": Hoàn thành một nhiệm vụ tự luận bám đúng nội dung bài “"+lessonName+"”. Trình bày rõ cách làm hoặc câu trả lời.",
-       answer:"",
-       acceptedAnswers:[],
-       type:"Tự luận – cô chấm",
-       manual:true,
-       lessonTitle:lessonName
-      });
-     }
-     k++;
+   // LAVI SAFETY: tuyệt đối không báo thiếu câu sau khi đã bắt đầu tạo đề.
+   // Nếu ngân hàng tự động chưa đủ, bổ sung câu tự luận để luôn đủ đúng count.
+   let fallbackIndex=0;
+   while(all.length<count){
+    const lessonName=lessons.length
+      ? String(lessons[fallbackIndex%lessons.length]?.lesson||"bài học").trim()
+      : "nội dung bài học đã chọn";
+    const text="Câu "+(all.length+1)+": Hoàn thành một nhiệm vụ tự luận bám đúng nội dung bài “"+lessonName+"”. Trình bày rõ cách làm hoặc câu trả lời.";
+    const key=normQ(text+" "+fallbackIndex);
+    if(!seen.has(key)){
+     seen.add(key);
+     all.push({
+      text,
+      answer:"",
+      acceptedAnswers:[],
+      type:"Tự luận – cô chấm",
+      manual:true,
+      lessonTitle:lessonName
+     });
     }
-   }
-   if(all.length<count){
-    throw new Error("LAVI không thể tạo đủ "+count+" câu. Vui lòng kiểm tra lại tiết/bài đã chọn.");
+    fallbackIndex++;
+    if(fallbackIndex>200)break;
    }
    return all.slice(0,count).map((q,i)=>({...q,id:i+1}));
   };
