@@ -244,13 +244,15 @@ function frac(n,d){if(d<0){n=-n;d=-d}const g=gcd(n,d);return [n/g,d/g]}
 function fracText(n,d){const f=frac(n,d);return f[1]===1?String(f[0]):f[0]+"/"+f[1]}
 function mixedToImproper(w,n,d){return w*d+n}
 function levelNum(group,base){return group==="Yếu"?base:group==="Trung bình"?base+1:group==="Khá"?base+2:base+3}
-function makeQuestions(lesson,group,count){
+function makeQuestions(lesson,group,count,note=""){
  const title=(lesson?.lesson||"").toLowerCase(), subj=lesson?.subject||"";
  const qs=[], math=subj==="Toán";
  const simple=group==="Yếu";
  for(let i=1;i<=count;i++){
   let q="",a="",type="Tự luận";
   const k=(i-1)%8;
+  const req=String(note||"").toLowerCase();
+  const wantMC=/trắc nghiệm|chọn đáp án|khoanh/.test(req), wantFill=/điền|điền từ|điền số/.test(req), wantWord=/bài toán thực tế|thực tế|có lời văn/.test(req), wantTrueFalse=/đúng ?sai|đúng\/sai/.test(req);
   if(math && /hỗn số/.test(title)){
    const w=simple?2+(i%3):levelNum(group,2)+(i%3), d=simple?2+(i%2):4+(i%4), n=1+(i%d);
    if(k%3===0){q="Viết hỗn số "+w+" "+n+"/"+d+" thành phân số.";a=String(mixedToImproper(w,n,d));type="Điền số";}
@@ -353,6 +355,25 @@ function makeQuestions(lesson,group,count){
   } else {
    q="Khoanh vào đáp án đúng về nội dung bài “"+(lesson?.lesson||"bài học")+"”.";a="Giáo viên duyệt theo bài học.";type="Trắc nghiệm";
   }
+  if(req){
+   if(wantMC && math && i%3===1){
+    const opts=[a,"0","1",String(Number(a||0)+1)].filter((v,idx,arr)=>arr.indexOf(v)===idx);
+    while(opts.length<3)opts.push(String(opts.length));
+    const shuffled=opts.slice(0,3);
+    const letter=shuffled.indexOf(a)===0?"A":shuffled.indexOf(a)===1?"B":"C";
+    q+=" Chọn đáp án đúng: A. "+shuffled[0]+"  B. "+shuffled[1]+"  C. "+shuffled[2]+".";
+    a=letter;type="Trắc nghiệm";
+   } else if(wantFill && i%3===1){
+    q="Điền kết quả thích hợp: "+q.replace(/^Tính:\s*/,"");
+    type="Điền số";
+   } else if(wantTrueFalse && i%3===1){
+    const statement=q;
+    q="Đúng hay sai? "+statement;
+    a="Đúng";type="Đúng/Sai";
+   } else if(wantWord && math && /hình thang|hình tam giác|thể tích/.test(title) && i%2===1){
+    type="Bài toán có lời văn";
+   }
+  }
   qs.push({id:i,text:q,answer:a,type});
  }
  return qs;
@@ -379,7 +400,7 @@ function generate(){
   const gifUrl=safeGifUrl(document.getElementById("cGifUrl")?.value);
   if(!lesson) return toast("Chưa có bài học để tạo bài.");
   const groups=group==="Cả 4 nhóm"?GROUPS:[group];
-  const sets=groups.map(g=>({group:g,questions:makeQuestions(lesson,g,count)}));
+  const sets=groups.map(g=>({group:g,questions:makeQuestions(lesson,g,count,note)}));
   draft={
    id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
    subject:lesson.subject,
