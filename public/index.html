@@ -254,13 +254,44 @@ const AVATARS=['🎓','🧑‍🎓','👩‍🎓','👨‍🎓','🦊','🐼','�
 function currentStudent(){return STUDENTS.find(x=>x.id===LAVI.user?.studentId)}
 function syncStudentAvatar(){
  const s=currentStudent(), el=document.getElementById('studentAvatar');
- if(s&&el)el.textContent=s.avatar||'🎓';
+ if(s&&el){const a=s.avatar||'🎓';if(String(a).startsWith('data:image/')){el.textContent='';el.style.backgroundImage='url("'+a+'")';el.style.backgroundSize='cover';el.style.backgroundPosition='center';}else{el.style.backgroundImage='';el.textContent=a;}}
 }
 function openAvatarPicker(){
  if(LAVI.user?.role!=='student')return;
  const s=currentStudent(), current=s?.avatar||'🎓';
- document.getElementById("modalBox").innerHTML='<h2 style="margin-top:0">🖼️ Chọn ảnh đại diện</h2><p class="sub">Em hãy chọn một hình đại diện cho tài khoản của mình.</p><div class="avatar-picker">'+AVATARS.map(a=>'<button class="avatar-choice '+(a===current?'selected':'')+'" onclick="saveStudentAvatar('+JSON.stringify(a)+')" title="Chọn '+a+'">'+a+'</button>').join('')+'</div><button class="btn" onclick="closeModal()">Đóng</button>';
+ document.getElementById("modalBox").innerHTML='<h2 style="margin-top:0">🖼️ Ảnh đại diện</h2><p class="sub">Em có thể chọn avatar có sẵn hoặc tải ảnh của mình từ điện thoại.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><label class="btn primary" style="display:inline-flex;align-items:center;gap:6px">📷 Chọn ảnh từ điện thoại<input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadStudentAvatar(this.files[0])"></label><button class="btn" onclick="closeModal()">Đóng</button></div><div class="avatar-picker">'+AVATARS.map(a=>'<button class="avatar-choice '+(a===current?'selected':'')+'" onclick="saveStudentAvatar('+JSON.stringify(a)+')" title="Chọn '+a+'">'+a+'</button>').join('')+'</div>';
  document.getElementById("modal").classList.add("show");
+}
+async function uploadStudentAvatar(file){
+ if(!file)return;
+ if(!/^image\/(png|jpeg|webp)$/.test(file.type)){toast('⚠️ Chỉ nhận PNG, JPG hoặc WebP');return}
+ if(file.size>5*1024*1024){toast('⚠️ Ảnh gốc quá lớn. Hãy chọn ảnh dưới 5 MB');return}
+ try{
+  const data=await resizeAvatarImage(file);
+  const r=await fetch('/api/student/avatar',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({image:data})});
+  const j=await r.json();if(!r.ok)throw new Error(j.error||'Không tải được ảnh');
+  const s=currentStudent();if(s)s.avatar=j.avatar;
+  syncStudentAvatar();closeModal();toast('✅ Đã cập nhật ảnh đại diện!');
+ }catch(e){toast(e.message)}
+}
+function resizeAvatarImage(file){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onload=()=>{
+   const img=new Image();
+   img.onload=()=>{
+    const size=256,scale=Math.min(size/img.width,size/img.height,1);
+    const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+    const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,w,h);
+    resolve(cv.toDataURL('image/jpeg',.82));
+   };
+   img.onerror=()=>reject(new Error('Không đọc được ảnh'));
+   img.src=reader.result;
+  };
+  reader.onerror=()=>reject(new Error('Không đọc được ảnh'));
+  reader.readAsDataURL(file);
+ });
 }
 async function saveStudentAvatar(avatar){
  try{
