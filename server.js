@@ -110,6 +110,13 @@ app.post('/api/student/avatar',auth,(req,res)=>{
   if(req.user.role!=='student')return res.status(403).json({error:'Chỉ học sinh được đổi ảnh đại diện'});
   const allowed=['🎓','🧑‍🎓','👩‍🎓','👨‍🎓','🦊','🐼','🐯','🐰','🐨','🐸','🐵','🦄','🐱','🐶','🐻','🐼','🐨','🦁','🐯','🐷','🐙','🦋','🌈','⭐','🚀','⚽','🎨','🎵','📚','🤖'];
   const avatar=String(req.body?.avatar||'').trim();
+  const image=String(req.body?.image||'').trim();
+  if(image){
+    if(!/^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/.test(image))return res.status(400).json({error:'Ảnh không đúng định dạng'});
+    if(image.length>1400000)return res.status(400).json({error:'Ảnh quá lớn. Hãy chọn ảnh nhỏ hơn 1 MB'});
+    db.prepare('UPDATE students SET avatar=? WHERE id=?').run(image,req.user.studentId);
+    return res.json({ok:true,avatar:image});
+  }
   if(!allowed.includes(avatar))return res.status(400).json({error:'Ảnh đại diện không hợp lệ'});
   db.prepare('UPDATE students SET avatar=? WHERE id=?').run(avatar,req.user.studentId);
   res.json({ok:true,avatar});
