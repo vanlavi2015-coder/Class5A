@@ -469,8 +469,8 @@ if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.t
   if(/phép cộng số thập phân/.test(title)){
    const bank=[[7.635,6.249],[23.58,5.271],[4.61,8],[56,3.7],[12.45,6.8],[35.7,4.26]]; const b=bank[(i-1)%bank.length];
    if(i%3===1)add("Đặt tính rồi tính: "+dec(b[0])+" + "+dec(b[1])+".",dec(b[0]+b[1]),"Đặt tính rồi tính");
-   else if(i%3===2)add("Tính bằng cách thuận tiện: "+dec(b[0])+" + "+dec(b[1])+" + 0.",dec(b[0]+b[1]),"Tính thuận tiện");
-   else add("Tính: "+dec(b[1])+" + "+dec(b[0])+".",dec(b[0]+b[1]),"Tính chất giao hoán");
+   else if(i%3===2){const x=group==="Yếu"?2.4:group==="Trung bình"?3.25:group==="Khá"?12.48:25.75;const y=10-x;add("Tính bằng cách thuận tiện nhất: "+dec(x)+" + "+dec(y)+" + 4,5 + 5,5.",dec(x+y+10),"Tính thuận tiện – nhóm số tròn");
+   }else add("Tính: "+dec(b[1])+" + "+dec(b[0])+".",dec(b[0]+b[1]),"Tính chất giao hoán");
    return true;
   }
   if(/phép nhân số thập phân/.test(title)){
@@ -561,7 +561,7 @@ if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.t
    if(i%2===1)manualAdd("Khảo sát 10 bạn trong lớp về phương tiện các bạn dùng để đến trường. Lập bảng số liệu và nêu nhận xét từ kết quả khảo sát.","Khảo sát – lập bảng – nhận xét"); else manualAdd("Dựa vào một bảng số liệu do cô cung cấp, hãy đọc số liệu, nêu ít nhất 2 nhận xét và đề xuất 1 việc làm phù hợp với lớp/trường.","Đọc bảng – nhận xét – đề xuất"); return true;
   }
   if(/ôn tập các phép tính với số tự nhiên, phân số, số thập phân/.test(title)){
-   const m=(i-1)%4; if(m===0){const a=125+i,b=37+i;add("Tính: "+a+" + "+b+".",String(a+b),"Tính số tự nhiên");} else if(m===1){const d=2+(i%4),a=1+(i%3);add("Tính: "+a+"/"+d+" + 1/"+d+".",fracText(a+1,d),"Tính phân số");} else if(m===2){const a=12.5+i/10,b=3.25;add("Tính: "+dec(a)+" + "+dec(b)+".",dec(a+b),"Tính số thập phân");} else {const a=12.5+i/10,b=3.25;add("Tính thuận tiện: "+dec(a)+" + "+dec(b)+" − "+dec(b)+".",dec(a),"Tính thuận tiện");} return true;
+   const m=(i-1)%4; if(m===0){const a=125+i,b=37+i;add("Tính: "+a+" + "+b+".",String(a+b),"Tính số tự nhiên");} else if(m===1){const d=2+(i%4),a=1+(i%3);add("Tính: "+a+"/"+d+" + 1/"+d+".",fracText(a+1,d),"Tính phân số");} else if(m===2){const a=12.5+i/10,b=3.25;add("Tính: "+dec(a)+" + "+dec(b)+".",dec(a+b),"Tính số thập phân");} else {const a=12.5+i/10,b=10-(12.5+i/10);add("Tính bằng cách thuận tiện nhất: "+dec(a)+" + "+dec(b)+" + 7,5 + 2,5.",dec(a+b+10),"Tính thuận tiện – nhóm số tròn");} return true;
   }
   if(/ôn tập tỉ số, tỉ số phần trăm/.test(title)){
    const m=(i-1)%3; if(m===0){const a=49+i,b=70+i;add("Tính tỉ số phần trăm của "+a+" và "+b+".",dec(a/b*100)+"%","Tỉ số phần trăm");} else if(m===1){const p=[10,15,20][(i-1)%3],a=350000;add("Tìm "+p+"% của "+a+" đồng.",dec(a*p/100)+" đồng","Giá trị phần trăm");} else {const price=250000+i*1000,p=15;add("Một món hàng giá "+price+" đồng được giảm "+p+"%. Số tiền được giảm là bao nhiêu?",dec(price*p/100)+" đồng","Giảm giá");} return true;
