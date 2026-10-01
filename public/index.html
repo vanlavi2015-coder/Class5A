@@ -1132,6 +1132,11 @@ function generate(){
   toast("Không tạo được bài: "+(e.message||"lỗi không xác định"));
  }
 }
+function setDraftText(si,qi,value){
+ if(!draft?.sets?.[si]?.questions?.[qi])return;
+ const q=draft.sets[si].questions[qi];
+ q.text=String(value??'').trim();
+}
 function setDraftAnswer(si,qi,value){
  if(!draft?.sets?.[si]?.questions?.[qi])return;
  const q=draft.sets[si].questions[qi];
@@ -1154,7 +1159,8 @@ function renderDraft(){
  <div class="sub" style="margin:10px 0;padding:10px;background:#ecfdf3;border-radius:10px">✅ <b>Cô duyệt đáp án trước khi giao.</b> Nếu học sinh trả lời đúng bằng cách khác, LAVI sẽ đối chiếu các đáp án được chấp nhận và giá trị tương đương.</div>
  ${draft.sets.map((set,si)=>`<div class="assignment"><h3>${esc(set.group)} · ${difficulty(set.group)}</h3>
  ${set.questions.map((q,qi)=>`<div class="question">
- <b>Câu ${qi+1}. ${esc(q.text)}</b>
+ <label class="sub" style="display:block;font-weight:800">✏️ Nội dung câu hỏi (cô có thể sửa):</label>
+ <textarea oninput="setDraftText(${si},${qi},this.value)" style="width:100%;box-sizing:border-box;margin-top:4px;min-height:76px;resize:vertical">${esc(q.text)}</textarea>
  <label class="sub" style="display:block;margin-top:9px">Đáp án chuẩn (cô kiểm tra/sửa):</label>
  <input value="${esc(q.answer)}" onchange="setDraftAnswer(${si},${qi},this.value)" style="width:100%;box-sizing:border-box;margin-top:4px">
  <label class="sub" style="display:block;margin-top:8px">Đáp án/cách trả lời khác vẫn chấp nhận <span style="font-weight:400">(ngăn cách bằng dấu ;)</span>:</label>
