@@ -115,9 +115,37 @@ app.get('/api/overall-leaderboard',auth,(req,res)=>{
   const assignmentRows=db.prepare('SELECT student_id, SUM(CASE WHEN json_extract(payload,\'$.score\') IS NOT NULL THEN CAST(json_extract(payload,\'$.score\') AS REAL) ELSE 0 END) AS points, COUNT(CASE WHEN json_extract(payload,\'$.score\') IS NOT NULL THEN 1 END) AS completed FROM submissions GROUP BY student_id').all();
   const games=db.prepare('SELECT student_id, game_type, score, stars, correct, total, time_seconds FROM game_results').all();
   const amap=new Map(assignmentRows.map(x=>[Number(x.student_id),{points:Number(x.points)||0,completed:Number(x.completed)||0}]));
+  // Điểm trò chơi = cộng ĐIỂM CAO NHẤT của cả 3 trò:
+  // ⚡ Tính nhanh + 🎯 Săn đáp án + 🧠 Thử tài kiến thức.
+  // Mỗi trò có tối đa 3 lượt; game_results chỉ giữ kết quả cao nhất của từng trò.
+  const GAME_TYPES=['math','choice','knowledge'];
   const gmap=new Map();
-  for(const g of games){const id=Number(g.student_id);if(!gmap.has(id))gmap.set(id,{points:0,stars:0,games:0,details:[]});const z=gmap.get(id);z.points+=Number(g.score)||0;z.stars+=Number(g.stars)||0;z.games++;z.details.push({type:g.game_type,score:Number(g.score)||0,stars:Number(g.stars)||0,correct:Number(g.correct)||0,total:Number(g.total)||0,timeSeconds:Number(g.time_seconds)||0});}
-  const list=ss.map(s=>{const a=amap.get(s.id)||{points:0,completed:0};const g=gmap.get(s.id)||{points:0,stars:0,games:0,details:[]};return {studentId:s.id,name:s.name,group:s.group,assignmentPoints:a.points,completedAssignments:a.completed,gamePoints:g.points,gameStars:g.stars,playedGames:g.games,totalPoints:a.points+g.points,details:g.details};});
+  for(const g of games){
+    const id=Number(g.student_id);
+    if(!gmap.has(id))gmap.set(id,{points:0,stars:0,games:0,details:[],byType:{}});
+    const z=gmap.get(id);
+    const score=Number(g.score)||0, stars=Number(g.stars)||0, type=String(g.game_type||'');
+    z.points+=score;
+    z.stars+=stars;
+    z.games++;
+    z.byType[type]={score,stars,correct:Number(g.correct)||0,total:Number(g.total)||0,timeSeconds:Number(g.time_seconds)||0};
+    z.details.push({type,score,stars,correct:Number(g.correct)||0,total:Number(g.total)||0,timeSeconds:Number(g.time_seconds)||0});
+  }
+  const list=ss.map(s=>{
+    const a=amap.get(s.id)||{points:0,completed:0};
+    const g=gmap.get(s.id)||{points:0,stars:0,games:0,details:[],byType:{}};
+    const gameMath=Number(g.byType.math?.score||0);
+    const gameChoice=Number(g.byType.choice?.score||0);
+    const gameKnowledge=Number(g.byType.knowledge?.score||0);
+    const gamePoints=gameMath+gameChoice+gameKnowledge;
+    return {
+      studentId:s.id,name:s.name,group:s.group,
+      assignmentPoints:a.points,completedAssignments:a.completed,
+      gamePoints,gameStars:g.stars,playedGames:g.games,
+      gameMath,gameChoice,gameKnowledge,
+      totalPoints:a.points+gamePoints,details:g.details
+    };
+  });
   list.sort((a,b)=>b.totalPoints-a.totalPoints||b.assignmentPoints-a.assignmentPoints||b.gamePoints-a.gamePoints||a.studentId-b.studentId);
   list.forEach((x,i)=>x.rank=i+1);
   const me=list.find(x=>x.studentId===req.user.studentId);
