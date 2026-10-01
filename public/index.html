@@ -404,7 +404,17 @@ function applyExtraRequirements(questions,lesson,group,note){
   return m?Number(m[0]):null;
  }
   function makeMC(q,index){
-  const correct=String(q.answer??"").trim();
+  let correct=String(q.answer??"").trim();
+  // Nếu dữ liệu cũ đã lưu đáp án A/B/C/D, cố gắng khôi phục đáp án thật từ nội dung câu hỏi.
+  if(/^[ABCD]$/.test(correct)){
+   const txt=String(q.text||"");
+   let m=txt.match(/Viết số thập phân\s+([0-9]+[.,][0-9]+)\s+dưới dạng số thập phân có chữ số 0 ở cuối/i);
+   if(m) correct=m[1].replace(".",",")+"0";
+   else {
+    m=txt.match(/Viết số thập phân có phần nguyên\s+([0-9]+)\s+và phần thập phân\s+([0-9]+)/i);
+    if(m) correct=m[1]+","+m[2];
+   }
+  }
   let opts=[];
   const nMatch=correct.replace(",",".").match(/^(-?\d+(?:\.\d+)?)(\s*(?:cm²|m²|cm³|m³|kg|g|l|ml|%))?$/i);
   const fracMatch=correct.match(/^(-?\d+)\s*\/\s*(\d+)$/);
