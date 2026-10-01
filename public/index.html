@@ -6,6 +6,17 @@
 <meta name="theme-color" content="#4f46e5">
 <title>LAVI 5A – Online V3 | Giao bài • Nộp bài • Sao thưởng</title>
 <style>
+.game-card{padding:16px;text-align:center}
+.game-card h3{margin:0 0 6px}
+.game-board{max-width:680px;margin:auto;padding:18px;border-radius:18px;background:var(--card,#fff);border:1px solid rgba(0,0,0,.08)}
+.game-q{font-size:22px;font-weight:800;margin:16px 0;text-align:center}
+.game-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.game-option{padding:13px;border:1px solid rgba(0,0,0,.12);border-radius:12px;background:#fff;font-size:18px;font-weight:700;cursor:pointer}
+.game-option:active{transform:scale(.98)}
+.game-result{text-align:center;padding:18px;font-size:18px}
+.game-progress{height:9px;border-radius:99px;background:#eee;overflow:hidden}.game-progress i{display:block;height:100%;background:currentColor}
+@media(max-width:600px){.game-options{grid-template-columns:1fr}.game-q{font-size:20px}}
+</style>
 :root{--p:#4f46e5;--p2:#7c3aed;--bg:#f4f6fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#e4e7ec;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--gold:#f59e0b}
 *{box-sizing:border-box}html,body{margin:0;padding:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink)}
 button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:flex}.side{width:248px;position:fixed;left:0;top:0;bottom:0;background:#111827;color:#fff;padding:16px 13px;z-index:20;overflow:auto}.brand{font-weight:900;font-size:22px;padding:9px 10px 20px}.brand span{color:#a5b4fc}.nav button{width:100%;border:0;background:transparent;color:#d1d5db;text-align:left;padding:11px 12px;border-radius:10px;margin:2px 0}.nav button:hover,.nav button.active{background:#312e81;color:#fff}
@@ -130,6 +141,25 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
     <div class="field"><label>🏆 Cách tính</label><select id="raceMode" onchange="loadRace()"><option value="score">Điểm cao trước</option><option value="speed">Điểm + thời gian</option><option value="stars">Sao thưởng</option></select></div>
     <div class="field"><label>🔄 Cập nhật</label><button class="btn primary" onclick="loadRace()">↻ Cập nhật bảng</button></div>
    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <h2>🎮 Trò chơi 5A</h2>
+   <p class="sub">Học sinh có thể chơi nhanh để luyện tập. Kết quả trò chơi hiển thị ngay trên máy đang chơi.</p>
+   <div class="grid3">
+    <div class="card game-card">
+     <h3>⚡ Tính nhanh</h3><p class="sub">10 câu Toán lớp 5 · càng nhanh càng tốt.</p>
+     <button class="btn primary" onclick="startQuickMathGame()">▶️ Chơi ngay</button>
+    </div>
+    <div class="card game-card">
+     <h3>🎯 Săn đáp án</h3><p class="sub">Chọn đáp án đúng trong 10 câu.</p>
+     <button class="btn primary" onclick="startChoiceGame()">▶️ Chơi ngay</button>
+    </div>
+    <div class="card game-card">
+     <h3>🧠 Thử tài kiến thức</h3><p class="sub">10 câu kiến thức Tiểu học.</p>
+     <button class="btn primary" onclick="startKnowledgeGame()">▶️ Chơi ngay</button>
+    </div>
+   </div>
+   <div id="gameArea" style="margin-top:14px"></div>
   </div>
   <div class="race-stat" style="margin-top:14px">
    <div class="card"><div class="sub">Đã tham gia</div><div class="num" id="raceCount">0/0</div></div>
@@ -1827,6 +1857,87 @@ function fillRaceAssignments(){
  el.innerHTML=arr.length?arr.map(a=>'<option value="'+esc(a.id)+'">'+esc((a.subject||'')+' · '+(a.lesson||a.title||'Bài học'))+'</option>').join(''):'<option value="">Chưa có bài</option>';
 }
 function medal(n){return n===1?'🥇':n===2?'🥈':n===3?'🥉':String(n)}
+const GAME_STATE={questions:[],index:0,score:0,correct:0,started:0,type:""};
+function gameEl(){return document.getElementById('gameArea')}
+function gameEsc(v){return esc(String(v??''))}
+function makeMathQuestion(){
+ const ops=['+','−','×'];
+ const op=ops[Math.floor(Math.random()*ops.length)];
+ let a,b,answer;
+ if(op==='+'){a=10+Math.floor(Math.random()*90);b=10+Math.floor(Math.random()*90);answer=a+b}
+ else if(op==='−'){a=30+Math.floor(Math.random()*70);b=5+Math.floor(Math.random()*(a-4));answer=a-b}
+ else {a=2+Math.floor(Math.random()*9);b=2+Math.floor(Math.random()*9);answer=a*b}
+ return {text:a+' '+op+' '+b+' = ?',answer};
+}
+function gameShell(title){
+ gameEl().innerHTML='<div class="game-board"><div class="sub">'+gameEsc(title)+'</div><div id="gameBody"></div></div>';
+}
+function renderGameQuestion(){
+ const q=GAME_STATE.questions[GAME_STATE.index],body=document.getElementById('gameBody'); if(!q||!body)return;
+ const pct=Math.round(GAME_STATE.index/GAME_STATE.questions.length*100);
+ body.innerHTML='<div class="game-progress"><i style="width:'+pct+'%"></i></div><div class="sub" style="margin-top:8px">Câu '+(GAME_STATE.index+1)+' / '+GAME_STATE.questions.length+' · Đúng: '+GAME_STATE.correct+'</div><div class="game-q">'+gameEsc(q.text)+'</div><div id="gameChoices" class="game-options"></div>';
+ if(q.options){
+  document.getElementById('gameChoices').innerHTML=q.options.map((x,i)=>'<button class="game-option" onclick="answerGame('+i+')">'+gameEsc(x)+'</button>').join('');
+ }else{
+  document.getElementById('gameChoices').innerHTML='<div style="grid-column:1/-1;display:flex;gap:8px"><input id="gameAnswer" inputmode="numeric" autocomplete="off" style="flex:1;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:18px" placeholder="Nhập đáp án"><button class="btn primary" onclick="answerGame()">Trả lời</button></div>';
+  setTimeout(()=>document.getElementById('gameAnswer')?.focus(),50);
+ }
+}
+function answerGame(choice){
+ const q=GAME_STATE.questions[GAME_STATE.index];
+ let value=choice==null?String(document.getElementById('gameAnswer')?.value||'').trim():q.options[choice];
+ const ok=String(value).trim().toLowerCase()===String(q.answer).trim().toLowerCase();
+ if(ok)GAME_STATE.correct++;
+ GAME_STATE.index++;
+ if(GAME_STATE.index>=GAME_STATE.questions.length){finishGame();return}
+ renderGameQuestion();
+}
+function finishGame(){
+ const secs=Math.max(1,Math.round((Date.now()-GAME_STATE.started)/1000));
+ const score=GAME_STATE.correct*10;
+ const stars=GAME_STATE.correct>=9?5:GAME_STATE.correct>=7?4:GAME_STATE.correct>=5?3:GAME_STATE.correct>=3?2:GAME_STATE.correct>0?1:0;
+ gameEl().innerHTML='<div class="game-board game-result"><div style="font-size:52px">'+(stars?'🌟'.repeat(stars):'💪')+'</div><h2>Hoàn thành!</h2><p>Đúng <b>'+GAME_STATE.correct+'/'+GAME_STATE.questions.length+'</b> câu · <b>'+score</b> điểm · '+secs+' giây</p><p>'+stars+' ⭐</p><button class="btn primary" onclick="startGameAgain()">🔄 Chơi lại</button> <button class="btn" onclick="gameEl().innerHTML=''">Đóng</button></div>';
+}
+function startGame(title,questions,type){
+ GAME_STATE.questions=questions;GAME_STATE.index=0;GAME_STATE.correct=0;GAME_STATE.started=Date.now();GAME_STATE.type=type||'';
+ gameShell(title);renderGameQuestion();
+}
+function startQuickMathGame(){startGame('⚡ Tính nhanh – 10 câu Toán',Array.from({length:10},makeMathQuestion),'math')}
+function startChoiceGame(){
+ const bank=[
+  ['3/4 của 20 bằng bao nhiêu?',['12','15','16','18'],'15'],
+  ['25% của 80 bằng bao nhiêu?',['10','15','20','25'],'20'],
+  ['Diện tích hình tam giác có đáy 8 cm, cao 5 cm là?',['20 cm²','40 cm²','13 cm²','26 cm²'],'20 cm²'],
+  ['1,5 m bằng bao nhiêu cm?',['15 cm','150 cm','105 cm','1500 cm'],'150 cm'],
+  ['Hình thang có đáy 6 cm, 10 cm, cao 4 cm có diện tích?',['16 cm²','24 cm²','32 cm²','40 cm²'],'32 cm²'],
+  ['2 giờ 30 phút bằng bao nhiêu phút?',['120','130','150','180'],'150'],
+  ['5 × (20 + 2) bằng?',['102','110','120','130'],'110'],
+  ['Một số chia cho 10 thì giá trị số đó thay đổi thế nào?',['Gấp 10 lần','Giảm 10 lần','Không đổi','Tăng 10 đơn vị'],'Giảm 10 lần'],
+  ['3,25 + 1,5 bằng?',['4,25','4,5','4,75','5,25'],'4,75'],
+  ['Chu vi hình vuông cạnh 7 cm là?',['14 cm','21 cm','28 cm','49 cm'],'28 cm']
+ ].map(x=>({text:x[0],options:x[1],answer:x[2]}));
+ startGame('🎯 Săn đáp án – 10 câu',bank,'choice');
+}
+function startKnowledgeGame(){
+ const bank=[
+  ['Từ “chăm chỉ” là từ loại nào?',['Danh từ','Động từ','Tính từ','Đại từ'],'Tính từ'],
+  ['Cặp kết từ “vì… nên…” biểu thị quan hệ gì?',['Đối lập','Nguyên nhân – kết quả','Điều kiện – kết quả','Tăng tiến'],'Nguyên nhân – kết quả'],
+  ['Nước sôi ở khoảng bao nhiêu độ C?',['0°C','50°C','100°C','150°C'],'100°C'],
+  ['Trái Đất quay quanh?',['Mặt Trăng','Mặt Trời','Sao Hỏa','Sao Kim'],'Mặt Trời'],
+  ['Một thế kỉ có bao nhiêu năm?',['10','50','100','1000'],'100'],
+  ['1 tấn bằng bao nhiêu kg?',['10','100','1000','10000'],'1000'],
+  ['Hình có 4 cạnh bằng nhau và 4 góc vuông là?',['Hình tam giác','Hình chữ nhật','Hình vuông','Hình thang'],'Hình vuông'],
+  ['Từ nào đồng nghĩa với “dũng cảm”?',['can đảm','nhút nhát','buồn bã','chậm chạp'],'can đảm'],
+  ['5/10 viết thành số thập phân là?',['0,05','0,5','5','0,10'],'0,5'],
+  ['Muốn bảo vệ môi trường, em nên làm gì?',['Xả rác','Tiết kiệm nước và phân loại rác','Đốt rác bừa bãi','Lãng phí điện'],'Tiết kiệm nước và phân loại rác']
+ ].map(x=>({text:x[0],options:x[1],answer:x[2]}));
+ startGame('🧠 Thử tài kiến thức – 10 câu',bank,'knowledge');
+}
+function startGameAgain(){
+ if(GAME_STATE.type==='math')startQuickMathGame();
+ else if(GAME_STATE.type==='choice')startChoiceGame();
+ else startKnowledgeGame();
+}
 async function loadRace(){
  const el=document.getElementById('raceAssignment'); if(!el)return;
  if(!el.value)fillRaceAssignments();
