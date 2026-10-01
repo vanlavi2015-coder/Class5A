@@ -84,7 +84,7 @@ async function restoreBackupIfEmpty(){
  if(!backupEnabled())return false;
  const n=Number(db.prepare('SELECT COUNT(*) n FROM students').get().n||0); if(n>0)return false;
  const api='https://api.github.com/repos/'+BACKUP_REPO+'/contents/'+BACKUP_PATH+'?ref='+encodeURIComponent(BACKUP_BRANCH);
- const r=await githubRequest(api,{headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+BACKUP_TOKEN,'X-GitHub-Api-Version':'2026-03-10','User-Agent':'LAVI-5A'});
+ const r=await githubRequest(api,{headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+BACKUP_TOKEN,'X-GitHub-Api-Version':'2026-03-10','User-Agent':'LAVI-5A'}});
  if(!r.ok){if(r.status===404)return false;throw new Error('Không đọc được backup GitHub: '+r.status);}
  const x=await r.json(); const text=Buffer.from(String(x.content||'').replace(/\\s/g,''),'base64').toString('utf8'); const data=decryptBackup(text);
  if(!data?.students?.length)return false;
