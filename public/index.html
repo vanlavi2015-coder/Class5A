@@ -394,7 +394,7 @@ function frac(n,d){if(d<0){n=-n;d=-d}const g=gcd(n,d);return [n/g,d/g]}
 function fracText(n,d){const f=frac(n,d);return f[1]===1?String(f[0]):f[0]+"/"+f[1]}
 function mixedToImproper(w,n,d){return w*d+n}
 function levelNum(group,base){return group==="Yếu"?base:group==="Trung bình"?base+1:group==="Khá"?base+2:base+3}
-function makeQuestions(lesson,group,count,note=""){
+function makeQuestions(lesson,group,count,note="",seed=0){
  const rawTitle=String(lesson?.lesson||""); const title=rawTitle.toLowerCase().replace(/[\u00a0\u2000-\u200b]/g," ").replace(/\s+/g," ").trim(), subj=String(lesson?.subject||"").trim();
  const qs=[], math=subj==="Toán", simple=group==="Yếu";
  const req=String(note||"").toLowerCase();
@@ -1062,7 +1062,7 @@ if(/khái niệm về số thập phân/.test(title) && !/luyện tập chung/.t
 
  let madeCount=0,attempt=0;
  while(madeCount<count && attempt<Math.max(60,count*10)){
-  const i=madeCount+1+attempt*7;
+  const i=madeCount+1+attempt*7+Number(seed||0);
   let made=math?standardMath(i):(subj==="Tiếng Việt"?standardVietnamese(i):standardKnowledge(i));
   if(!made) made=standardKnowledge(i);
   const candidate=qs[qs.length-1];
@@ -1372,16 +1372,19 @@ function generate(){
    };
    lessons.forEach((lesson,idx)=>{
     const n=Math.max(1,base+(idx<extra?1:0));
+    // Mỗi bài/tiết dùng một "seed" khác nhau để không lấy lại cùng câu ở cùng vị trí.
+    const seed=idx*31+String(lesson?.lesson||"").length*7;
     const pool=applyExtraRequirements(
-      makeQuestions(lesson,g,n+8,note),lesson,g,note
+      makeQuestions(lesson,g,n+12,note,seed),lesson,g,note
     );
     for(const q of pool){if(all.length>=count)break;addUnique(q);}
    });
    if(all.length<count){
     for(const lesson of lessons){
      if(all.length>=count)break;
+     const seed=(lessons.indexOf(lesson)+1)*47+String(lesson?.lesson||"").length*11;
      const pool=applyExtraRequirements(
-       makeQuestions(lesson,g,count+12,note),lesson,g,note
+       makeQuestions(lesson,g,count+18,note,seed),lesson,g,note
      );
      for(const q of pool){if(all.length>=count)break;addUnique(q);}
     }
