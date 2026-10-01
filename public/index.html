@@ -855,7 +855,14 @@ function makeQuestions(lesson,group,count,note=""){
   if(/tìm đại từ/.test(t)&&!q.text.includes(q.answer)){q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;}
   if(/tìm (một )?(danh từ|động từ|tính từ)/.test(t)&&!q.text.toLowerCase().includes(a)){q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;}
   if(q.options&&(!Array.isArray(q.options)||q.options.length!==4||!["A","B","C","D"].includes(q.answer))){q.manual=true;q.answer="";q.options=undefined;q.type="Tự luận – cô chấm";return q;}
-  if(/^(đặt|viết|hãy viết|nêu tác dụng|giải thích|trình bày|thực hiện|lập dàn ý)/.test(t)){q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;}
+  if(/^(đặt|viết|hãy viết|nêu tác dụng|giải thích|trình bày|thực hiện|lập dàn ý)/.test(t)
+     && !/^(đặt tính|viết số|viết số đo|viết tỉ số|viết phân số|đặt dấu|viết số thích hợp)/.test(t)){
+   q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;
+  }
+  // Đáp án A/B/C/D chỉ hợp lệ khi câu có đúng 4 phương án.
+  if(/^[ABCD]$/.test(q.answer)&&!Array.isArray(q.options)){
+   q.manual=true;q.answer="";q.type="Tự luận – cô chấm";return q;
+  }
   return q;
  }
  const checked=qs.map(qualityGate);
