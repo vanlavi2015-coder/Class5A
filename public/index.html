@@ -1091,12 +1091,11 @@ function makeQuestions(lesson,group,count,note="",seed=0){
   const candidate=qs[qs.length-1];
   const normText=v=>String(v||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\d+(?:[.,]\d+)?/g,"#").replace(/[^a-z0-9#]+/g," ").replace(/\s+/g," ").trim();
   const normNums=v=>(String(v||"").match(/-?\d+(?:[.,]\d+)?/g)||[]).map(x=>x.replace(",","." )).join("|");
-  const duplicate=candidate&&qs.slice(0,-1).some(q=>{
-   const exact=String(q.text||"").trim().toLowerCase()===String(candidate.text||"").trim().toLowerCase();
-   const sameTemplate=normText(q.text)===normText(candidate.text);
-   const sameNumbers=normNums(q.text)===normNums(candidate.text);
-   return exact||(sameTemplate&&sameNumbers);
-  });
+  // Chỉ loại câu trùng nội dung thực sự. Không loại các câu khác nhau
+  // chỉ vì cùng dạng toán hoặc cùng bộ số; như vậy có thể làm hụt 8 câu.
+  const duplicate=candidate&&qs.slice(0,-1).some(q=>
+   String(q.text||"").trim().toLowerCase()===String(candidate.text||"").trim().toLowerCase()
+  );
   if(candidate&&!duplicate) madeCount++;
   else if(candidate) qs.pop();
   attempt++;
