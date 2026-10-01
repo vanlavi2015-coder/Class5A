@@ -102,7 +102,7 @@ body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
    <div class="grid3">
     <div class="field"><label>Môn</label><select id="cSubject" onchange="fillWeeks()"></select></div>
     <div class="field"><label>Tuần</label><select id="cWeek" onchange="fillLessons()"></select></div>
-    <div class="field"><label>Bài học</label><select id="cLesson"></select></div>
+    <div class="field"><label>Bài học / tiết <span class="sub">(có thể chọn nhiều)</span></label><select id="cLesson" multiple size="5"></select><div class="sub">Giữ Ctrl (Windows) hoặc ⌘ (Mac) để chọn nhiều tiết.</div></div>
    </div>
    <div class="grid3">
     <div class="field"><label>Đối tượng giao bài</label><select id="cGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option>Tất cả</option></select></div>
@@ -349,10 +349,14 @@ function fillLessons(){
  const items=CURRICULUM.filter(x=>x.subject===sub && x.week===w);
  document.getElementById("cLesson").innerHTML=items.map((x,i)=>`<option value="${i}">${esc(x.lesson)}</option>`).join("")
 }
-function selectedLesson(){
- const sub=document.getElementById("cSubject").value,w=document.getElementById("cWeek").value,i=+document.getElementById("cLesson").value||0;
- return CURRICULUM.filter(x=>x.subject===sub&&x.week===w)[i]
+function selectedLessons(){
+ const sub=document.getElementById("cSubject").value,w=document.getElementById("cWeek").value;
+ const items=CURRICULUM.filter(x=>x.subject===sub&&x.week===w);
+ const el=document.getElementById("cLesson");
+ const vals=[...(el?.selectedOptions||[])].map(o=>Number(o.value)).filter(Number.isFinite);
+ return (vals.length?vals:[0]).map(i=>items[i]).filter(Boolean);
 }
+function selectedLesson(){return selectedLessons()[0]}
 function difficulty(group){return {Tốt:"vận dụng cao, nhiều bước và có bài toán thực tế",Khá:"vận dụng, 1–2 bước và có số liệu thực tế","Trung bình":"cơ bản, thao tác trực tiếp và số liệu rõ ràng",Yếu:"củng cố kiến thức nền, câu ngắn, số liệu nhỏ và có gợi ý"}[group]}
 function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=a%b;a=b;b=t}return a||1}
 function frac(n,d){if(d<0){n=-n;d=-d}const g=gcd(n,d);return [n/g,d/g]}
@@ -1313,41 +1317,51 @@ function validateQuestionSet(questions){
 }
 function generate(){
  try{
-  const lesson=selectedLesson();
+  const lessons=selectedLessons();
   const group=document.getElementById("cGroup").value;
   const count=Math.max(3,Math.min(15,Number(document.getElementById("cCount").value)||8));
   const due=document.getElementById("cDue").value;
   const note=(document.getElementById("cNote").value||"").trim();
   const gifUrl=safeGifUrl(document.getElementById("cGifUrl")?.value);
-  if(!lesson) return toast("Chưa có bài học để tạo bài.");
+  if(!lessons.length) return toast("Chưa có tiết/bài học để tạo bài.");
   const groups=group==="Cả 4 nhóm"?GROUPS:[group];
+  const makeMultiQuestions=(g)=>{
+   const base=Math.floor(count/lessons.length),extra=count%lessons.length;
+   const all=[];
+   lessons.forEach((lesson,idx)=>{
+    const n=Math.max(1,base+(idx<extra?1:0));
+    const generated=makeQuestions(lesson,g,n,note);
+    const customized=applyExtraRequirements(generated,lesson,g,note);
+    all.push(...customized);
+   });
+   return all.map((q,i)=>({...q,id:i+1}));
+  };
   let sets;
   if(group==="Tất cả"){
-   const generated=makeQuestions(lesson,"Khá",count,note);
-   const customized=applyExtraRequirements(generated,lesson,"Khá",note);
-   const questions=finalizeQuestionSet(customized);
+   const questions=finalizeQuestionSet(makeMultiQuestions("Khá"));
    const check=validateQuestionSet(questions);
    if(check.length)return toast("⚠️ LAVI chưa cho giao đề: "+check.slice(0,3).join(" "));
    sets=[{group:"Tất cả",questions}];
   }else{
    sets=groups.map(g=>{
-    const generated=makeQuestions(lesson,g,count,note);
-    const customized=applyExtraRequirements(generated,lesson,g,note);
-    const questions=finalizeQuestionSet(customized);
+    const questions=finalizeQuestionSet(makeMultiQuestions(g));
     const check=validateQuestionSet(questions);
     if(check.length)throw new Error(g+": "+check.slice(0,3).join(" "));
     return {group:g,questions};
    });
   }
+  const weeks=[...new Set(lessons.map(x=>String(x.week)))];
+  const lessonNames=lessons.map(x=>x.lesson);
   draft={
    id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
-   subject:lesson.subject,
-   week:String(lesson.week),
-   topic:lesson.topic||"",
-   lesson:lesson.lesson,
-   duration:lesson.duration||"",
+   subject:lessons[0].subject,
+   week:weeks.join(", "),
+   topic:[...new Set(lessons.map(x=>x.topic||""))].filter(Boolean).join(" · "),
+   lesson:lessonNames.join(" + "),
+   duration:lessons.map(x=>x.duration).filter(Boolean).join(" + "),
    group,
    count,
+   lessonIds:lessons.map(x=>x.lesson),
    due:due||"",
    note,
    gifUrl,
@@ -1357,7 +1371,7 @@ function generate(){
   };
   document.getElementById("draft").innerHTML=renderDraft();
   document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});
-  toast(group==="Tất cả"?"Đã tạo bài chung cho cả lớp":"Đã tạo bản nháp "+sets.length+" nhóm");
+  toast(lessons.length>1?"Đã tạo đề kết hợp "+lessons.length+" tiết/bài học":"Đã tạo bài theo tiết đã chọn");
  }catch(e){
   console.error(e);
   toast("Không tạo được bài: "+(e.message||"lỗi không xác định"));
