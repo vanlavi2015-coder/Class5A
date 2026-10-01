@@ -14,8 +14,10 @@ app.use(express.static(path.join(__dirname,'public'),{etag:false,maxAge:0}));
 const PORT=process.env.PORT||3000;
 const SECRET=process.env.LAVI_JWT_SECRET;
 if(!SECRET){ console.error('Thiếu LAVI_JWT_SECRET. Hãy đặt biến môi trường trước khi chạy.'); process.exit(1); }
-const DATA_DIR=process.env.LAVI_DATA_DIR||path.join(__dirname,'data');
+const DEFAULT_DATA_DIR=fs.existsSync('/var/data')?'/var/data':path.join(__dirname,'data');
+const DATA_DIR=process.env.LAVI_DATA_DIR||DEFAULT_DATA_DIR;
 fs.mkdirSync(DATA_DIR,{recursive:true});
+console.log(`LAVI_DATA_DIR=${DATA_DIR}`);
 const DB_PATH=path.join(DATA_DIR,'lavi5a.sqlite');
 const db=new DatabaseSync(DB_PATH);
 
