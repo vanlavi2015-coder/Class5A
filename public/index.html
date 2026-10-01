@@ -265,33 +265,19 @@ function makeQuestions(lesson,group,count,note=""){
   const groupOffset={Yếu:0,"Trung bình":1,Khá:2,Tốt:4}[group]||0;
   const k=(i-1+groupOffset)%8;
   if(/bài 9\\.\\s*luyện tập chung/.test(title)){
-   // Bài 9 tiết 3 theo kế hoạch dạy học: ước lượng/làm tròn,
-   // tính giá trị biểu thức thuận tiện và bài toán thực tế với số tự nhiên, phân số.
+   // Bài 9 tiết 3: ước lượng/làm tròn, tính biểu thức thuận tiện và bài toán thực tế.
    const level={Yếu:0,"Trung bình":1,Khá:2,Tốt:3}[group]??1;
-   const n=i+level;
-   const roundBank={
-    Yếu:[[12020,6915,1000],[36070,23950,10000],[48200,17600,1000],[73500,28400,10000]],
-    "Trung bình":[[18240,7930,1000],[45870,23640,10000],[126500,48700,10000],[384600,151200,100000]],
-    Khá:[[31240,16870,1000],[67580,29430,10000],[248600,119700,100000],[598600,101500,100000]],
-    Tốt:[[412020,196915,1000],[736070,423950,10000],[958600,201500,100000],[4180300,3990700,1000000]]
-   };
-   const rb=(roundBank[group]||roundBank["Trung bình"])[(i-1)%4];
-   const a=rb[0],b=rb[1],p=rb[2],op=i%2===0?"+":"−";
-   const ra=Math.round(a/p)*p, rbv=Math.round(b/p)*p;
-   const est=op==="+"?ra+rbv:ra-rbv;
+   const roundBank={Yếu:[[12020,6915,1000],[36070,23950,10000],[48200,17600,1000],[73500,28400,10000]],"Trung bình":[[18240,7930,1000],[45870,23640,10000],[126500,48700,10000],[384600,151200,100000]],Khá:[[31240,16870,1000],[67580,29430,10000],[248600,119700,100000],[598600,101500,100000]],Tốt:[[412020,196915,1000],[736070,423950,10000],[958600,201500,100000],[4180300,3990700,1000000]]};
+   const rb=(roundBank[group]||roundBank["Trung bình"])[(i-1)%4],a=rb[0],b=rb[1],p=rb[2],op=i%2===0?"+":"−";
+   const ra=Math.round(a/p)*p,rbv=Math.round(b/p)*p,est=op==="+"?ra+rbv:ra-rbv;
    if(i%3===1){
     add("Ước lượng kết quả phép tính "+a.toLocaleString("vi-VN")+" "+op+" "+b.toLocaleString("vi-VN")+" bằng cách làm tròn các số đến hàng thích hợp.",String(est).replace(/\\B(?=(\\d{3})+(?!\\d))/g,"."),"Ước lượng kết quả");
    }else if(i%3===2){
-    const x=level===0?12+i:level===1?18+i:level===2?25+i:35+i;
-    const y=level===0?3:level===1?4:5;
-    const z=level>=2?2:1;
-    const ans=x*y+z*x;
-    add("Tính bằng cách thuận tiện: "+x+" × "+y+" + "+z+" × "+x+".",String(ans),"Tính giá trị biểu thức thuận tiện");
+    const x=level===0?12+i:level===1?18+i:level===2?25+i:35+i,y=level===0?3:level===1?4:5,z=level>=2?2:1;
+    add("Tính bằng cách thuận tiện: "+x+" × "+y+" + "+z+" × "+x+".",String(x*y+z*x),"Tính giá trị biểu thức thuận tiện");
    }else{
-    const xe=level===0?4+i:5+i, hs1=level===0?30:level===1?32:level===2?35:40, hs2=level===0?20:level===1?24:level===2?28:32;
-    const fracNum=level<=1?1:2, fracDen=level<=1?4:5;
-    const total=xe*hs1+xe*hs2*fracNum/fracDen;
-    add("Một đội có "+xe+" xe. Mỗi xe thứ nhất chở "+hs1+" học sinh, các xe còn lại chở "+hs2+" học sinh. Biết số học sinh cần tính thêm là "+fracNum+"/"+fracDen+" số học sinh của nhóm xe sau. Tính số học sinh theo dữ kiện.",String(total),"Bài toán thực tế");
+    const bank={Yếu:[48,1,4,6],"Trung bình":[72,1,3,8],Khá:[120,2,5,12],Tốt:[240,3,8,18]},w=bank[group]||bank["Trung bình"],total=w[0],fn=w[1],fd=w[2],extra=w[3],remain=total-(total*fn/fd)-extra;
+    add("Một cửa hàng có "+total+" kg gạo. Buổi sáng cửa hàng bán "+fn+"/"+fd+" số gạo đó, buổi chiều bán thêm "+extra+" kg. Hỏi cửa hàng còn lại bao nhiêu ki-lô-gam gạo?",String(remain)+" kg","Bài toán thực tế");
    }
    return true;
   }
