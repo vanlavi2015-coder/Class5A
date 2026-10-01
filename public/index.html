@@ -803,8 +803,9 @@ async function submitOnline(aid,sid){
   const j=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(j.error||('Máy chủ trả lỗi '+r.status));
   state.submissions[aid+'_'+sid]=j.submission;
-  state.stars[sid]=(state.stars[sid]||0)+stars;
-  state.awards.unshift({time:new Date().toISOString(),studentId:sid,stars,reason:'Hoàn thành bài'});
+  if(Number.isFinite(Number(j.starsTotal))) state.stars[sid]=Number(j.starsTotal);
+  else state.stars[sid]=(state.stars[sid]||0)+stars;
+  state.awards.unshift({time:new Date().toISOString(),studentId:sid,stars:j.submission?.stars??stars,reason:'Hoàn thành bài'});
   localStorage.setItem('lavi5a_real',JSON.stringify(state));
   studentMode();
   toast(s.name+': '+score+'/100 · +'+stars+' ⭐');
