@@ -12,8 +12,15 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
 .main{margin-left:248px;width:calc(100% - 248px);padding:22px;max-width:1550px}.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}.top h1{margin:0;font-size:27px}.sub{color:var(--muted);font-size:13px;margin-top:4px}.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 13px;border-radius:10px;font-weight:750}.btn:hover{filter:brightness(.98)}.primary{background:var(--p);border-color:var(--p);color:#fff}.success{background:var(--ok);border-color:var(--ok);color:#fff}.danger{background:var(--bad);border-color:var(--bad);color:#fff}.gold{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
 .section{display:none}.section.active{display:block}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 3px 12px rgba(16,24,40,.05)}.kpi .num{font-size:28px;font-weight:900;margin-top:5px}.kpi .label{font-size:13px;color:var(--muted)}h2{margin:0 0 12px;font-size:19px}h3{margin:0 0 7px}.field{margin-bottom:12px}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:5px}input,select,textarea{width:100%;padding:10px 11px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:var(--ink)}textarea{min-height:90px}.row{display:flex;gap:9px;flex-wrap:wrap}.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}.good{background:#dcfce7;color:#166534}.blue{background:#e0e7ff;color:#3730a3}.yellow{background:#fef3c7;color:#92400e}.red{background:#fee2e2;color:#991b1b}.gray{background:#eef2f6;color:#475467}
 .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}.tabs button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 11px}.tabs button.active{background:#eef2ff;border-color:#c7d2fe;color:#3730a3;font-weight:800}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:720px}th,td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:left;font-size:13px}th{background:#f8fafc}.bar{height:9px;border-radius:99px;background:#e5e7eb;overflow:hidden}.bar i{display:block;height:100%;background:var(--p)}.assignment{border:1px solid var(--line);border-radius:13px;padding:13px;margin:10px 0}.question{border-bottom:1px dashed var(--line);padding:10px 0}.question:last-child{border-bottom:0}.answer{margin-top:7px}.star{color:var(--gold);font-size:19px;letter-spacing:1px}.hero{background:linear-gradient(135deg,#312e81,#4f46e5);color:#fff;border-radius:18px;padding:19px}.hero .big{font-size:34px;font-weight:900}.empty{text-align:center;padding:30px;color:var(--muted)}.modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:50;align-items:center;justify-content:center;padding:15px}.modal.show{display:flex}.modalbox{background:#fff;width:min(940px,100%);max-height:92vh;overflow:auto;border-radius:18px;padding:19px}.toast{display:none;position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;padding:12px 15px;border-radius:10px;z-index:70}.studentcard{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:11px;margin:7px 0}.avatar{width:38px;height:38px;border-radius:50%;background:#eef2ff;color:#3730a3;display:grid;place-items:center;font-weight:900}.mobilebar{display:none}
+.menuToggle{position:fixed;left:258px;top:12px;z-index:45;width:42px;height:42px;border:1px solid #dbe2f0;border-radius:12px;background:#fff;color:#172033;font-size:20px;font-weight:900;box-shadow:0 4px 14px rgba(16,24,40,.12)}
+.menuBackdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:19}
+body.menu-collapsed .side{transform:translateX(-105%)}
+body.menu-collapsed .main{margin-left:0;width:100%;max-width:none}
+body.menu-collapsed .menuToggle{left:14px}
+body.menu-collapsed .menuToggle .menuIcon{transform:rotate(180deg)}
+
 @media(max-width:900px){.side{width:70px;padding:12px 8px}.brand{font-size:0;text-align:center;padding:9px 0 18px}.brand span{font-size:19px}.nav button{font-size:0;text-align:center;padding:12px 4px}.nav button:first-letter{font-size:20px}.main{margin-left:70px;width:calc(100% - 70px);padding:14px}.top h1{font-size:21px}.grid4{grid-template-columns:1fr 1fr}.grid3,.grid2{grid-template-columns:1fr}.top{align-items:flex-start}.top .btn{display:none}}
-@media(max-width:560px){.side{display:none}.main{margin:0;width:100%;padding:12px;padding-bottom:75px}.grid4{grid-template-columns:1fr 1fr}.card{padding:13px}.top{margin-bottom:12px}.mobilebar{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);z-index:30;justify-content:space-around;padding:7px}.mobilebar button{border:0;background:transparent;font-size:11px;color:#475467}.mobilebar b{display:block;font-size:20px}}
+@media(max-width:560px){.side{display:block;width:260px;transform:translateX(-105%);transition:transform .22s ease;box-shadow:8px 0 25px rgba(15,23,42,.18)}.main{margin:0;width:100%;padding:12px;padding-bottom:75px}.menuToggle{left:12px;top:10px}.menuBackdrop{display:block;opacity:0;pointer-events:none;transition:opacity .2s}.menu-open .side{transform:translateX(0)}.menu-open .menuBackdrop{opacity:1;pointer-events:auto}.grid4{grid-template-columns:1fr 1fr}.card{padding:13px}.top{margin-bottom:12px}.mobilebar{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);z-index:30;justify-content:space-around;padding:7px}.mobilebar button{border:0;background:transparent;font-size:11px;color:#475467}.mobilebar b{display:block;font-size:20px}}
 
 <style>
 #loginOverlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#eef2ff,#f8fafc);display:flex;align-items:center;justify-content:center;padding:20px}
@@ -34,7 +41,7 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:
 @media(max-width:650px){.student-shell{padding:10px 10px 28px}.student-top{padding:11px}.student-actions .student-btn:not(.logout){display:none}.student-kpis{grid-template-columns:1fr 1fr}.student-kpis .student-kpi:last-child{grid-column:1/-1}.student-hero{padding:17px}.student-hero h1{font-size:21px}}
 </style></head>
 <body>
-<div class="app">
+<button class="menuToggle" id="menuToggle" onclick="toggleMenu()" aria-label="Ẩn hoặc hiện thanh menu"><span class="menuIcon">☰</span></button><div class="menuBackdrop" id="menuBackdrop" onclick="closeMenu()"></div><div class="app">
 <aside class="side">
  <div class="brand">LAVI <span>5A</span></div>
  <div class="nav">
@@ -193,7 +200,16 @@ async function save(){
 }
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function toast(s){let t=document.getElementById("toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",2200)}
+function toggleMenu(){
+ document.body.classList.toggle('menu-collapsed');
+ if(window.innerWidth<=560) document.body.classList.toggle('menu-open');
+}
+function closeMenu(){
+ document.body.classList.remove('menu-open');
+}
 function show(id,btn){
+ if(window.innerWidth<=560) closeMenu();
+
  document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");
  document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));if(btn)btn.classList.add("active");
  renderAll()
