@@ -1876,6 +1876,16 @@ function medal(n){return n===1?'🥇':n===2?'🥈':n===3?'🥉':String(n)}
 const GAME_STATE={questions:[],index:0,score:0,correct:0,started:0,type:""};
 function gameEl(){return document.getElementById('studentGameArea')||document.getElementById('gameArea')}
 function gameEsc(v){return esc(String(v??''))}
+function shuffleGameQuestions(list){
+ const arr=list.map(q=>{
+  if(!q.options)return {...q};
+  const opts=q.options.map((text)=>({text,correct:String(text).trim().toLowerCase()===String(q.answer).trim().toLowerCase()}));
+  for(let i=opts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]]}
+  return {...q,options:opts.map(x=>x.text),answer:opts.find(x=>x.correct)?.text||q.answer};
+ });
+ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+ return arr;
+}
 function makeMathQuestion(){
  const ops=['+','−','×'];
  const op=ops[Math.floor(Math.random()*ops.length)];
@@ -1935,7 +1945,7 @@ function startChoiceGame(){
   ['3,25 + 1,5 bằng?',['4,25','4,5','4,75','5,25'],'4,75'],
   ['Chu vi hình vuông cạnh 7 cm là?',['14 cm','21 cm','28 cm','49 cm'],'28 cm']
  ].map(x=>({text:x[0],options:x[1],answer:x[2]}));
- startGame('🎯 Săn đáp án – 10 câu',bank,'choice');
+ startGame('🎯 Săn đáp án – 10 câu',shuffleGameQuestions(bank),'choice');
 }
 function startKnowledgeGame(){
  const bank=[
@@ -1950,7 +1960,7 @@ function startKnowledgeGame(){
   ['5/10 viết thành số thập phân là?',['0,05','0,5','5','0,10'],'0,5'],
   ['Muốn bảo vệ môi trường, em nên làm gì?',['Xả rác','Tiết kiệm nước và phân loại rác','Đốt rác bừa bãi','Lãng phí điện'],'Tiết kiệm nước và phân loại rác']
  ].map(x=>({text:x[0],options:x[1],answer:x[2]}));
- startGame('🧠 Thử tài kiến thức – 10 câu',bank,'knowledge');
+ startGame('🧠 Thử tài kiến thức – 10 câu',shuffleGameQuestions(bank),'knowledge');
 }
 function startGameAgain(){
  if(GAME_STATE.type==='math')startQuickMathGame();
