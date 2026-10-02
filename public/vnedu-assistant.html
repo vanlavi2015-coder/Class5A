@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trợ lý VnEdu - LAVI 5A</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--line:#dfe5ef;--text:#172033;--muted:#687386;--primary:#1769e0;--soft:#eaf2ff;--ok:#15803d}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,#1769e0,#5b8def);color:#fff;padding:20px 24px;position:sticky;top:0;z-index:5}
+header h1{margin:0 0 5px;font-size:24px}header p{margin:0;opacity:.9}
+.wrap{max-width:1400px;margin:18px auto;padding:0 18px}.grid{display:grid;grid-template-columns:310px 1fr;gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 10px #1720330a;margin-bottom:14px}
+h2,h3{margin:0 0 12px}label{font-weight:600;font-size:14px;display:block;margin:10px 0 6px}
+input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:10px;font:inherit;background:#fff}
+textarea{min-height:125px;resize:vertical}.btn{border:0;border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer}.primary{background:var(--primary);color:#fff}.ghost{background:var(--soft);color:#1456b8}.green{background:#eaf8ef;color:#126b35}.danger{background:#fff0f0;color:#a61b1b}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.hint{color:var(--muted);font-size:13px;line-height:1.5}
+.badges{display:flex;gap:7px;flex-wrap:wrap}.badge{padding:6px 9px;background:#eef2f7;border-radius:99px;font-size:12px}
+.section{border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}.section-head{background:#f8fafc;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}.section-body{padding:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.week{display:grid;grid-template-columns:130px 1fr 1fr 1fr;gap:8px;align-items:start;margin-bottom:10px}.week b{padding:10px 0}.week textarea{min-height:92px}
+.preview{background:#fbfdff;border:1px dashed #b8c8e5;padding:14px;border-radius:10px;white-space:pre-wrap;line-height:1.55}
+.notice{padding:10px 12px;border-radius:10px;background:#fff8e8;border:1px solid #f1dfaa;font-size:13px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}.week{grid-template-columns:1fr}.week b{padding:0}}
+</style>
+</head>
+<body>
+<header><h1>🤖 Trợ lý VnEdu – Kế hoạch chủ nhiệm 5A</h1><p>Soạn đúng các ô của VnEdu để cô chỉ việc Copy → Paste → Lưu.</p></header>
+<div class="wrap">
+<div class="grid">
+<aside>
+<div class="card">
+<h3>Thông tin lớp</h3>
+<div class="badges">
+<span class="badge">Lớp 5A</span><span class="badge">32 học sinh</span><span class="badge">NH 2026–2027</span>
+</div>
+<label>Tháng</label><select id="month"></select>
+<label>Chủ điểm</label><input id="theme" placeholder="Ví dụ: Chăm ngoan học giỏi">
+<div class="actions">
+<button class="btn primary" onclick="loadTemplate()">Tạo khung tháng</button>
+<button class="btn ghost" onclick="saveAll()">Lưu dữ liệu</button>
+</div>
+<p class="hint">Dữ liệu của trợ lý được lưu trên trình duyệt này. VnEdu vẫn là nơi lưu hồ sơ chính thức.</p>
+</div>
+<div class="card">
+<h3>Quy trình 3 bước</h3>
+<div class="hint"><b>1.</b> Chọn tháng → tạo khung.<br><b>2.</b> Chỉnh nội dung thực tế của lớp 5A.<br><b>3.</b> Bấm <b>Copy</b> ở từng mục rồi dán vào đúng ô VnEdu.</div>
+</div>
+<div class="card">
+<h3>Kiểm tra trước khi lưu</h3>
+<div class="notice">⚠️ Khi vào VnEdu, cô nhớ kiểm tra bộ chọn lớp đang là <b>5A</b>, không phải lớp khác.</div>
+<div class="actions"><button class="btn green" onclick="checkAll()">Kiểm tra nội dung</button><button class="btn ghost" onclick="exportAll()">Copy toàn bộ tháng</button></div>
+<div id="check" class="hint" style="margin-top:10px"></div>
+</div>
+</aside>
+
+<main>
+<div class="section"><div class="section-head"><b>1. ĐÁNH GIÁ CÔNG TÁC THÁNG TRƯỚC</b><button class="btn ghost" onclick="copyField('evaluation')">Copy</button></div><div class="section-body"><textarea id="evaluation"></textarea></div></div>
+<div class="section"><div class="section-head"><b>2.1. TRỌNG TÂM THÁNG</b><button class="btn ghost" onclick="copyField('focus')">Copy</button></div><div class="section-body"><textarea id="focus"></textarea></div></div>
+<div class="section"><div class="section-head"><b>2.2.a. GIÁO DỤC ĐẠO ĐỨC</b><button class="btn ghost" onclick="copyField('ethics')">Copy</button></div><div class="section-body"><textarea id="ethics"></textarea></div></div>
+<div class="section"><div class="section-head"><b>2.2.b. GIÁO DỤC HỌC TẬP</b><button class="btn ghost" onclick="copyField('learning')">Copy</button></div><div class="section-body"><textarea id="learning"></textarea></div></div>
+<div class="section"><div class="section-head"><b>2.2.c. CÁC HOẠT ĐỘNG KHÁC</b><button class="btn ghost" onclick="copyField('activities')">Copy</button></div><div class="section-body"><textarea id="activities"></textarea></div></div>
+
+<div class="section"><div class="section-head"><b>3. KẾ HOẠCH HÀNG TUẦN</b><button class="btn primary" onclick="copyWeeks()">Copy kế hoạch tuần</button></div>
+<div class="section-body">
+<p class="hint">Các cột tương ứng trực tiếp với VnEdu: <b>Ngày – Kế hoạch thực hiện – Kết quả – Nguyên nhân</b>.</p>
+<div id="weeks"></div>
+</div></div>
+
+<div class="section"><div class="section-head"><b>4. XEM BẢN GỘP ĐỂ KIỂM TRA</b><button class="btn ghost" onclick="exportAll()">Copy toàn bộ</button></div><div class="section-body"><div id="preview" class="preview"></div></div></div>
+</main>
+</div>
+</div>
+
+<script>
+const KEY='lavi_vnedu_chunhiem_5a_v1';
+const months=['09','10','11','12','01','02','03','04','05'];
+const templates={
+'09':{theme:'NGÀY TOÀN DÂN ĐƯA TRẺ ĐẾN TRƯỜNG',focus:'Ổn định tổ chức lớp 5A, xây dựng nền nếp học tập và rèn luyện ngay từ đầu năm; thực hiện tốt nội quy trường lớp; phối hợp chặt chẽ với cha mẹ học sinh; phân loại đối tượng để có biện pháp hỗ trợ phù hợp; thực hiện chương trình học tập theo kế hoạch nhà trường; tăng cường ứng dụng công nghệ và trí tuệ nhân tạo trong dạy học và chủ nhiệm.',ethics:'Ổn định nền nếp, hướng dẫn học sinh thực hiện nội quy; xây dựng tinh thần đoàn kết, lễ phép, tự giác; bầu ban cán sự lớp và tổ chức tự quản; giáo dục an toàn giao thông, đồng phục, vệ sinh và ý thức giữ gìn tài sản chung; phối hợp phụ huynh trong việc rèn nền nếp.',learning:'Thực hiện chương trình theo kế hoạch; hướng dẫn phương pháp tự học; phân loại học sinh để hỗ trợ; động viên học sinh chưa hoàn thành; tuyên dương học sinh chăm chỉ; tiếp tục bồi dưỡng học sinh tham gia Trạng nguyên Tiếng Việt và VioEdu theo kế hoạch; ứng dụng AI/CNTT tạo môi trường học tập tích cực.',activities:'Tham gia các hoạt động của Liên đội và nhà trường; thực hiện tốt vệ sinh, thể dục, hoạt động ngoài giờ; xây dựng kênh thông tin hai chiều với phụ huynh; thực hiện hồ sơ điện tử; theo dõi sĩ số và các trường hợp cần quan tâm.'},
+'10':{theme:'CHĂM NGOAN HỌC GIỎI – CHÀO MỪNG NGÀY PHỤ NỮ VIỆT NAM 20/10',focus:'Duy trì nền nếp học tập, đến lớp đúng giờ; xây dựng lớp học sạch đẹp, thân thiện; thực hiện chương trình học tập theo kế hoạch; phát động giữ vở sạch, viết chữ đẹp; tiếp tục rèn luyện Trạng nguyên Tiếng Việt và VioEdu; tăng cường hỗ trợ học sinh còn hạn chế; tổ chức hoạt động Trung thu và các hoạt động tập thể phù hợp.',ethics:'Phát động phong trào lớp học sạch đẹp, văn minh; giao ban cán sự và tổ trưởng theo dõi nền nếp; giáo dục học sinh lễ phép, đoàn kết, biết chia sẻ; thực hiện tốt vệ sinh lớp học, đồng phục và nội quy; phối hợp phụ huynh để nhắc nhở học sinh đi học đúng giờ, chuẩn bị đầy đủ đồ dùng.',learning:'Đổi mới phương pháp dạy học theo hướng phát triển phẩm chất, năng lực; tiếp tục phân loại đối tượng; hỗ trợ học sinh chưa hoàn thành; bồi dưỡng học sinh tham gia các sân chơi theo kế hoạch; ứng dụng AI và CNTT làm bài học sinh động; kịp thời tuyên dương tiến bộ.',activities:'Tổ chức và tham gia hoạt động Trung thu, trang trí lớp, vệ sinh trường lớp; tham gia phong trào của Đội; tăng cường hoạt động đầu giờ, giữa giờ; thực hiện an toàn giao thông và các nhiệm vụ phát sinh của nhà trường.'},
+'11':{theme:'MỪNG NGÀY NHÀ GIÁO VIỆT NAM 20/11',focus:'Thi đua học tập và rèn luyện chào mừng ngày Nhà giáo Việt Nam 20/11; duy trì nền nếp; giữ vở sạch, viết chữ đẹp; thực hiện chương trình tháng; tham gia văn nghệ và hoạt động của Đội; tiếp tục hỗ trợ Trạng nguyên Tiếng Việt, VioEdu; tăng cường tiếng Việt và hỗ trợ học sinh còn hạn chế.',ethics:'Giáo dục truyền thống tôn sư trọng đạo; xây dựng lớp học hạnh phúc, đoàn kết; giao ban cán sự theo dõi nền nếp; nhắc nhở cách ứng xử văn minh, lễ phép; phối hợp phụ huynh trong việc rèn thói quen học tập.',learning:'Tiếp tục đổi mới phương pháp; tạo môi trường học tập tích cực; bồi dưỡng học sinh tham gia các sân chơi; hỗ trợ học sinh yếu; ứng dụng AI/CNTT; đánh giá thường xuyên để điều chỉnh biện pháp.',activities:'Trang trí lớp, luyện tập văn nghệ, tham gia hoạt động 20/11 và phong trào Đội; vệ sinh lớp học; động viên học sinh tham gia hoạt động tập thể.'},
+'12':{theme:'NOI GƯƠNG ANH BỘ ĐỘI CỤ HỒ',focus:'Thi đua chào mừng ngày 22/12; duy trì nền nếp; giữ vở sạch, viết chữ đẹp; thực hiện chương trình; tăng cường kiểm tra nền nếp; hỗ trợ Trạng nguyên Tiếng Việt và VioEdu; tăng cường tiếng Việt; hỗ trợ học sinh yếu.',ethics:'Giáo dục truyền thống yêu nước, biết ơn; phát động phong trào noi gương anh Bộ đội Cụ Hồ; giao ban cán sự theo dõi thi đua; rèn cách ứng xử, lễ phép, đoàn kết; phối hợp phụ huynh.',learning:'Đổi mới phương pháp, học thông qua chơi; bồi dưỡng học sinh tham gia sân chơi; ứng dụng AI/CNTT; phân loại đối tượng và hỗ trợ học sinh chưa hoàn thành; tuyên dương học sinh có tiến bộ.',activities:'Tham gia hoạt động chào mừng 22/12, văn nghệ, vẽ tranh, vệ sinh trường lớp và phong trào Đội; thực hiện tốt thể dục, hoạt động ngoài giờ và an toàn giao thông.'},
+'01':{theme:'MỪNG ĐẢNG MỪNG XUÂN',focus:'Duy trì nền nếp sau học kỳ I; thực hiện chương trình tháng; tăng cường kiểm tra nền nếp; ôn tập và chuẩn bị các hoạt động theo kế hoạch nhà trường; hỗ trợ học sinh còn hạn chế; tăng cường phối hợp với cha mẹ học sinh.',ethics:'Rèn ý thức tự giác, lễ phép, đoàn kết; duy trì nội quy; giao ban cán sự theo dõi nền nếp; phối hợp phụ huynh trong việc chuẩn bị học tập và đi học đúng giờ.',learning:'Đánh giá kết quả học kỳ I để phân loại và điều chỉnh biện pháp; tiếp tục đổi mới phương pháp; hỗ trợ học sinh chưa hoàn thành; bồi dưỡng học sinh tham gia các sân chơi; ứng dụng AI/CNTT.',activities:'Tham gia phong trào mừng Đảng, mừng Xuân; giữ gìn vệ sinh; thực hiện an toàn giao thông; phối hợp hoạt động của Đội và nhà trường.'},
+'02':{theme:'MỪNG ĐẢNG MỪNG XUÂN',focus:'Ổn định nền nếp học tập; thực hiện chương trình tháng; tăng cường kiểm tra trong và ngoài lớp; hỗ trợ học sinh sau kỳ nghỉ; tiếp tục các hoạt động học tập, rèn luyện và sân chơi theo kế hoạch.',ethics:'Rèn thói quen đi học đúng giờ sau kỳ nghỉ; giáo dục ứng xử văn minh, đoàn kết; giao nhiệm vụ cho ban cán sự và tổ trưởng; phối hợp phụ huynh.',learning:'Đánh giá thường xuyên; phân loại đối tượng; hỗ trợ học sinh chưa hoàn thành; tiếp tục bồi dưỡng Trạng nguyên Tiếng Việt, VioEdu nếu có; ứng dụng AI/CNTT và phương pháp tích cực.',activities:'Tham gia hoạt động của Đội; duy trì vệ sinh, thể dục và an toàn giao thông; thực hiện nhiệm vụ phát sinh của nhà trường.'},
+'03':{theme:'THÁNG THANH NIÊN',focus:'Ổn định nền nếp, phát huy tinh thần chăm chỉ; thực hiện chương trình; tham gia hoạt động chào mừng 26/3; tiếp tục các sân chơi học tập; tăng cường STEM và hỗ trợ học sinh yếu.',ethics:'Giao nhiệm vụ cho ban cán sự, tổ trưởng; đánh giá cuối tuần minh bạch; kịp thời tuyên dương; rèn kỹ năng giao tiếp, đoàn kết; phối hợp phụ huynh.',learning:'Đổi mới phương pháp; tiếp tục bồi dưỡng học sinh theo kế hoạch; ứng dụng CNTT, BeeClass/AI; tổ chức trải nghiệm STEM; phân loại và hỗ trợ học sinh chưa hoàn thành.',activities:'Tham gia hoạt động Đội, thể dục, hoạt động ngoài giờ; giáo dục an toàn giao thông và tinh thần trách nhiệm.'},
+'04':{theme:'MỪNG ĐẤT NƯỚC THỐNG NHẤT',focus:'Thi đua chào mừng 30/4 và 1/5; tiếp tục ổn định nền nếp; thực hiện chương trình; hỗ trợ học sinh còn hạn chế; tăng cường ứng dụng CNTT và STEM; chuẩn bị các nhiệm vụ cuối năm.',ethics:'Duy trì nội quy, giao ban cán sự theo dõi; đánh giá cuối tuần; tuyên dương tiến bộ; giáo dục đoàn kết, lễ phép và trách nhiệm; phối hợp phụ huynh.',learning:'Đổi mới phương pháp; kiểm tra nền nếp học tập; hỗ trợ học sinh yếu; ứng dụng AI/CNTT; tổ chức STEM phù hợp; phối hợp giáo viên bộ môn.',activities:'Tham gia hoạt động 30/4, phong trào Đội, vệ sinh, thể dục, hoạt động ngoài giờ và an toàn giao thông.'},
+'05':{theme:'HOÀN THÀNH NHIỆM VỤ NĂM HỌC',focus:'Hoàn thành chương trình lớp 5; củng cố kiến thức, kỹ năng; đánh giá kết quả học tập và rèn luyện; chuẩn bị tổng kết năm học; giáo dục học sinh ý thức tự học, tự quản và bàn giao nhiệm vụ hè.',ethics:'Duy trì nền nếp đến cuối năm; giáo dục ý thức trách nhiệm, đoàn kết, biết ơn thầy cô và cha mẹ; thực hiện tốt nội quy; phối hợp phụ huynh chuẩn bị cho học sinh nghỉ hè an toàn.',learning:'Củng cố kiến thức trọng tâm; hỗ trợ học sinh còn hạn chế; hoàn thành đánh giá cuối năm theo quy định; tuyên dương học sinh có tiến bộ và thành tích; hướng dẫn tự học trong hè.',activities:'Tham gia tổng kết năm học; hoàn thành hồ sơ lớp; bàn giao học sinh; tuyên truyền an toàn giao thông, phòng chống tai nạn thương tích và kỹ năng tự bảo vệ trong dịp hè.'}
+};
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function init(){
+ $('month').innerHTML=months.map(m=>'<option value="'+m+'">THÁNG '+m+'</option>').join('');
+ $('month').value=new Date().getMonth()===0?'01':String(new Date().getMonth()+1).padStart(2,'0');
+ renderWeeks(); loadMonth();
+ $('month').addEventListener('change',loadMonth);
+ ['theme','evaluation','focus','ethics','learning','activities'].forEach(id=>$(id).addEventListener('input',updatePreview));
+}
+function loadMonth(){
+ const m=$('month').value, saved=JSON.parse(localStorage.getItem(KEY+'_'+m)||'null'), t=templates[m]||templates['09'];
+ $('theme').value=saved?.theme||t.theme;
+ $('focus').value=saved?.focus||t.focus;$('ethics').value=saved?.ethics||t.ethics;$('learning').value=saved?.learning||t.learning;$('activities').value=saved?.activities||t.activities;
+ $('evaluation').value=saved?.evaluation||'';
+ renderWeeks(saved?.weeks||[]);
+ updatePreview();
+}
+function renderWeeks(data=[]){
+ const m=$('month').value, count=(m==='09'||m==='10'||m==='11'||m==='12'||m==='01'||m==='02'||m==='03'||m==='04'||m==='05')?4:4;
+ $('weeks').innerHTML=Array.from({length:count},(_,i)=>{
+ const w=data[i]||{};return '<div class="week"><b>Tuần '+(i+1)+'</b><input class="wd" value="'+esc(w.date||'')+'" placeholder="dd/mm/yyyy – dd/mm/yyyy"><textarea class="wp" placeholder="Kế hoạch thực hiện">'+esc(w.plan||'')+'</textarea><textarea class="wr" placeholder="Kết quả">'+esc(w.result||'')+'</textarea><textarea class="wn" placeholder="Nguyên nhân">'+esc(w.reason||'')+'</textarea></div>'
+ }).join('');
+ document.querySelectorAll('#weeks textarea,#weeks input').forEach(x=>x.addEventListener('input',updatePreview));
+}
+function getWeeks(){return [...document.querySelectorAll('.week')].map((x)=>({date:x.querySelector('.wd').value,plan:x.querySelector('.wp').value,result:x.querySelector('.wr').value,reason:x.querySelector('.wn').value}))}
+function payload(){return {theme:$('theme').value,evaluation:$('evaluation').value,focus:$('focus').value,ethics:$('ethics').value,learning:$('learning').value,activities:$('activities').value,weeks:getWeeks()}}
+function saveAll(){localStorage.setItem(KEY+'_'+$('month').value,JSON.stringify(payload()));toast('Đã lưu bản nháp tháng '+$('month').value)}
+function loadTemplate(){localStorage.removeItem(KEY+'_'+$('month').value);loadMonth();toast('Đã tạo lại khung tháng '+$('month').value)}
+function copyText(txt){navigator.clipboard.writeText(txt).then(()=>toast('Đã copy')).catch(()=>{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();toast('Đã copy')})}
+function copyField(id){copyText($(id).value||'');}
+function weeksText(){return getWeeks().map((w,i)=>'Tuần '+(i+1)+'\nNgày: '+w.date+'\nKế hoạch thực hiện: '+w.plan+'\nKết quả: '+w.result+'\nNguyên nhân: '+w.reason).join('\n\n')}
+function allText(){const p=payload();return 'KẾ HOẠCH CHỦ NHIỆM THÁNG '+$('month').value+' – LỚP 5A\nChủ điểm: '+p.theme+'\n\n1. ĐÁNH GIÁ CÔNG TÁC THÁNG TRƯỚC\n'+p.evaluation+'\n\n2.1. TRỌNG TÂM\n'+p.focus+'\n\n2.2.a. GIÁO DỤC ĐẠO ĐỨC\n'+p.ethics+'\n\n2.2.b. GIÁO DỤC HỌC TẬP\n'+p.learning+'\n\n2.2.c. CÁC HOẠT ĐỘNG KHÁC\n'+p.activities+'\n\n3. KẾ HOẠCH HÀNG TUẦN\n'+weeksText()}
+function copyWeeks(){copyText(weeksText())}
+function exportAll(){copyText(allText());saveAll()}
+function checkAll(){
+ const p=payload(), missing=[];
+ if(!p.evaluation.trim())missing.push('Đánh giá tháng trước');
+ if(!p.focus.trim())missing.push('Trọng tâm');
+ if(!p.ethics.trim())missing.push('Giáo dục đạo đức');
+ if(!p.learning.trim())missing.push('Giáo dục học tập');
+ if(!p.activities.trim())missing.push('Các hoạt động khác');
+ const ws=getWeeks();if(ws.some(w=>!w.plan.trim()))missing.push('Kế hoạch ít nhất một tuần');
+ $('check').innerHTML=missing.length?'⚠️ Còn thiếu: <b>'+missing.join(', ')+'</b>':'✅ Đủ 5 nhóm nội dung chính và đã có kế hoạch tuần.';
+}
+function updatePreview(){$('preview').textContent=allText()}
+function toast(s){let x=document.getElementById('toast');if(!x){x=document.createElement('div');x.id='toast';x.style='position:fixed;right:20px;bottom:20px;background:#172033;color:white;padding:11px 14px;border-radius:10px;z-index:99';document.body.appendChild(x)}x.textContent=s;clearTimeout(window._toast);window._toast=setTimeout(()=>x.remove(),1800)}
+init();
+</script>
+</body></html>
