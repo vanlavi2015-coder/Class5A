@@ -40,6 +40,7 @@ textarea{min-height:125px;resize:vertical}.btn{border:0;border-radius:9px;paddin
 <button class="btn ghost" onclick="saveAll()">Lưu dữ liệu</button>
 </div>
 <p class="hint">Dữ liệu của trợ lý được lưu trên trình duyệt này. VnEdu vẫn là nơi lưu hồ sơ chính thức.</p>
+<div class="notice" style="margin-top:10px">📌 <b>Cách dán vào VnEdu:</b> bấm <b>Copy</b> → sang đúng ô VnEdu → nhấn <b>Ctrl+V</b>. Nếu máy chặn copy tự động, nhấn <b>Ctrl+C</b> theo thông báo rồi mới sang VnEdu.</div>
 </div>
 <div class="card">
 <h3>Quy trình 3 bước</h3>
@@ -169,7 +170,35 @@ function getWeeks(){return [...document.querySelectorAll('.week')].map((x)=>({da
 function payload(){return {theme:$('theme').value,evaluation:$('evaluation').value,focus:$('focus').value,ethics:$('ethics').value,learning:$('learning').value,activities:$('activities').value,weeks:getWeeks()}}
 function saveAll(){localStorage.setItem(KEY+'_'+$('month').value,JSON.stringify(payload()));toast('Đã lưu bản nháp tháng '+$('month').value)}
 function loadTemplate(){localStorage.removeItem(KEY+'_'+$('month').value);loadMonth();toast('Đã tạo lại khung tháng '+$('month').value)}
-function copyText(txt){navigator.clipboard.writeText(txt).then(()=>toast('Đã copy')).catch(()=>{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();toast('Đã copy')})}
+function copyText(txt){
+  if(!txt.trim()){toast('Ô này đang trống');return}
+  const t=document.createElement('textarea');
+  t.value=txt;
+  t.setAttribute('readonly','');
+  t.style.position='fixed';
+  t.style.left='-9999px';
+  t.style.top='0';
+  t.style.opacity='0';
+  document.body.appendChild(t);
+  t.focus();
+  t.select();
+  t.setSelectionRange(0,t.value.length);
+  let ok=false;
+  try{ok=document.execCommand('copy')}catch(e){}
+  if(ok){
+    t.remove();
+    if(navigator.clipboard) navigator.clipboard.writeText(txt).catch(()=>{});
+    toast('✅ Đã copy. Sang VnEdu và nhấn Ctrl+V');
+  }else{
+    t.style.position='fixed';
+    t.style.left='12px';
+    t.style.top='12px';
+    t.style.width='1px';
+    t.style.height='1px';
+    t.style.opacity='0.01';
+    toast('⚠️ Trình duyệt chặn copy tự động. Đang giữ nội dung: nhấn Ctrl+C rồi sang VnEdu nhấn Ctrl+V');
+  }
+}
 function copyField(id){copyText($(id).value||'');}
 function weeksText(){return getWeeks().map((w,i)=>'Tuần '+(i+1)+'\nNgày: '+w.date+'\nKế hoạch thực hiện: '+w.plan+'\nKết quả: '+w.result+'\nNguyên nhân: '+w.reason).join('\n\n')}
 function allText(){const p=payload();return 'KẾ HOẠCH CHỦ NHIỆM THÁNG '+$('month').value+' – LỚP 5A\nChủ điểm: '+p.theme+'\n\n1. ĐÁNH GIÁ CÔNG TÁC THÁNG TRƯỚC\n'+p.evaluation+'\n\n2.1. TRỌNG TÂM\n'+p.focus+'\n\n2.2.a. GIÁO DỤC ĐẠO ĐỨC\n'+p.ethics+'\n\n2.2.b. GIÁO DỤC HỌC TẬP\n'+p.learning+'\n\n2.2.c. CÁC HOẠT ĐỘNG KHÁC\n'+p.activities+'\n\n3. KẾ HOẠCH HÀNG TUẦN\n'+weeksText()}
