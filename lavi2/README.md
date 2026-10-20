@@ -2,9 +2,14 @@
 
 Đây là ứng dụng thử nghiệm độc lập, không thay thế website LAVI 5A hiện tại. Mọi dữ liệu được tạo sẵn đều là dữ liệu giả lập.
 
-## Phạm vi MVP 0.1
+## Phạm vi MVP 0.2
 
-- Đăng nhập bằng hai tài khoản giáo viên giả lập.
+- Trang chủ có lựa chọn đăng ký và đăng nhập giáo viên bằng email hoặc số điện thoại.
+- Email được chuẩn hóa chữ thường; số điện thoại Việt Nam dạng 0xxxxxxxxx được chuẩn hóa thành +84xxxxxxxxx.
+- Mật khẩu tối thiểu 8 ký tự, lưu dưới dạng băm; giới hạn số lần đăng ký/đăng nhập theo địa chỉ kết nối.
+- Bản thử nghiệm chưa gửi OTP; email/số điện thoại chưa được xác minh quyền sở hữu. Không dùng cho tài khoản thật hoặc dữ liệu học sinh thật.
+- Đăng nhập bằng hai tài khoản giáo viên giả lập vẫn được giữ để kiểm thử phân quyền.
+- Mỗi giáo viên chỉ xem lớp và danh sách học sinh giả lập thuộc tài khoản đó.
 - Mỗi giáo viên chỉ xem lớp và danh sách học sinh giả lập thuộc tài khoản đó.
 - API kiểm tra quyền truy cập phía máy chủ; không dựa vào việc ẩn giao diện.
 - SQLite riêng, migration version đầu tiên, nhật ký đăng nhập cơ bản và thời hạn JWT ngắn.
@@ -55,6 +60,14 @@ Tạo **Web Service mới**, không sửa service LAVI cũ:
 - Gắn Persistent Disk riêng vào `/var/data` nếu cần giữ dữ liệu thử qua lần deploy. Tuyệt đối không dùng disk hoặc secrets của LAVI production.
 
 Tên dịch vụ, URL và cấu hình Render chỉ được xác nhận sau khi người quản trị tạo dịch vụ mới. Không kết nối nhánh này với service production.
+
+## Đăng ký/đăng nhập thử
+
+- Chọn tab **Đăng ký**, nhập họ tên, Gmail hoặc số điện thoại, mật khẩu và xác nhận mật khẩu.
+- Khi đăng ký thành công, tài khoản giáo viên được tạo và chuyển tới trang chủ riêng. Tài khoản mới chưa có lớp.
+- Đăng xuất rồi đăng nhập bằng email/số điện thoại đã đăng ký và mật khẩu.
+- Để kiểm thử phân quyền demo, dùng `teacher1` hoặc `teacher2` với mật khẩu `Demo1234!`.
+- Không nhập email/số điện thoại cá nhân thật trên website thử nghiệm cho tới khi có xác minh OTP và chính sách bảo mật hoàn chỉnh.
 
 ## Giới hạn và bước kế tiếp
 
