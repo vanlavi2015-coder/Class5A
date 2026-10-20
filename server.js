@@ -24,7 +24,7 @@ const db=new DatabaseSync(DB_PATH);
 
 db.exec(`
 PRAGMA journal_mode=WAL;
-CREATE TABLE IF NOT EXISTS users(username TEXT PRIMARY KEY, role TEXT NOT NULL, student_id INTEGER, password_hash TEXT NOT NULL, owner_username TEXT NOT NULL DEFAULT 'teacher');
+CREATE TABLE IF NOT EXISTS users(username TEXT PRIMARY KEY, role TEXT NOT NULL, student_id INTEGER, password_hash TEXT NOT NULL, owner_username TEXT NOT NULL DEFAULT 'teacher', class_name TEXT NOT NULL DEFAULT 'Lớp 5A');
 CREATE TABLE IF NOT EXISTS students(id INTEGER PRIMARY KEY, code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, group_name TEXT NOT NULL, source_level TEXT, avatar TEXT DEFAULT '🎓', owner_username TEXT NOT NULL DEFAULT 'teacher');
 CREATE TABLE IF NOT EXISTS assignments(id TEXT PRIMARY KEY, payload TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, owner_username TEXT NOT NULL DEFAULT 'teacher');
 CREATE TABLE IF NOT EXISTS submissions(k TEXT PRIMARY KEY, assignment_id TEXT NOT NULL, student_id INTEGER NOT NULL, payload TEXT NOT NULL, submitted_at TEXT NOT NULL);
@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS score_history(id INTEGER PRIMARY KEY AUTOINCREMENT, s
 // Migration an toàn: dữ liệu cũ của lớp 5A vẫn thuộc tài khoản teacher.
 function ensureColumn(table,column,definition){const columns=db.prepare('PRAGMA table_info('+table+')').all().map(x=>x.name);if(!columns.includes(column))db.exec('ALTER TABLE '+table+' ADD COLUMN '+column+' '+definition);}
 ensureColumn('users','owner_username',"TEXT NOT NULL DEFAULT 'teacher'");
+ensureColumn('users','class_name',"TEXT NOT NULL DEFAULT 'Lớp 5A'");
 ensureColumn('students','owner_username',"TEXT NOT NULL DEFAULT 'teacher'");
 ensureColumn('assignments','owner_username',"TEXT NOT NULL DEFAULT 'teacher'");
 ensureColumn('schedules','owner_username',"TEXT NOT NULL DEFAULT 'teacher'");
@@ -172,9 +173,36 @@ function auth(req,res,next){try{const h=req.headers.authorization||'';if(!h.star
 function teacher(req,res){if(req.user.role!=='teacher'){res.status(403).json({error:'Chỉ giáo viên được thực hiện thao tác này'});return false;}return true;}
 
 app.get('/api/health',(req,res)=>res.json({ok:true,app:'LAVI 5A Online v3',students:students().length,db:'sqlite',persistentData:DATA_DIR,backup:backupEnabled()}));
-app.post('/api/login',(req,res)=>{const rawUser=String(req.body?.username||'').trim();const username=rawUser.toLowerCase();const password=String(req.body?.password??'');const u=db.prepare('SELECT * FROM users WHERE lower(username)=?').get(username);if(!u)return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});if(!bcrypt.compareSync(password,u.password_hash))return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});const user={username:u.username,role:u.role,studentId:u.student_id||null,ownerUsername:u.role==='student'?String(u.owner_username||'teacher'):String(u.username)};res.json({token:tokenFor(user),user,students:students(user.ownerUsername)});});
+app.post('/api/login',(req,res)=>{const rawUser=String(req.body?.username||'').trim();const username=rawUser.toLowerCase();const password=String(req.body?.password??'');const u=db.prepare('SELECT * FROM users WHERE lower(username)=?').get(username);if(!u)return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});if(!bcrypt.compareSync(password,u.password_hash))return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});const ownerUsername=u.role==='student'?String(u.owner_username||'teacher'):String(u.username);const ownerRow=u.role==='student'?db.prepare('SELECT class_name FROM users WHERE username=? AND role=\\'teacher\\'').get(ownerUsername):u;const user={username:u.username,role:u.role,studentId:u.student_id||null,ownerUsername,className:String(ownerRow?.class_name||'Lớp')};res.json({token:tokenFor(user),user,students:students(user.ownerUsername)});});
 app.get('/api/state',auth,(req,res)=>{const owner=ownerForUser(req.user),roster=students(owner);res.json({state:req.user.role==='teacher'?stateForTeacher(owner):stateForStudent(req.user.studentId,owner),students:req.user.role==='teacher'?roster:roster.filter(s=>s.id===req.user.studentId),user:req.user});});
 app.get('/api/students',auth,(req,res)=>{if(!teacher(req,res))return;res.json({students:students(ownerForUser(req.user))});});
+app.post('/api/teacher/create-account',auth,(req,res)=>{
+ if(!teacher(req,res))return;
+ if(req.user.username!==(process.env.LAVI_ADMIN_USERNAME||'teacher'))return res.status(403).json({error:'Chỉ tài khoản quản trị teacher được tạo tài khoản giáo viên mới'});
+ const username=String(req.body?.username||'').trim().toLowerCase(),password=String(req.body?.password||''),className=String(req.body?.className||'').trim();
+ if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username))return res.status(400).json({error:'Tên đăng nhập 3–32 ký tự, dùng chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang'});
+ if(password.length<8)return res.status(400).json({error:'Mật khẩu giáo viên phải có ít nhất 8 ký tự'});
+ if(!className||className.length>80)return res.status(400).json({error:'Hãy nhập tên lớp (tối đa 80 ký tự)'});
+ if(db.prepare('SELECT 1 FROM users WHERE lower(username)=?').get(username))return res.status(409).json({error:'Tên đăng nhập đã tồn tại'});
+ db.prepare('INSERT INTO users(username,role,student_id,password_hash,owner_username,class_name) VALUES(?,?,?,?,?,?)').run(username,'teacher',null,bcrypt.hashSync(password,10),username,className);
+ res.status(201).json({ok:true,teacher:{username,className},message:'Đã tạo tài khoản giáo viên riêng; danh sách lớp bắt đầu trống.'});
+});
+app.post('/api/teacher/students',auth,(req,res)=>{
+ if(!teacher(req,res))return;
+ const owner=ownerForUser(req.user),name=String(req.body?.name||'').trim(),rawCode=String(req.body?.code||'').trim().toUpperCase(),username=String(req.body?.username||'').trim().toLowerCase(),password=String(req.body?.password||''),group=String(req.body?.group||'Trung bình');
+ if(name.length<2||name.length>100)return res.status(400).json({error:'Họ tên học sinh phải từ 2 đến 100 ký tự'});
+ if(!/^[A-Z0-9_-]{1,20}$/.test(rawCode))return res.status(400).json({error:'Mã học sinh chỉ gồm chữ, số, gạch ngang hoặc gạch dưới'});
+ if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username))return res.status(400).json({error:'Tên đăng nhập học sinh phải từ 3 đến 32 ký tự'});
+ if(password.length<6)return res.status(400).json({error:'Mật khẩu học sinh tối thiểu 6 ký tự'});
+ if(!['Tốt','Khá','Trung bình','Yếu'].includes(group))return res.status(400).json({error:'Nhóm học tập không hợp lệ'});
+ const code=owner.toUpperCase()+'-'+rawCode;
+ if(db.prepare('SELECT 1 FROM students WHERE code=?').get(code))return res.status(409).json({error:'Mã học sinh đã tồn tại trong hệ thống'});
+ if(db.prepare('SELECT 1 FROM users WHERE lower(username)=?').get(username))return res.status(409).json({error:'Tên đăng nhập đã tồn tại'});
+ let studentId;
+ try{db.exec('BEGIN');const info=db.prepare('INSERT INTO students(code,name,group_name,source_level,owner_username) VALUES(?,?,?,?,?)').run(code,name,group,group,owner);studentId=Number(info.lastInsertRowid);db.prepare('INSERT INTO users(username,role,student_id,password_hash,owner_username,class_name) VALUES(?,?,?,?,?,?)').run(username,'student',studentId,bcrypt.hashSync(password,10),owner,'');db.exec('COMMIT');}
+ catch(e){try{db.exec('ROLLBACK')}catch{}return res.status(500).json({error:'Không tạo được học sinh: '+e.message});}
+ res.status(201).json({ok:true,student:students(owner).find(x=>x.id===studentId),login:{username,password}});
+});
 app.get('/api/game/status',auth,(req,res)=>{
   if(req.user.role!=='student')return res.status(403).json({error:'Chỉ học sinh được xem lượt chơi'});
   const type=String(req.query?.gameType||'').trim();
