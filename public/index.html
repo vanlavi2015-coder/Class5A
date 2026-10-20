@@ -1903,7 +1903,11 @@ async function copyAssignmentToBank(id){
 async function deleteBankItem(id){
  const item=(state.assignments||[]).find(a=>a.id===id);if(!item||item.status!=='Kho bài')return;
  if(!confirm('Xóa bộ bài này khỏi kho? Bài đang giao (nếu có) không bị ảnh hưởng.'))return;
- const old=state.assignments;state.assignments=old.filter(a=>a.id!==id);try{await save();toast('Đã xóa khỏi kho');renderQuestionBank();}catch(e){state.assignments=old;toast('Chưa xóa được: '+e.message);}
+ const old=state.assignments;state.assignments=old.filter(a=>a.id!==id);
+ try{
+  if(LAVI.token&&LAVI.user?.role==='teacher'){const r=await fetch('/api/teacher/question-bank/'+encodeURIComponent(id),{method:'DELETE',headers:{Authorization:'Bearer '+LAVI.token}});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Không xóa được bộ bài');}
+  await save();toast('Đã xóa khỏi kho');renderQuestionBank();
+ }catch(e){state.assignments=old;localStorage.setItem('lavi5a_real',JSON.stringify(state));renderAll();toast('Chưa xóa được: '+e.message);}
 }
 function playBankGame(id){
  const item=(state.gameLibrary||[]).find(a=>a.id===id)||(state.assignments||[]).find(a=>a.id===id);if(!item){toast('Không tìm thấy bộ bài. Hãy tải lại trang.');return;}
@@ -2471,8 +2475,8 @@ function answerGame(choice){
 }
 async function finishGame(){
  const secs=Math.max(1,Math.round((Date.now()-GAME_STATE.started)/1000));
- const score=GAME_STATE.correct*10;
- const stars=GAME_STATE.correct>=9?5:GAME_STATE.correct>=7?4:GAME_STATE.correct>=5?3:GAME_STATE.correct>=3?2:GAME_STATE.correct>0?1:0;
+ const score=Math.round(GAME_STATE.correct/Math.max(1,GAME_STATE.questions.length)*100);
+ const stars=score>=90?5:score>=80?4:score>=65?3:score>=40?2:score>0?1:0;
  gameEl().innerHTML=`<div class="game-board game-result"><div style="font-size:52px">${stars?'🌟'.repeat(stars):'💪'}</div><h2>Hoàn thành!</h2><p>Đúng <b>${GAME_STATE.correct}/${GAME_STATE.questions.length}</b> câu · <b>${score}</b> điểm · ${secs} giây</p><p>${stars} ⭐</p><p id="gameAttemptInfo" class="sub">Đang lưu lượt chơi...</p><button id="gameReplayBtn" class="btn primary" onclick="startGameAgain()">🔄 Chơi lại</button> <button class="btn" onclick="gameEl().innerHTML=''">Đóng</button></div>`;
  if(LAVI.user?.role==='student'&&LAVI.token&&GAME_STATE.type){
   try{
