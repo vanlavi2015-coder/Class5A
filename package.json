@@ -5,7 +5,8 @@
   "description": "LAVI 5A Online - production-ready Render deployment",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=22"
