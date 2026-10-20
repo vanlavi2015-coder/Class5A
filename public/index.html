@@ -1806,8 +1806,8 @@ async function importQuestionsFromExcel(){
  }catch(e){console.error(e);if(status)status.textContent='Không nhập được: '+(e.message||'Lỗi không xác định');toast('Nhập câu hỏi thất bại');}
 }
 function parseWordQuestionText(raw){
- const text=String(raw||'').replace(/\\r/g,'\\n').replace(/[：]/g,':').replace(/[\\t ]+/g,' ').trim();
- const blocks=text.split(/(?=Câu hỏi\\s*:)/i).map(x=>x.trim()).filter(Boolean),rows=[];
+ const text=String(raw||'').replace(/\r/g,'\n').replace(/[：]/g,':').replace(/[ \t]+/g,' ').trim();
+ const blocks=text.split(/(?=Câu hỏi\s*:)/i).map(x=>x.trim()).filter(Boolean),rows=[];
  for(const block of blocks){
   const get=(labels)=>{for(const label of labels){const re=new RegExp('(?:^|\\n)\\s*'+label+'\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*(?:Câu hỏi|A|B|C|D|Đáp án đúng|Đáp án|Giải thích|Lời giải)\\s*:|$)','i');const m=block.match(re);if(m&&m[1].trim())return m[1].trim();}return '';};
   const row={'Câu hỏi':get(['Câu hỏi','Nội dung câu hỏi']),'A':get(['A','Đáp án A','Phương án A']),'B':get(['B','Đáp án B','Phương án B']),'C':get(['C','Đáp án C','Phương án C']),'D':get(['D','Đáp án D','Phương án D']),'Đáp án đúng':get(['Đáp án đúng','Đáp án','Đáp án chuẩn']),'Giải thích':get(['Giải thích','Lời giải'])};
