@@ -115,14 +115,14 @@ function normalizeContact(raw) {
   const value = String(raw || '').trim();
   if (value.includes('@')) {
     const email = value.toLowerCase();
-    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return null;
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
     return { kind: 'email', value: email };
   }
-  const compact = value.replace(/[\\s().-]/g, '');
+  const compact = value.replace(/[\s().-]/g, '');
   let phone = compact;
-  if (/^0\\d{9}$/.test(phone)) phone = '+84' + phone.slice(1);
-  if (/^84\\d{9}$/.test(phone)) phone = '+' + phone;
-  if (!/^\\+[1-9]\\d{7,14}$/.test(phone)) return null;
+  if (/^0\d{9}$/.test(phone)) phone = '+84' + phone.slice(1);
+  if (/^84\d{9}$/.test(phone)) phone = '+' + phone;
+  if (!/^\+[1-9]\d{7,14}$/.test(phone)) return null;
   return { kind: 'phone', value: phone };
 }
 
