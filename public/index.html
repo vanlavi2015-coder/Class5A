@@ -1823,6 +1823,8 @@ function renderDraft(){
  ${set.questions.map((q,qi)=>`<div class="question">
  <label class="sub" style="display:block;font-weight:800">✏️ Nội dung câu hỏi (cô có thể sửa):</label>
  <textarea oninput="setDraftText(${si},${qi},this.value)" style="width:100%;box-sizing:border-box;margin-top:4px;min-height:76px;resize:vertical">${esc(q.text)}</textarea>
+ ${Array.isArray(q.options)?`<div style="margin-top:8px;padding:10px;background:#f8fafc;border-radius:8px"><b>Phương án:</b>${q.options.map((op,oi)=>`<div>${["A","B","C","D"][oi]}. ${esc(op)}</div>`).join("")}</div>`:""}
+ ${q.explanation?`<div style="margin-top:8px;padding:9px;background:#fffbeb;border-radius:8px"><b>Giải thích:</b> ${esc(q.explanation)}</div>`:""}
  <label class="sub" style="display:block;margin-top:9px">Đáp án chuẩn (cô kiểm tra/sửa):</label>
  <input id="draftAnswer_${si}_${qi}" value="${esc(q.answer)}" oninput="setDraftAnswer(${si},${qi},this.value)" style="width:100%;box-sizing:border-box;margin-top:4px">
  <label class="sub" style="display:block;margin-top:8px">Đáp án/cách trả lời khác vẫn chấp nhận <span style="font-weight:400">(ngăn cách bằng dấu ;)</span>:</label>
