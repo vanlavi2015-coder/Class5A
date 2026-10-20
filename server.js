@@ -123,7 +123,7 @@ awaitableStartup();
 async function awaitableStartup(){try{const restored=await restoreBackupIfEmpty();if(restored)console.log('LAVI: đã khôi phục dữ liệu từ backup GitHub mã hóa.');}catch(e){console.error('LAVI RESTORE ERROR:',e.message);}seed();}
 
 function students(ownerUsername=null){
- const sql='SELECT id,code,name,group_name AS "group",source_level AS sourceLevel,COALESCE(avatar,\\'🎓\\') AS avatar FROM students'+(ownerUsername?' WHERE owner_username=?':'')+' ORDER BY id';
+ const sql=`SELECT id,code,name,group_name AS "group",source_level AS sourceLevel,COALESCE(avatar,'🎓') AS avatar FROM students${ownerUsername?' WHERE owner_username=?':''} ORDER BY id`;
  return ownerUsername?db.prepare(sql).all(String(ownerUsername)):db.prepare(sql).all();
 }
 function ownerForUser(user){return user?.role==='student'?String(user.ownerUsername||'teacher'):String(user?.username||'teacher');}
@@ -154,7 +154,7 @@ function stateForTeacher(ownerUsername=null){
  const subRows=scoped?db.prepare('SELECT sub.k,sub.payload FROM submissions sub JOIN students s ON s.id=sub.student_id WHERE s.owner_username=?').all(owner):db.prepare('SELECT k,payload FROM submissions').all();const submissions={};for(const r of subRows)submissions[r.k]=JSON.parse(r.payload);
  const starRows=scoped?db.prepare('SELECT st.student_id,st.total FROM stars st JOIN students s ON s.id=st.student_id WHERE s.owner_username=?').all(owner):db.prepare('SELECT student_id,total FROM stars').all();const stars={};for(const r of starRows)stars[r.student_id]=r.total;
  const awards=scoped?db.prepare('SELECT a.id,a.student_id AS studentId,a.stars,a.reason,a.created_at AS time FROM awards a JOIN students s ON s.id=a.student_id WHERE s.owner_username=? ORDER BY a.created_at DESC LIMIT 300').all(owner):db.prepare('SELECT id,student_id AS studentId,stars,reason,created_at AS time FROM awards ORDER BY created_at DESC LIMIT 300').all();
- const notifications=(scoped?db.prepare('SELECT n.id,n.student_id AS studentId,n.message,n.read,n.created_at AS time FROM notifications n JOIN students s ON s.id=n.student_id WHERE s.owner_username=? ORDER BY n.created_at DESC LIMIT 500').all(owner):db.prepare('SELECT id,student_id AS studentId,message,read,created_at AS time FROM notifications ORDER BY created_at DESC LIMIT 500').all()).map(n=>({...n,read:!!n.read));
+ const notifications=(scoped?db.prepare('SELECT n.id,n.student_id AS studentId,n.message,n.read,n.created_at AS time FROM notifications n JOIN students s ON s.id=n.student_id WHERE s.owner_username=? ORDER BY n.created_at DESC LIMIT 500').all(owner):db.prepare('SELECT id,student_id AS studentId,message,read,created_at AS time FROM notifications ORDER BY created_at DESC LIMIT 500').all()).map(n=>({...n,read:!!n.read}));
  const schedules=(scoped?db.prepare('SELECT payload FROM schedules WHERE owner_username=? ORDER BY created_at DESC').all(owner):db.prepare('SELECT payload FROM schedules ORDER BY created_at DESC').all()).map(x=>JSON.parse(x.payload));return {assignments,submissions,stars,awards,notifications,schedules};
 }
 function stateForStudent(sid,ownerUsername='teacher'){
