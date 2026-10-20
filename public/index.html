@@ -73,6 +73,7 @@ body.menu-collapsed .menuToggle{left:14px}
  <div class="nav">
   <button class="active" onclick="show('home',this)">📊 Tổng quan</button>
   <button onclick="show('create',this)">🤖 Tạo bài</button>
+  <button onclick="show('questionBank',this);renderQuestionBank()">🗂️ Kho bài tập</button>
   <button onclick="show('assign',this)">📤 Bài đang giao</button>
   <button onclick="show('students',this)">👩‍🎓 Học sinh</button>
   <button onclick="show('stars',this)">⭐ Sao & Khen</button>
@@ -139,6 +140,19 @@ body.menu-collapsed .menuToggle{left:14px}
   <div id="draft" style="margin-top:14px"></div>
  </section>
 
+ <section id="questionBank" class="section">
+  <div class="card">
+   <h2>🗂️ Kho bài tập dùng chung</h2>
+   <p class="sub">Lưu các đề đã tạo hoặc nhập từ Excel/Word, tìm theo môn/chủ đề và dùng lại để chơi trò chơi. Bản sao trong kho không làm thay đổi bài đang giao.</p>
+   <div class="row" style="align-items:center;gap:10px;flex-wrap:wrap">
+    <input id="bankSearch" placeholder="Tìm theo tên bài, môn học..." oninput="renderQuestionBank()" style="flex:1;min-width:220px">
+    <select id="bankSubjectFilter" onchange="renderQuestionBank()" style="max-width:220px"><option value="">Tất cả môn</option></select>
+    <select id="bankTypeFilter" onchange="renderQuestionBank()" style="max-width:220px"><option value="">Tất cả nguồn</option><option value="Kho bài">Đã lưu trong kho</option><option value="Đang giao">Bài đang giao</option></select>
+   </div>
+   <div id="questionBankSummary" class="sub" style="margin:8px 0"></div>
+   <div id="questionBankList"></div>
+  </div>
+ </section>
  <section id="assign" class="section"><div class="card"><h2>📤 Bài đang giao</h2><div id="assignList"></div></div></section>
 
  <section id="students" class="section">
@@ -1869,7 +1883,39 @@ async function publish(){
   alert("Chưa giao được bài. "+e.message);
  }
 }
-function saveLibrary(){if(!draft)return;draft.status="Kho bài";state.assignments.unshift({...draft});draft=null;document.getElementById("draft").innerHTML="";save();toast("Đã lưu vào kho")}
+function saveLibrary(){if(!draft)return;draft.status="Kho bài";state.assignments.unshift({...draft});draft=null;document.getElementById("draft").innerHTML="";save().then(()=>toast("Đã lưu vào kho")).catch(e=>toast("Chưa lưu được: "+e.message));}
+function renderQuestionBank(){
+ const list=document.getElementById('questionBankList');if(!list)return;
+ const search=String(document.getElementById('bankSearch')?.value||'').trim().toLowerCase(),subject=String(document.getElementById('bankSubjectFilter')?.value||''),status=String(document.getElementById('bankTypeFilter')?.value||'');
+ const all=(state.assignments||[]).filter(a=>['Kho bài','Đang giao'].includes(a.status));
+ const sel=document.getElementById('bankSubjectFilter'),old=sel?.value||'';
+ if(sel){const opts=[...new Set(all.map(a=>a.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'));if(sel.options.length!==opts.length+1||opts.some((x,i)=>sel.options[i+1]?.value!==x)){sel.innerHTML='<option value="">Tất cả môn</option>'+opts.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(opts.includes(old))sel.value=old;}}
+ const filtered=all.filter(a=>(!search||[a.subject,a.lesson,a.topic,a.week].some(x=>String(x||'').toLowerCase().includes(search)))&&(!subject||a.subject===subject)&&(!status||a.status===status)).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+ const summary=document.getElementById('questionBankSummary');if(summary)summary.textContent='Tổng '+all.length+' bộ · '+all.filter(a=>a.status==='Kho bài').length+' bộ đã lưu · '+all.filter(a=>a.status==='Đang giao').length+' bài đang giao';
+ if(!filtered.length){list.innerHTML='<div class="empty">Chưa có bộ bài phù hợp. Hãy tạo bài rồi chọn “Lưu nháp” hoặc lưu một bài đang giao vào kho.</div>';return;}
+ list.innerHTML=filtered.map(a=>{const qs=(a.sets||[]).reduce((n,s)=>n+(s.questions||[]).length,0);const bankCopy=(a.status==='Đang giao'&&!all.some(x=>x.status==='Kho bài'&&x.bankOf===a.id));return '<div class="assignment" style="margin-top:10px"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px"><div style="flex:1"><h3>'+esc(a.subject||'Chưa chọn môn')+' – '+esc(a.lesson||a.topic||'Bộ câu hỏi')+'</h3><p class="sub">'+esc(a.topic||'')+' · '+qs+' câu · '+esc(a.group||'Tất cả')+'</p><span class="pill '+(a.status==='Kho bài'?'blue':'good')+'">'+esc(a.status)+'</span></div><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn primary" onclick="playBankGame(\''+esc(a.id)+'\')">🎮 Chơi thử</button>'+(bankCopy?'<button class="btn" onclick="copyAssignmentToBank(\''+esc(a.id)+'\')">＋ Lưu vào kho</button>':'')+(a.status==='Kho bài'?'<button class="btn" onclick="deleteBankItem(\''+esc(a.id)+'\')">🗑️ Xóa khỏi kho</button>':'')+'</div></div></div>';}).join('');
+}
+async function copyAssignmentToBank(id){
+ const source=(state.assignments||[]).find(a=>a.id===id);if(!source)return;
+ const copy={...JSON.parse(JSON.stringify(source)),id:'bank_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),status:'Kho bài',createdAt:new Date().toISOString(),bankOf:source.id,lesson:(source.lesson||'Bài tập')+' (bản lưu kho)'};
+ state.assignments.unshift(copy);try{await save();toast('Đã sao chép bài vào kho; bài đang giao vẫn giữ nguyên.');renderQuestionBank();}catch(e){state.assignments=state.assignments.filter(a=>a.id!==copy.id);toast('Chưa lưu được vào kho: '+e.message);}
+}
+async function deleteBankItem(id){
+ const item=(state.assignments||[]).find(a=>a.id===id);if(!item||item.status!=='Kho bài')return;
+ if(!confirm('Xóa bộ bài này khỏi kho? Bài đang giao (nếu có) không bị ảnh hưởng.'))return;
+ const old=state.assignments;state.assignments=old.filter(a=>a.id!==id);try{await save();toast('Đã xóa khỏi kho');renderQuestionBank();}catch(e){state.assignments=old;toast('Chưa xóa được: '+e.message);}
+}
+function playBankGame(id){
+ const item=(state.gameLibrary||[]).find(a=>a.id===id)||(state.assignments||[]).find(a=>a.id===id);if(!item){toast('Không tìm thấy bộ bài. Hãy tải lại trang.');return;}
+ const sets=item.sets||[],set=sets.find(x=>x.group==='Tất cả')||sets.find(x=>x.group==='Cả 4 nhóm')||sets[0];
+ let questions=(set?.questions||[]).filter(q=>q&&q.text).map(q=>{const z={...q};if(Array.isArray(z.options)){const letter=String(z.answer??'').trim().toUpperCase();if(['A','B','C','D'].includes(letter))z.answer=z.options[['A','B','C','D'].indexOf(letter)];}return z;});
+ if(!questions.length){toast('Bộ bài chưa có câu hỏi để chơi.');return;}
+ if(questions.some(q=>!q.answer)){toast('Bộ bài có câu chưa có đáp án. Hãy mở bản tạo bài, bổ sung đáp án rồi lưu lại.');return;}
+ questions=shuffleGameQuestions(questions).slice(0,Math.min(20,questions.length));
+ GAME_STATE.bankReplay={id:item.id,title:item.lesson||item.topic||'Kho bài tập',questions};
+ startGame('🗂️ '+(item.lesson||item.topic||'Kho bài tập'),questions,'bank:'+item.id);
+}
+
 function clearDraft(){draft=null;document.getElementById("draft").innerHTML=""}
 function findSet(a,g){return a.sets.find(x=>x.group===g)||a.sets.find(x=>x.group==="Tất cả")||a.sets.find(x=>x.group==="Cả 4 nhóm")||a.sets[0]}
 function renderAssignments(id){
@@ -2347,7 +2393,7 @@ async function loadMonthlyScores(){
    '</tbody></table></div>';
  }catch(e){box.innerHTML='<div class="empty">⚠️ '+esc(e.message||'Không tải được dữ liệu')+'</div>';if(summary)summary.innerHTML='';}
 }
-function renderAll(){renderHome();renderAssignments("assignList");renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
+function renderAll(){renderHome();renderQuestionBank();renderAssignments("assignList");renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
 document.getElementById("cDue").value=new Date(Date.now()+86400000).toISOString().slice(0,16);
 fillSubjects();fillNotifyTargets();renderAll();
 
@@ -2494,6 +2540,7 @@ function startKnowledgeGame(){
  startGame('🧠 Thử tài kiến thức – 10 câu',shuffleGameQuestions(bank),'knowledge');
 }
 function startGameAgain(){
+ if(String(GAME_STATE.type||'').startsWith('bank:')&&GAME_STATE.bankReplay){playBankGame(GAME_STATE.bankReplay.id);return;}
  if(GAME_STATE.type==='math')startQuickMathGame();
  else if(GAME_STATE.type==='choice')startChoiceGame();
  else startKnowledgeGame();
@@ -2531,7 +2578,9 @@ async function studentLeaderboard(){
  const meId=LAVI.user?.studentId;
  const student=STUDENTS.find(x=>x.id===meId);
  const content=document.getElementById('studentContent');
- const games='<div class="student-assignment" style="margin-top:12px"><h3>🎮 Trò chơi 5A</h3><p>Không cần chờ cô giao bài — em có thể luyện tập ngay.</p><div class="grid3"><button class="btn primary" onclick="startQuickMathGame()">⚡ Tính nhanh</button><button class="btn primary" onclick="startChoiceGame()">🎯 Săn đáp án</button><button class="btn primary" onclick="startKnowledgeGame()">🧠 Thử tài kiến thức</button></div><div id="studentGameArea"></div></div>';
+ const library=(state.gameLibrary||[]).filter(a=>a.status==='Kho bài');
+ const bankGames=library.length?'<div class="student-assignment" style="margin-top:12px"><h3>🗂️ Kho bài tập của cô</h3><p>Chọn bộ câu hỏi đã được lưu để luyện tập. Mỗi bộ có tối đa 3 lượt chơi.</p>'+library.map(a=>'<div class="student-leader-row"><span><b>'+esc(a.subject||'')+' – '+esc(a.lesson||a.topic||'Bộ câu hỏi')+'</b><br><span class="sub">'+((a.sets||[]).reduce((n,s)=>n+(s.questions||[]).length,0))+' câu</span></span><button class="btn primary" onclick="playBankGame(\''+esc(a.id)+'\')">🎮 Chơi</button></div>').join('')+'</div>':'<div class="student-assignment" style="margin-top:12px"><h3>🗂️ Kho bài tập của cô</h3><p class="sub">Chưa có bộ bài nào được lưu. Cô sẽ bổ sung tại mục “Kho bài tập”.</p></div>';
+ const games='<div class="student-assignment" style="margin-top:12px"><h3>🎮 Trò chơi 5A</h3><p>Không cần chờ cô giao bài — em có thể luyện tập ngay.</p><div class="grid3"><button class="btn primary" onclick="startQuickMathGame()">⚡ Tính nhanh</button><button class="btn primary" onclick="startChoiceGame()">🎯 Săn đáp án</button><button class="btn primary" onclick="startKnowledgeGame()">🧠 Thử tài kiến thức</button></div><div id="studentGameArea"></div></div>'+bankGames;
  content.innerHTML='<div class="student-rank-card"><div class="sub">🏆 XẾP HẠNG TỔNG 5A</div><h2 style="margin:5px 0">Bài tập + Trò chơi</h2><div id="studentRankLoading" class="sub" style="margin-top:12px">⏳ Đang tải bảng xếp hạng...</div></div>'+games;
  try{
   const r=await fetch('/api/overall-leaderboard',{headers:{Authorization:'Bearer '+LAVI.token}});
