@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LAVI 2.0 — Bản thử nghiệm</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb}
+    *{box-sizing:border-box}body{margin:0}.top{padding:22px max(20px,calc((100% - 1040px)/2));background:#183b68;color:white}
+    .top h1{margin:0;font-size:27px}.top p{margin:6px 0 0;color:#dce8fa}
+    main{max-width:1040px;margin:24px auto;padding:0 18px}.notice{padding:13px 16px;border:1px solid #e6c56a;background:#fff8df;border-radius:12px;margin-bottom:18px}
+    .grid{display:grid;grid-template-columns:300px 1fr;gap:18px}.panel{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:20px;box-shadow:0 4px 16px #1d35570b}
+    label{display:block;font-weight:650;margin:12px 0 6px}input{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}
+    button{border:0;border-radius:9px;padding:11px 14px;background:#2158a5;color:white;font:inherit;font-weight:700;cursor:pointer;margin-top:12px;width:100%}
+    button.secondary{background:#e9eff8;color:#183b68}.muted{color:#64748b;font-size:13px}.status{min-height:24px;color:#9a3412;margin-top:8px}
+    .class{border:1px solid #dce5f1;border-radius:12px;padding:14px;margin:10px 0;cursor:pointer}.class:hover{background:#f6f9ff}.class h3{margin:0 0 5px;font-size:17px}
+    table{width:100%;border-collapse:collapse;margin-top:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e2e8f0}th{background:#f7f9fc}
+    .hidden{display:none}.tag{display:inline-block;padding:4px 8px;border-radius:99px;background:#e9f3ff;color:#174785;font-size:12px;font-weight:700}
+    @media(max-width:720px){.grid{grid-template-columns:1fr}.top h1{font-size:22px}}
+  </style>
+</head>
+<body>
+<header class="top"><h1>LAVI 2.0</h1><p>Bản thử nghiệm độc lập · Chỉ sử dụng dữ liệu giả lập</p></header>
+<main>
+  <div class="notice"><strong>Chế độ an toàn:</strong> Đây là môi trường sandbox. Không nhập tên, điểm hoặc thông tin thật của học sinh.</div>
+  <div class="grid">
+    <section class="panel" id="loginPanel">
+      <h2>Đăng nhập thử</h2>
+      <p class="muted">Hai tài khoản giáo viên giả lập dùng để kiểm tra phân quyền độc lập.</p>
+      <label for="username">Tài khoản</label><input id="username" autocomplete="username" value="teacher1">
+      <label for="password">Mật khẩu demo</label><input id="password" type="password" autocomplete="current-password" value="Demo1234!">
+      <button id="loginBtn">Đăng nhập</button>
+      <button class="secondary" id="teacher2Btn">Điền tài khoản giáo viên 2</button>
+      <div class="status" id="loginStatus" role="status"></div>
+      <p class="muted">Demo: teacher1 hoặc teacher2 · Mật khẩu: Demo1234!</p>
+    </section>
+    <section class="panel">
+      <div id="welcome"><span class="tag">MVP 0.1</span><h2>Không gian lớp học</h2><p>Đăng nhập để xem các lớp thuộc tài khoản đang dùng.</p><p class="muted">Bước đầu kiểm thử: đăng nhập, phân vùng lớp và danh sách học sinh giả lập.</p></div>
+      <div id="workspace" class="hidden">
+        <h2 id="greeting">Lớp học của tôi</h2>
+        <p class="muted">Chỉ hiển thị lớp do tài khoản này quản lý.</p>
+        <div id="classList"></div>
+        <div id="studentsArea"></div>
+        <button class="secondary" id="logoutBtn">Đăng xuất</button>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  let token = '';
+  const $ = id => document.getElementById(id);
+  async function api(url, options={}) {
+    const response = await fetch(url, { ...options, headers: {
+      'Content-Type':'application/json',
+      ...(token ? {Authorization:'Bearer '+token} : {}),
+      ...(options.headers||{})
+    }});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
+    return data;
+  }
+  $('teacher2Btn').addEventListener('click', () => {$('username').value='teacher2';$('password').value='Demo1234!';});
+  $('loginBtn').addEventListener('click', async () => {
+    $('loginStatus').textContent='Đang kiểm tra...';
+    try {
+      const result = await api('/api/login',{method:'POST',body:JSON.stringify({username:$('username').value,password:$('password').value})});
+      token=result.token;
+      $('loginPanel').classList.add('hidden');$('welcome').classList.add('hidden');$('workspace').classList.remove('hidden');
+      $('greeting').textContent='Xin chào, '+result.user.displayName;
+      await loadClasses();
+    } catch(e) {$('loginStatus').textContent=e.message;}
+  });
+  async function loadClasses(){
+    const data=await api('/api/classes');
+    $('classList').replaceChildren();
+    $('studentsArea').replaceChildren();
+    if(!data.classes.length){$('classList').textContent='Tài khoản này chưa có lớp.';return;}
+    data.classes.forEach(c=>{
+      const card=document.createElement('div');card.className='class';
+      const title=document.createElement('h3');title.textContent=c.name;
+      const detail=document.createElement('p');detail.className='muted';detail.textContent=c.schoolName+' · '+c.studentCount+' học sinh giả lập';
+      card.append(title,detail);
+      card.addEventListener('click',()=>loadStudents(c.id,c.name));
+      $('classList').append(card);
+    });
+  }
+  async function loadStudents(id,name){
+    const data=await api('/api/classes/'+encodeURIComponent(id)+'/students');
+    const area=$('studentsArea');area.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent='Danh sách mẫu: '+name;area.append(heading);
+    const table=document.createElement('table');
+    const thead=document.createElement('thead');thead.innerHTML='<tr><th>Mã demo</th><th>Tên giả lập</th><th>Mức mẫu</th></tr>';
+    const tbody=document.createElement('tbody');
+    data.students.forEach(s=>{const tr=document.createElement('tr');[s.code,s.displayName,s.level].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});tbody.append(tr);});
+    table.append(thead,tbody);area.append(table);
+  }
+  $('logoutBtn').addEventListener('click',()=>{token='';$('workspace').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('welcome').classList.remove('hidden');$('password').value='';});
+})();
+</script>
+</body>
+</html>
