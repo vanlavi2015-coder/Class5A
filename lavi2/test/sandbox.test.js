@@ -7,19 +7,20 @@ const { spawn } = require('node:child_process');
 
 const root = path.join(__dirname, '..');
 
-test('sandbox safety contract contains only synthetic records and server-side tenant filters', () => {
+test('sandbox UI and API support teacher registration with email or phone', () => {
   const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
-  assert.match(server, /syntheticDataOnly: true/);
-  assert.match(server, /LAVI_DEMO_MODE/);
-  assert.match(server, /owner_user_id = \?/);
-  assert.doesNotMatch(server, /Hoàng Tuệ An|Tô Nguyễn Tâm An/);
   const html = fs.readFileSync(path.join(root, 'public', 'index.html'), 'utf8');
-  assert.match(html, /Chỉ sử dụng dữ liệu giả lập/);
-  assert.match(html, /teacher1/);
-  assert.match(html, /teacher2/);
+  assert.match(server, /app\.post\('\/api\/register'/);
+  assert.match(server, /normalizeContact/);
+  assert.match(server, /contact_verified/);
+  assert.match(server, /owner_user_id = \?/);
+  assert.match(html, /Đăng ký/);
+  assert.match(html, /Gmail hoặc số điện thoại/);
+  assert.match(html, /Chưa được xác minh email\/số điện thoại bằng OTP/);
+  assert.doesNotMatch(server, /Hoàng Tuệ An|Tô Nguyễn Tâm An/);
 });
 
-test('teacher1 and teacher2 cannot see or open each other’s classes', async () => {
+test('demo teachers remain isolated and registration/login works for email and phone', async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lavi2-test-'));
   const port = 32000 + Math.floor(Math.random() * 10000);
   const base = 'http://127.0.0.1:' + port;
@@ -49,12 +50,15 @@ test('teacher1 and teacher2 cannot see or open each other’s classes', async ()
     }
     throw new Error('Test server did not start: ' + stderr);
   }
-  async function login(username) {
-    const r = await fetch(base + '/api/login', {
+  async function post(url, body) {
+    return fetch(base + url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password: 'Demo1234!' })
+      body: JSON.stringify(body)
     });
+  }
+  async function login(username) {
+    const r = await post('/api/login', { username, password: 'Demo1234!' });
     assert.equal(r.status, 200);
     return (await r.json()).token;
   }
@@ -68,7 +72,6 @@ test('teacher1 and teacher2 cannot see or open each other’s classes', async ()
     const tokenB = await login('teacher2');
     const classesA = await (await fetch(base + '/api/classes', { headers: { Authorization: 'Bearer ' + tokenA } })).json();
     const classesB = await (await fetch(base + '/api/classes', { headers: { Authorization: 'Bearer ' + tokenB } })).json();
-
     assert.deepEqual(classesA.classes.map(c => c.id), ['demo-class-a']);
     assert.deepEqual(classesB.classes.map(c => c.id), ['demo-class-b']);
 
@@ -76,7 +79,6 @@ test('teacher1 and teacher2 cannot see or open each other’s classes', async ()
       headers: { Authorization: 'Bearer ' + tokenA }
     });
     assert.equal(crossAccess.status, 404);
-
     const ownAccess = await fetch(base + '/api/classes/demo-class-a/students', {
       headers: { Authorization: 'Bearer ' + tokenA }
     });
@@ -84,6 +86,49 @@ test('teacher1 and teacher2 cannot see or open each other’s classes', async ()
     const roster = await ownAccess.json();
     assert.equal(roster.students.length, 3);
     assert.ok(roster.students.every(s => s.displayName.includes('giả lập')));
+
+    const emailRegister = await post('/api/register', {
+      displayName: 'Giáo viên Demo Email',
+      contact: 'Teacher.Demo@Gmail.com',
+      password: 'StrongDemo123!'
+    });
+    assert.equal(emailRegister.status, 201);
+    const emailData = await emailRegister.json();
+    assert.equal(emailData.user.contact, 'teacher.demo@gmail.com');
+    assert.equal(emailData.user.contactVerified, false);
+
+    const emailLogin = await post('/api/login', {
+      contact: 'teacher.demo@gmail.com',
+      password: 'StrongDemo123!'
+    });
+    assert.equal(emailLogin.status, 200);
+
+    const duplicateEmail = await post('/api/register', {
+      displayName: 'Giáo viên khác',
+      contact: 'teacher.demo@gmail.com',
+      password: 'AnotherDemo123!'
+    });
+    assert.equal(duplicateEmail.status, 409);
+
+    const phoneRegister = await post('/api/register', {
+      displayName: 'Giáo viên Demo Phone',
+      contact: '0912345678',
+      password: 'StrongDemo123!'
+    });
+    assert.equal(phoneRegister.status, 201);
+    const phoneData = await phoneRegister.json();
+    assert.equal(phoneData.user.contact, '+84912345678');
+
+    const phoneLogin = await post('/api/login', {
+      contact: '0912 345 678',
+      password: 'StrongDemo123!'
+    });
+    assert.equal(phoneLogin.status, 200);
+    assert.equal((await post('/api/register', {
+      displayName: 'Giáo viên Demo Phone Trùng',
+      contact: '+84912345678',
+      password: 'AnotherDemo123!'
+    })).status, 409);
   } finally {
     child.kill('SIGTERM');
     fs.rmSync(dataDir, { recursive: true, force: true });
