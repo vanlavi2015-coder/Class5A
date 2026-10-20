@@ -1791,9 +1791,10 @@ function setDraftText(si,qi,value){
 function setDraftAnswer(si,qi,value){
  if(!draft?.sets?.[si]?.questions?.[qi])return;
  const q=draft.sets[si].questions[qi];
+ const previous=String(q.answer??'').trim();
  q.answer=String(value??'').trim();
- q.acceptedAnswers=[q.answer,...(q.acceptedAnswers||[])].filter(Boolean);
- q.acceptedAnswers=[...new Set(q.acceptedAnswers)];
+ const alternatives=(q.acceptedAnswers||[]).filter(a=>String(a??'').trim()!==previous&&String(a??'').trim()!==q.answer);
+ q.acceptedAnswers=[...new Set([q.answer,...alternatives].filter(Boolean))];
 }
 function saveDraftAnswer(si,qi){
  if(!draft?.sets?.[si]?.questions?.[qi])return;
