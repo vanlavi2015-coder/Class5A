@@ -154,7 +154,8 @@ function stateForStudent(sid){
   const star=db.prepare('SELECT total FROM stars WHERE student_id=?').get(sid);
   const awards=db.prepare('SELECT id,student_id AS studentId,stars,reason,created_at AS time FROM awards WHERE student_id=? ORDER BY created_at DESC LIMIT 100').all(sid);
   const notifications=db.prepare('SELECT id,student_id AS studentId,message,read,created_at AS time FROM notifications WHERE student_id=? ORDER BY created_at DESC LIMIT 100').all(sid).map(n=>({...n,read:!!n.read}));
-  return {assignments,submissions,stars:{[sid]:star?.total||0},awards,notifications,schedules:[]};
+  const gameLibrary=db.prepare("SELECT payload FROM assignments WHERE status='Kho bài' ORDER BY created_at DESC").all().map(x=>JSON.parse(x.payload));
+  return {assignments,gameLibrary,submissions,stars:{[sid]:star?.total||0},awards,notifications,schedules:[]};
 }
 function tokenFor(u){return jwt.sign(u,SECRET,{expiresIn:'30d'});}
 function auth(req,res,next){try{const h=req.headers.authorization||'';if(!h.startsWith('Bearer '))return res.status(401).json({error:'Chưa đăng nhập'});req.user=jwt.verify(h.slice(7),SECRET);next();}catch(e){return res.status(401).json({error:'Phiên đăng nhập không hợp lệ'});}}
@@ -164,10 +165,17 @@ app.get('/api/health',(req,res)=>res.json({ok:true,app:'LAVI 5A Online v3',stude
 app.post('/api/login',(req,res)=>{const rawUser=String(req.body?.username||'').trim();const username=rawUser.toLowerCase();const password=String(req.body?.password??'');const u=db.prepare('SELECT * FROM users WHERE lower(username)=?').get(username);if(!u)return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});let ok=bcrypt.compareSync(password,u.password_hash);if(!ok){if(u.role==='teacher')ok=password===(process.env.LAVI_TEACHER_PASSWORD||'Lavi@2026');else if(u.role==='student')ok=password==='1234';}if(!ok)return res.status(401).json({error:'Sai tài khoản hoặc mật khẩu'});const user={username:u.username,role:u.role,studentId:u.student_id||null};res.json({token:tokenFor(user),user,students:students()});});
 app.get('/api/state',auth,(req,res)=>res.json({state:req.user.role==='teacher'?stateForTeacher():stateForStudent(req.user.studentId),students:req.user.role==='teacher'?students():students().filter(s=>s.id===req.user.studentId),user:req.user}));
 app.get('/api/students',auth,(req,res)=>{if(!teacher(req,res))return;res.json({students:students()});});
+function validGameType(type){
+  if(['math','choice','knowledge'].includes(type))return true;
+  const match=String(type||'').match(/^bank:([A-Za-z0-9_-]+)$/);if(!match)return false;
+  const row=db.prepare('SELECT status,payload FROM assignments WHERE id=?').get(match[1]);
+  if(!row||!['Kho bài','Đang giao'].includes(row.status))return false;
+  try{const a=JSON.parse(row.payload);return Array.isArray(a.sets)&&a.sets.some(s=>Array.isArray(s.questions)&&s.questions.length>0);}catch{return false;}
+}
 app.get('/api/game/status',auth,(req,res)=>{
   if(req.user.role!=='student')return res.status(403).json({error:'Chỉ học sinh được xem lượt chơi'});
   const type=String(req.query?.gameType||'').trim();
-  if(!['math','choice','knowledge'].includes(type))return res.status(400).json({error:'Loại trò chơi không hợp lệ'});
+  if(!validGameType(type))return res.status(400).json({error:'Trò chơi không hợp lệ hoặc bộ bài đã bị xóa.'});
   const row=db.prepare('SELECT COUNT(*) n FROM game_attempts WHERE student_id=? AND game_type=?').get(req.user.studentId,type);
   const best=db.prepare('SELECT score FROM game_results WHERE student_id=? AND game_type=?').get(req.user.studentId,type);
   const attempts=Number(row?.n||0);
@@ -176,7 +184,7 @@ app.get('/api/game/status',auth,(req,res)=>{
 app.post('/api/game/result',auth,async(req,res)=>{
   if(req.user.role!=='student')return res.status(403).json({error:'Chỉ học sinh được lưu kết quả trò chơi'});
   const type=String(req.body?.gameType||'').trim();
-  if(!['math','choice','knowledge'].includes(type))return res.status(400).json({error:'Loại trò chơi không hợp lệ'});
+  if(!validGameType(type))return res.status(400).json({error:'Trò chơi không hợp lệ hoặc bộ bài đã bị xóa.'});
   const score=Math.max(0,Math.min(100,Number(req.body?.score)||0));
   const correct=Math.max(0,Number(req.body?.correct)||0);
   const total=Math.max(1,Number(req.body?.total)||10);
@@ -219,7 +227,7 @@ app.get('/api/overall-leaderboard',auth,(req,res)=>{
     const gameMath=Number(g.byType.math?.score||0);
     const gameChoice=Number(g.byType.choice?.score||0);
     const gameKnowledge=Number(g.byType.knowledge?.score||0);
-    const gamePoints=gameMath+gameChoice+gameKnowledge;
+    const gamePoints=Number(g.points)||0; // Bao gồm cả các bộ bài trong kho.
     return {
       studentId:s.id,name:s.name,group:s.group,
       assignmentPoints:a.points,completedAssignments:a.completed,
