@@ -1748,7 +1748,7 @@ function generate(){
   toast("Không tạo được bài: "+(e.message||"lỗi không xác định"));
  }
 }
-function importHeaderKey(v){return String(v??'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]/g,'');}
+function importHeaderKey(v){return String(v??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^a-z0-9]/g,'');}
 function importCell(row,aliases){const keys=Object.keys(row||{});for(const a of aliases){const t=importHeaderKey(a),k=keys.find(x=>importHeaderKey(x)===t);if(k!==undefined&&row[k]!=null&&String(row[k]).trim()!=='')return String(row[k]).trim();}return '';}
 function parseQuestionRows(rows){
  const questions=[],errors=[],seen=new Set();
@@ -1756,7 +1756,7 @@ function parseQuestionRows(rows){
   if(!text){if(Object.values(row||{}).some(v=>String(v??'').trim()))errors.push('Dòng '+line+': thiếu nội dung câu hỏi.');return;}
   const opts=['A','B','C','D'].map(k=>importCell(row,[k,'Đáp án '+k,'Phương án '+k,'Option '+k]));
   const raw=importCell(row,['Đáp án đúng','Đáp án','Đáp án chuẩn','Correct answer','Answer']),explanation=importCell(row,['Giải thích','Lời giải','Explanation']);
-  const key=text.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim();
+  const key=text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
   if(seen.has(key)){errors.push('Dòng '+line+': câu trùng nội dung, đã bỏ qua.');return;}seen.add(key);
   if(opts.every(Boolean)){let ans=raw.toUpperCase().trim();if(!['A','B','C','D'].includes(ans)){const oi=opts.findIndex(v=>v.trim().toLowerCase()===raw.trim().toLowerCase());if(oi>=0)ans=['A','B','C','D'][oi];}
    if(!['A','B','C','D'].includes(ans)){errors.push('Dòng '+line+': đáp án phải là A/B/C/D hoặc trùng nội dung một phương án.');return;}
@@ -1769,8 +1769,8 @@ async function importQuestionsFromExcel(){
  const input=document.getElementById('questionImportFile'),status=document.getElementById('questionImportStatus'),file=input?.files?.[0];
  if(!file){if(status)status.textContent='Cô hãy chọn tệp trước.';return;}if(file.size>8*1024*1024){if(status)status.textContent='Tệp tối đa 8 MB.';return;}
  try{let rows=[];
-  if(/\\.(csv|txt)$/i.test(file.name)){const raw=(await file.text()).replace(/^\\uFEFF/,'');const first=raw.split(/\\r?\\n/,1)[0]||'',delim=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':(first.match(/\\t/g)||[]).length>(first.match(/,/g)||[]).length?'\\t':',';
-   const matrix=[];let row=[],cell='',quoted=false;for(let i=0;i<raw.length;i++){const c=raw[i];if(c==='"'&&quoted&&raw[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=!quoted;else if(c===delim&&!quoted){row.push(cell);cell='';}else if((c==='\\n'||c==='\\r')&&!quoted){if(c==='\\r'&&raw[i+1]==='\\n')i++;row.push(cell);if(row.some(v=>String(v).trim()))matrix.push(row);row=[];cell='';}else cell+=c;}row.push(cell);if(row.some(v=>String(v).trim()))matrix.push(row);
+  if(/\.(csv|txt)$/i.test(file.name)){const raw=(await file.text()).replace(/^\uFEFF/,'');const first=raw.split(/\r?\n/,1)[0]||'',delim=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';
+   const matrix=[];let row=[],cell='',quoted=false;for(let i=0;i<raw.length;i++){const c=raw[i];if(c==='"'&&quoted&&raw[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=!quoted;else if(c===delim&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&raw[i+1]==='\n')i++;row.push(cell);if(row.some(v=>String(v).trim()))matrix.push(row);row=[];cell='';}else cell+=c;}row.push(cell);if(row.some(v=>String(v).trim()))matrix.push(row);
    if(matrix.length<2)throw new Error('Tệp chưa có dòng dữ liệu.');const headers=matrix[0].map(v=>String(v).trim());rows=matrix.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
   }else{if(!window.XLSX)throw new Error('Không tải được bộ đọc Excel. Hãy mở tệp bằng Excel và lưu thành CSV UTF-8 rồi nhập lại.');const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false});}
   const parsed=parseQuestionRows(rows);if(!parsed.questions.length)throw new Error('Không tìm thấy câu hỏi hợp lệ. Kiểm tra hàng tiêu đề “Câu hỏi”.');if(parsed.questions.length>100)throw new Error('Mỗi lần nhập tối đa 100 câu.');
@@ -1781,7 +1781,7 @@ async function importQuestionsFromExcel(){
   document.getElementById('draft').innerHTML=renderDraft();document.getElementById('draft').scrollIntoView({behavior:'smooth',block:'start'});if(status)status.textContent='Đã đọc '+parsed.questions.length+' câu. '+parsed.errors.slice(0,5).join(' ');toast('Đã nhập câu hỏi vào bản nháp. Cô kiểm tra trước khi giao.');
  }catch(e){console.error(e);if(status)status.textContent='Không nhập được: '+(e.message||'Lỗi không xác định');toast('Nhập câu hỏi thất bại');}
 }
-function downloadQuestionTemplate(){const rows=[['Câu hỏi','A','B','C','D','Đáp án đúng','Giải thích'],['Từ nào đồng nghĩa với “siêng năng”?','chăm chỉ','lười biếng','vội vàng','yếu ớt','A','Siêng năng có nghĩa là chăm chỉ.']];const csv='\\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),a=document.createElement('a');a.href=url;a.download='Mau_nhap_cau_hoi_LAVI.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+function downloadQuestionTemplate(){const rows=[['Câu hỏi','A','B','C','D','Đáp án đúng','Giải thích'],['Từ nào đồng nghĩa với “siêng năng”?','chăm chỉ','lười biếng','vội vàng','yếu ớt','A','Siêng năng có nghĩa là chăm chỉ.']];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),a=document.createElement('a');a.href=url;a.download='Mau_nhap_cau_hoi_LAVI.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
 
 function setDraftText(si,qi,value){
  if(!draft?.sets?.[si]?.questions?.[qi])return;
