@@ -43,6 +43,9 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
+    email TEXT,
+    phone TEXT,
+    contact_verified INTEGER NOT NULL DEFAULT 0,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL CHECK(role IN ('teacher','student','parent','admin')),
     display_name TEXT NOT NULL,
@@ -75,6 +78,17 @@ db.exec(`
   INSERT OR IGNORE INTO schema_migrations(version) VALUES (1);
 `);
 
+// Additive migration for existing sandbox databases.
+const userColumns = new Set(db.prepare('PRAGMA table_info(users)').all().map(c => c.name));
+if (!userColumns.has('email')) db.exec('ALTER TABLE users ADD COLUMN email TEXT');
+if (!userColumns.has('phone')) db.exec('ALTER TABLE users ADD COLUMN phone TEXT');
+if (!userColumns.has('contact_verified')) db.exec('ALTER TABLE users ADD COLUMN contact_verified INTEGER NOT NULL DEFAULT 0');
+db.exec(`
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(email) WHERE email IS NOT NULL;
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_unique ON users(phone) WHERE phone IS NOT NULL;
+`);
+db.prepare('INSERT OR IGNORE INTO schema_migrations(version) VALUES (2)').run();
+
 function seedDemoData() {
   if (!DEMO_MODE) return;
   const n = db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
@@ -96,6 +110,36 @@ function seedDemoData() {
   ].forEach(s => addStudent.run(...s));
 }
 seedDemoData();
+
+function normalizeContact(raw) {
+  const value = String(raw || '').trim();
+  if (value.includes('@')) {
+    const email = value.toLowerCase();
+    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return null;
+    return { kind: 'email', value: email };
+  }
+  const compact = value.replace(/[\\s().-]/g, '');
+  let phone = compact;
+  if (/^0\\d{9}$/.test(phone)) phone = '+84' + phone.slice(1);
+  if (/^84\\d{9}$/.test(phone)) phone = '+' + phone;
+  if (!/^\\+[1-9]\\d{7,14}$/.test(phone)) return null;
+  return { kind: 'phone', value: phone };
+}
+
+const requestBuckets = new Map();
+function rateLimit(key, limit, windowMs) {
+  const now = Date.now();
+  const current = requestBuckets.get(key);
+  if (!current || now - current.start >= windowMs) {
+    requestBuckets.set(key, { start: now, count: 1 });
+    return true;
+  }
+  current.count += 1;
+  return current.count <= limit;
+}
+function clientKey(req) {
+  return req.socket.remoteAddress || 'unknown';
+}
 
 function audit(actorId, action, entityType, entityId = null) {
   db.prepare('INSERT INTO audit_events(actor_user_id,action,entity_type,entity_id) VALUES(?,?,?,?)')
@@ -130,19 +174,69 @@ app.get('/api/health', (_req, res) => res.json({
   schemaVersion: 1
 }));
 
-app.post('/api/login', (req, res) => {
-  const username = String(req.body?.username || '').trim().toLowerCase();
-  const password = String(req.body?.password || '');
-  if (!username || !password || username.length > 80 || password.length > 200) {
-    return res.status(400).json({ error: 'Vui lòng nhập tài khoản và mật khẩu hợp lệ.' });
+app.post('/api/register', (req, res) => {
+  if (!rateLimit('register:' + clientKey(req), 5, 15 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Bạn đăng ký quá nhiều lần. Vui lòng thử lại sau 15 phút.' });
   }
-  const user = db.prepare('SELECT * FROM users WHERE lower(username)=? AND active=1').get(username);
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.status(401).json({ error: 'Sai tài khoản hoặc mật khẩu.' });
+  const displayName = String(req.body?.displayName || '').trim().replace(/\\s+/g, ' ');
+  const contact = normalizeContact(req.body?.contact);
+  const password = String(req.body?.password || '');
+  if (displayName.length < 2 || displayName.length > 100) {
+    return res.status(400).json({ error: 'Họ tên cần từ 2 đến 100 ký tự.' });
+  }
+  if (!contact) return res.status(400).json({ error: 'Vui lòng nhập email hợp lệ hoặc số điện thoại có mã quốc gia.' });
+  if (password.length < 8 || password.length > 200) {
+    return res.status(400).json({ error: 'Mật khẩu cần ít nhất 8 ký tự.' });
+  }
+  const existing = db.prepare('SELECT id FROM users WHERE lower(username)=? OR email=? OR phone=?')
+    .get(contact.value, contact.value, contact.value);
+  if (existing) return res.status(409).json({ error: 'Email hoặc số điện thoại này đã được đăng ký.' });
+  try {
+    const passwordHash = bcrypt.hashSync(password, 12);
+    const result = db.prepare('INSERT INTO users(username,email,phone,contact_verified,password_hash,role,display_name) VALUES(?,?,?,?,?,?,?)')
+      .run(contact.value, contact.kind === 'email' ? contact.value : null, contact.kind === 'phone' ? contact.value : null, 0, passwordHash, 'teacher', displayName);
+    const id = Number(result.lastInsertRowid);
+    audit(id, 'register', 'user', String(id));
+    const token = jwt.sign({ id }, SECRET, { expiresIn: '2h', issuer: 'lavi2-sandbox', audience: 'lavi2-client' });
+    res.status(201).json({
+      token,
+      user: { id, username: contact.value, role: 'teacher', displayName, contact: contact.value, contactVerified: false },
+      notice: 'Đã tạo tài khoản thử nghiệm. Email/số điện thoại chưa được xác minh bằng OTP.'
+    });
+  } catch (err) {
+    if (err && err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: 'Email hoặc số điện thoại này đã được đăng ký.' });
+    }
+    throw err;
+  }
+});
+
+app.post('/api/login', (req, res) => {
+  if (!rateLimit('login:' + clientKey(req), 10, 5 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Bạn đăng nhập quá nhiều lần. Vui lòng thử lại sau 5 phút.' });
+  }
+  const rawContact = String(req.body?.contact || req.body?.username || '').trim();
+  const normalized = normalizeContact(rawContact);
+  const identifier = normalized ? normalized.value : rawContact.toLowerCase();
+  const password = String(req.body?.password || '');
+  if (!identifier || !password || identifier.length > 254 || password.length > 200) {
+    return res.status(400).json({ error: 'Vui lòng nhập email/số điện thoại và mật khẩu hợp lệ.' });
+  }
+  const user = db.prepare('SELECT * FROM users WHERE lower(username)=? OR email=? OR phone=?')
+    .get(identifier, identifier, identifier);
+  if (!user || !user.active || !bcrypt.compareSync(password, user.password_hash)) {
+    return res.status(401).json({ error: 'Sai email/số điện thoại hoặc mật khẩu.' });
   }
   audit(user.id, 'login', 'user', String(user.id));
   const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: '2h', issuer: 'lavi2-sandbox', audience: 'lavi2-client' });
-  res.json({ token, user: { id: user.id, username: user.username, role: user.role, displayName: user.display_name } });
+  res.json({
+    token,
+    user: {
+      id: user.id, username: user.username, role: user.role, displayName: user.display_name,
+      contact: user.email || user.phone || user.username,
+      contactVerified: Boolean(user.contact_verified)
+    }
+  });
 });
 
 app.get('/api/me', authenticate, (req, res) => {
