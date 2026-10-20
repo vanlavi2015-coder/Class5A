@@ -1795,7 +1795,7 @@ async function importQuestionsFromExcel(){
    const raw=await file.text();
    if(!raw.trim().startsWith('<'))throw new Error('Tệp .doc nhị phân cũ chưa hỗ trợ trực tiếp. Cô hãy mở bằng Word, chọn Lưu thành .docx rồi nhập lại; hoặc tải mẫu Word của LAVI.');
    const doc=new DOMParser().parseFromString(raw,'text/html');
-   rows=parseWordQuestionText(doc.body.textContent||'');
+   rows=parseWordQuestionText((doc.body.innerHTML||'').replace(/<\\/(?:p|div|h[1-6]|li|tr)>/gi,'\\n').replace(/<br\\s*\\/?\s*>/gi,'\\n').replace(/<[^>]*>/g,' '));
   }else{if(!window.XLSX)throw new Error('Không tải được bộ đọc Excel. Hãy mở tệp bằng Excel và lưu thành CSV UTF-8 rồi nhập lại.');const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false});}
   const parsed=parseQuestionRows(rows);if(!parsed.questions.length)throw new Error('Không tìm thấy câu hỏi hợp lệ. Kiểm tra hàng tiêu đề “Câu hỏi”.');if(parsed.questions.length>100)throw new Error('Mỗi lần nhập tối đa 100 câu.');
   const group=document.getElementById('cGroup')?.value||'Tất cả',chosen=typeof selectedLessons==='function'?selectedLessons():[],subject=document.getElementById('cSubject')?.value||chosen[0]?.subject||'Tiếng Việt',names=chosen.map(x=>x.lesson).filter(Boolean),groups=group==='Cả 4 nhóm'?GROUPS:[group];
