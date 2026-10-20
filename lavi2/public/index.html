@@ -3,45 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LAVI 2.0 — Bản thử nghiệm</title>
+  <title>LAVI 2.0 — Trang chủ giáo viên</title>
   <style>
     :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb}
     *{box-sizing:border-box}body{margin:0}.top{padding:22px max(20px,calc((100% - 1040px)/2));background:#183b68;color:white}
     .top h1{margin:0;font-size:27px}.top p{margin:6px 0 0;color:#dce8fa}
     main{max-width:1040px;margin:24px auto;padding:0 18px}.notice{padding:13px 16px;border:1px solid #e6c56a;background:#fff8df;border-radius:12px;margin-bottom:18px}
-    .grid{display:grid;grid-template-columns:300px 1fr;gap:18px}.panel{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:20px;box-shadow:0 4px 16px #1d35570b}
+    .grid{display:grid;grid-template-columns:340px 1fr;gap:18px}.panel{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:20px;box-shadow:0 4px 16px #1d35570b}
     label{display:block;font-weight:650;margin:12px 0 6px}input{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}
     button{border:0;border-radius:9px;padding:11px 14px;background:#2158a5;color:white;font:inherit;font-weight:700;cursor:pointer;margin-top:12px;width:100%}
-    button.secondary{background:#e9eff8;color:#183b68}.muted{color:#64748b;font-size:13px}.status{min-height:24px;color:#9a3412;margin-top:8px}
+    button.secondary{background:#e9eff8;color:#183b68}.muted{color:#64748b;font-size:13px}.status{min-height:24px;color:#9a3412;margin-top:8px;white-space:pre-wrap}
     .class{border:1px solid #dce5f1;border-radius:12px;padding:14px;margin:10px 0;cursor:pointer}.class:hover{background:#f6f9ff}.class h3{margin:0 0 5px;font-size:17px}
     table{width:100%;border-collapse:collapse;margin-top:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e2e8f0}th{background:#f7f9fc}
     .hidden{display:none}.tag{display:inline-block;padding:4px 8px;border-radius:99px;background:#e9f3ff;color:#174785;font-size:12px;font-weight:700}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.tabs button{margin:0}.tabs button[aria-pressed="true"]{background:#183b68;color:white}.tabs button[aria-pressed="false"]{background:#e9eff8;color:#183b68}
+    .small-note{font-size:12px;line-height:1.5;color:#64748b;margin-top:12px}
     @media(max-width:720px){.grid{grid-template-columns:1fr}.top h1{font-size:22px}}
   </style>
 </head>
 <body>
-<header class="top"><h1>LAVI 2.0</h1><p>Bản thử nghiệm độc lập · Chỉ sử dụng dữ liệu giả lập</p></header>
+<header class="top"><h1>LAVI 2.0</h1><p>Không gian lớp học số dành cho giáo viên · Bản thử nghiệm</p></header>
 <main>
-  <div class="notice"><strong>Chế độ an toàn:</strong> Đây là môi trường sandbox. Không nhập tên, điểm hoặc thông tin thật của học sinh.</div>
+  <div class="notice"><strong>Môi trường thử nghiệm:</strong> chỉ sử dụng dữ liệu giả lập. Tài khoản đăng ký trong bản này chưa được xác minh email/số điện thoại bằng OTP; không dùng cho dữ liệu học sinh thật.</div>
   <div class="grid">
-    <section class="panel" id="loginPanel">
-      <h2>Đăng nhập thử</h2>
-      <p class="muted">Hai tài khoản giáo viên giả lập dùng để kiểm tra phân quyền độc lập.</p>
-      <label for="username">Tài khoản</label><input id="username" autocomplete="username" value="teacher1">
-      <label for="password">Mật khẩu demo</label><input id="password" type="password" autocomplete="current-password" value="Demo1234!">
-      <button id="loginBtn">Đăng nhập</button>
-      <button class="secondary" id="teacher2Btn">Điền tài khoản giáo viên 2</button>
-      <div class="status" id="loginStatus" role="status"></div>
-      <p class="muted">Demo: teacher1 hoặc teacher2 · Mật khẩu: Demo1234!</p>
+    <section class="panel" id="authPanel">
+      <h2 id="authTitle">Chào mừng thầy cô</h2>
+      <p class="muted" id="authSubtitle">Đăng nhập hoặc tạo tài khoản giáo viên bằng email/số điện thoại.</p>
+      <div class="tabs">
+        <button id="loginTab" type="button" aria-pressed="true">Đăng nhập</button>
+        <button id="registerTab" type="button" aria-pressed="false">Đăng ký</button>
+      </div>
+      <form id="authForm">
+        <div id="nameField" class="hidden">
+          <label for="displayName">Họ và tên giáo viên</label>
+          <input id="displayName" name="displayName" autocomplete="name" maxlength="100" placeholder="Ví dụ: Nguyễn Văn A">
+        </div>
+        <label for="contact">Gmail hoặc số điện thoại</label>
+        <input id="contact" name="contact" autocomplete="username" maxlength="254" required placeholder="ten@gmail.com hoặc 09xxxxxxxx">
+        <label for="password">Mật khẩu</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="200" required placeholder="Tối thiểu 8 ký tự">
+        <div id="confirmField" class="hidden">
+          <label for="confirmPassword">Nhập lại mật khẩu</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="200" placeholder="Nhập lại mật khẩu">
+        </div>
+        <button id="submitBtn" type="submit">Đăng nhập</button>
+      </form>
+      <div class="status" id="authStatus" role="status" aria-live="polite"></div>
+      <p class="small-note" id="demoHelp">Tài khoản demo có sẵn: teacher1 hoặc teacher2 · Mật khẩu: Demo1234!</p>
     </section>
     <section class="panel">
-      <div id="welcome"><span class="tag">MVP 0.1</span><h2>Không gian lớp học</h2><p>Đăng nhập để xem các lớp thuộc tài khoản đang dùng.</p><p class="muted">Bước đầu kiểm thử: đăng nhập, phân vùng lớp và danh sách học sinh giả lập.</p></div>
+      <div id="welcome"><span class="tag">LAVI 2.0 · MVP</span><h2>Trang chủ giáo viên</h2><p>Sau khi đăng nhập, thầy cô sẽ vào không gian riêng để quản lý lớp học của mình.</p><p class="muted">Mỗi tài khoản giáo viên chỉ được xem dữ liệu thuộc tài khoản đó.</p></div>
       <div id="workspace" class="hidden">
-        <h2 id="greeting">Lớp học của tôi</h2>
-        <p class="muted">Chỉ hiển thị lớp do tài khoản này quản lý.</p>
+        <h2 id="greeting">Trang chủ giáo viên</h2>
+        <p class="muted" id="accountNotice"></p>
+        <h3>Lớp học của tôi</h3>
         <div id="classList"></div>
         <div id="studentsArea"></div>
-        <button class="secondary" id="logoutBtn">Đăng xuất</button>
+        <button class="secondary" id="logoutBtn" type="button">Đăng xuất</button>
       </div>
     </section>
   </div>
@@ -49,6 +67,7 @@
 <script>
 (() => {
   let token = '';
+  let mode = 'login';
   const $ = id => document.getElementById(id);
   async function api(url, options={}) {
     const response = await fetch(url, { ...options, headers: {
@@ -60,22 +79,62 @@
     if (!response.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
     return data;
   }
-  $('teacher2Btn').addEventListener('click', () => {$('username').value='teacher2';$('password').value='Demo1234!';});
-  $('loginBtn').addEventListener('click', async () => {
-    $('loginStatus').textContent='Đang kiểm tra...';
+  function setMode(nextMode) {
+    mode = nextMode;
+    const registering = mode === 'register';
+    $('loginTab').setAttribute('aria-pressed', String(!registering));
+    $('registerTab').setAttribute('aria-pressed', String(registering));
+    $('nameField').classList.toggle('hidden', !registering);
+    $('confirmField').classList.toggle('hidden', !registering);
+    $('authTitle').textContent = registering ? 'Tạo tài khoản giáo viên' : 'Chào mừng thầy cô';
+    $('authSubtitle').textContent = registering ? 'Dùng Gmail hoặc số điện thoại của thầy cô và tạo mật khẩu.' : 'Đăng nhập bằng Gmail/số điện thoại đã đăng ký.';
+    $('submitBtn').textContent = registering ? 'Đăng ký và vào trang chủ' : 'Đăng nhập';
+    $('password').autocomplete = registering ? 'new-password' : 'current-password';
+    $('demoHelp').classList.toggle('hidden', registering);
+    $('authStatus').textContent = '';
+  }
+  $('loginTab').addEventListener('click', () => setMode('login'));
+  $('registerTab').addEventListener('click', () => setMode('register'));
+
+  $('authForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    $('submitBtn').disabled = true;
+    $('authStatus').textContent = mode === 'register' ? 'Đang tạo tài khoản...' : 'Đang đăng nhập...';
     try {
-      const result = await api('/api/login',{method:'POST',body:JSON.stringify({username:$('username').value,password:$('password').value})});
-      token=result.token;
-      $('loginPanel').classList.add('hidden');$('welcome').classList.add('hidden');$('workspace').classList.remove('hidden');
-      $('greeting').textContent='Xin chào, '+result.user.displayName;
+      const contact = $('contact').value.trim();
+      const password = $('password').value;
+      let result;
+      if (mode === 'register') {
+        if ($('displayName').value.trim().length < 2) throw new Error('Vui lòng nhập họ và tên giáo viên.');
+        if (password !== $('confirmPassword').value) throw new Error('Mật khẩu nhập lại chưa khớp.');
+        result = await api('/api/register', {method:'POST',body:JSON.stringify({displayName:$('displayName').value,contact,password})});
+      } else {
+        result = await api('/api/login', {method:'POST',body:JSON.stringify({contact,password})});
+      }
+      token = result.token;
+      $('authPanel').classList.add('hidden');
+      $('welcome').classList.add('hidden');
+      $('workspace').classList.remove('hidden');
+      $('greeting').textContent = 'Xin chào, ' + result.user.displayName;
+      $('accountNotice').textContent = result.user.contactVerified ? 'Thông tin liên hệ đã xác minh.' : 'Tài khoản thử nghiệm · Chưa xác minh email/số điện thoại bằng OTP.';
       await loadClasses();
-    } catch(e) {$('loginStatus').textContent=e.message;}
+    } catch(e) {
+      $('authStatus').textContent = e.message;
+    } finally {
+      $('submitBtn').disabled = false;
+    }
   });
+
   async function loadClasses(){
     const data=await api('/api/classes');
     $('classList').replaceChildren();
     $('studentsArea').replaceChildren();
-    if(!data.classes.length){$('classList').textContent='Tài khoản này chưa có lớp.';return;}
+    if(!data.classes.length){
+      const message=document.createElement('p');
+      message.textContent='Tài khoản đã sẵn sàng. Chưa có lớp nào được tạo cho tài khoản này.';
+      $('classList').append(message);
+      return;
+    }
     data.classes.forEach(c=>{
       const card=document.createElement('div');card.className='class';
       const title=document.createElement('h3');title.textContent=c.name;
@@ -86,16 +145,27 @@
     });
   }
   async function loadStudents(id,name){
-    const data=await api('/api/classes/'+encodeURIComponent(id)+'/students');
-    const area=$('studentsArea');area.replaceChildren();
-    const heading=document.createElement('h3');heading.textContent='Danh sách mẫu: '+name;area.append(heading);
-    const table=document.createElement('table');
-    const thead=document.createElement('thead');thead.innerHTML='<tr><th>Mã demo</th><th>Tên giả lập</th><th>Mức mẫu</th></tr>';
-    const tbody=document.createElement('tbody');
-    data.students.forEach(s=>{const tr=document.createElement('tr');[s.code,s.displayName,s.level].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});tbody.append(tr);});
-    table.append(thead,tbody);area.append(table);
+    try {
+      const data=await api('/api/classes/'+encodeURIComponent(id)+'/students');
+      const area=$('studentsArea');area.replaceChildren();
+      const heading=document.createElement('h3');heading.textContent='Danh sách mẫu: '+name;area.append(heading);
+      const table=document.createElement('table');
+      const thead=document.createElement('thead');thead.innerHTML='<tr><th>Mã demo</th><th>Tên giả lập</th><th>Mức mẫu</th></tr>';
+      const tbody=document.createElement('tbody');
+      data.students.forEach(s=>{const tr=document.createElement('tr');[s.code,s.displayName,s.level].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});tbody.append(tr);});
+      table.append(thead,tbody);area.append(table);
+    } catch(e) {$('studentsArea').textContent=e.message;}
   }
-  $('logoutBtn').addEventListener('click',()=>{token='';$('workspace').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('welcome').classList.remove('hidden');$('password').value='';});
+  $('logoutBtn').addEventListener('click',()=>{
+    token='';
+    $('workspace').classList.add('hidden');
+    $('authPanel').classList.remove('hidden');
+    $('welcome').classList.remove('hidden');
+    $('password').value='';
+    $('confirmPassword').value='';
+    $('contact').value='';
+    setMode('login');
+  });
 })();
 </script>
 </body>
