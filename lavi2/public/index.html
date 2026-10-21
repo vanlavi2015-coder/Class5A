@@ -147,13 +147,27 @@
   let mode = 'login';
   const $ = id => document.getElementById(id);
   async function api(url, options={}) {
-    const response = await fetch(url, { ...options, headers: {
-      'Content-Type':'application/json',
-      ...(token ? {Authorization:'Bearer '+token} : {}),
-      ...(options.headers||{})
-    }});
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'Có lỗi xảy ra.');
+    let response;
+    try {
+      response = await fetch(url, { ...options, headers: {
+        'Content-Type':'application/json',
+        ...(token ? {Authorization:'Bearer '+token} : {}),
+        ...(options.headers||{})
+      }});
+    } catch (error) {
+      throw new Error('Không kết nối được máy chủ. Kiểm tra mạng hoặc trạng thái triển khai Render rồi thử lại.');
+    }
+    const raw = await response.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; } catch {}
+    if (!response.ok) {
+      if (response.status === 404) throw new Error('Máy chủ hiện tại chưa có chức năng này (404). Có thể Render chưa triển khai bản LAVI 2.0 mới. Mở Render > Deploys để kiểm tra bản mới nhất.');
+      if (response.status === 413) throw new Error('Tệp gửi lên quá lớn so với giới hạn máy chủ.');
+      if (response.status === 401) throw new Error(data.error || 'Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi thử.');
+      throw new Error((data.error || 'Máy chủ trả về lỗi.') + ' (HTTP ' + response.status + ')');
+    }
+    if (!raw) return {};
+    if (!Object.keys(data).length && raw.trim().startsWith('<')) throw new Error('Máy chủ trả về trang HTML thay vì dữ liệu API. Có thể đang dùng bản triển khai cũ.');
     return data;
   }
   function setMode(nextMode) {
@@ -326,7 +340,7 @@
       $('importStatus').textContent=result.message || ('Đã nhập '+result.imported+' câu hỏi.');
       $('questionImportFile').value='';
       await loadQuestions(selectedBankId);
-    }catch(e){$('importStatus').textContent=e.message;}finally{button.disabled=false;}
+    }catch(e){$('importStatus').textContent='Nhập tệp chưa thành công: '+e.message;}finally{button.disabled=false;}
   });
   let aiDrafts=[];
   $('generateAIQuestionsBtn').addEventListener('click', async () => {
