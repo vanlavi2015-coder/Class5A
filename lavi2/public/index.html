@@ -137,16 +137,16 @@
             <div class="status" id="bankStatus" role="status" aria-live="polite"></div>
           </form>
           <div class="class" id="importQuestionPanel">
-            <h4>Nhập câu hỏi từ Excel / Word</h4>
-            <p class="muted">Để nhập bài: tải mẫu Excel, điền 7 cột theo đúng thứ tự, lưu tệp rồi mở một ngân hàng câu hỏi và chọn tệp để nhập. Cột “Đáp án đúng” ghi A, B, C hoặc D. Mỗi dòng là một câu.</p>
-            <a href="/api/question-template.xlsx" download>Tải mẫu Excel câu hỏi LAVI (.xlsx)</a>
-            <p class="muted">Nếu chưa có ngân hàng, tạo ngân hàng ở phía trên trước. Tệp .docx dùng làm tài liệu nguồn cho AI, không phải mẫu nhập câu hỏi trực tiếp.</p>
-            <label for="questionImportFile">Chọn tệp Excel/CSV/Word/TXT</label>
-            <input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv,.docx,.txt,.md">
-            <button id="importQuestionsBtn" type="button">Nhập câu hỏi từ tệp</button>
+            <h4>1. Nhập bộ câu hỏi có sẵn</h4>
+            <p class="muted">Dùng Excel (.xlsx/.xls) hoặc CSV theo mẫu để nhập trực tiếp vào ngân hàng. Với Word hoặc tài liệu dài, dùng mục 2 để AI đọc tài liệu và tạo bản nháp.</p>
+            <label for="questionImportType">Dạng câu hỏi trong tệp mẫu</label>
+            <select id="questionImportType"><option value="abcd">Trắc nghiệm A/B/C/D</option><option value="true_false">Đúng / Sai</option><option value="fill_blank">Điền khuyết</option><option value="short">Trả lời ngắn</option><option value="multiple">Chọn nhiều đáp án</option><option value="matching">Nối cặp</option><option value="ordering">Sắp xếp</option></select>
+            <p><a id="questionTemplateLink" href="/api/question-template.xlsx?type=abcd" download>Tải mẫu Excel theo dạng câu hỏi đã chọn (.xlsx)</a></p>
+            <label for="questionImportFile">Chọn tệp Excel/CSV</label><input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv">
+            <button id="importQuestionsBtn" type="button">Nhập câu hỏi vào ngân hàng đang mở</button>
             <div class="status" id="importStatus" role="status" aria-live="polite"></div>
             <hr>
-            <h4>Tạo câu hỏi bằng AI từ tài liệu</h4>
+            <h4>2. Tạo câu hỏi bằng AI từ tài liệu Word hoặc tài liệu nguồn</h4>
             <p class="muted">Tải tài liệu đã cung cấp; AI sẽ tạo bản nháp bám sát nội dung nguồn. Giáo viên xem lại và chọn câu hỏi cần lưu.</p>
             <label for="aiSourceFile">Tài liệu nguồn (.docx, .xlsx, .xls, .csv, .txt, .md)</label>
             <input id="aiSourceFile" type="file" accept=".docx,.xlsx,.xls,.csv,.txt,.md">
@@ -164,8 +164,8 @@
               <label for="questionType">Loại câu hỏi</label>
               <select id="questionType"><option value="abcd">Trắc nghiệm A/B/C/D</option><option value="true_false">Đúng / Sai</option><option value="short">Trả lời ngắn</option><option value="fill_blank">Điền khuyết</option><option value="multiple">Chọn nhiều đáp án</option><option value="matching">Nối cặp</option><option value="ordering">Sắp xếp</option></select>
               <label for="questionPrompt">Nội dung câu hỏi</label><textarea id="questionPrompt" maxlength="5000" required rows="3" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></textarea>
-              <label for="questionOptions">Các phương án (mỗi dòng một phương án; dùng cho trắc nghiệm)</label><textarea id="questionOptions" rows="4" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit" placeholder="A. ...&#10;B. ...&#10;C. ...&#10;D. ..."></textarea>
-              <label for="questionAnswer">Đáp án đúng</label><input id="questionAnswer" required placeholder="Ví dụ: B hoặc 125">
+              <div id="questionOptionsField"><label id="questionOptionsLabel" for="questionOptions">Các phương án (mỗi dòng một phương án)</label><textarea id="questionOptions" rows="4" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit" placeholder="A. ...&#10;B. ...&#10;C. ...&#10;D. ..."></textarea><small id="questionOptionsHelp" class="muted">Dùng cho câu hỏi trắc nghiệm.</small></div>
+              <label for="questionAnswer" id="questionAnswerLabel">Đáp án đúng</label><input id="questionAnswer" required placeholder="Ví dụ: B hoặc 125">
               <label for="questionExplanation">Giải thích (không bắt buộc)</label><textarea id="questionExplanation" rows="2" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></textarea>
               <button type="submit">Lưu câu hỏi</button>
               <div class="status" id="questionStatus" role="status" aria-live="polite"></div>
@@ -475,18 +475,20 @@
     });
     return { fileName:file.name, dataBase64:dataUrl.split(',')[1] || '' };
   }
+  $('questionImportType').addEventListener('change',()=>{$('questionTemplateLink').href='/api/question-template.xlsx?type='+encodeURIComponent($('questionImportType').value);});
   $('importQuestionsBtn').addEventListener('click', async () => {
     const file=$('questionImportFile').files[0];
-    if(!selectedBankId){$('importStatus').textContent='Hãy mở ngân hàng câu hỏi trước khi nhập.';return;}
-    if(!file){$('importStatus').textContent='Cô hãy chọn một tệp trước.';return;}
+    if(!selectedBankId){$('importStatus').textContent='Cô hãy mở ngân hàng muốn nhập bằng nút “Mở ngân hàng / thêm câu hỏi”, rồi thử lại.';return;}
+    if(!file){$('importStatus').textContent='Cô hãy chọn tệp Excel/CSV trước.';return;}
     if(file.size>10*1024*1024){$('importStatus').textContent='Tệp tối đa 10 MB.';return;}
     const button=$('importQuestionsBtn');button.disabled=true;$('importStatus').textContent='Đang đọc và nhập tệp...';
     try{
       const payload=await fileAsPayload(file);
-      const result=await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/import',{method:'POST',body:JSON.stringify(payload)});
+      const result=await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/import?type='+encodeURIComponent($('questionImportType').value),{method:'POST',body:JSON.stringify(payload)});
       $('importStatus').textContent=result.message || ('Đã nhập '+result.imported+' câu hỏi.');
       $('questionImportFile').value='';
-      await loadQuestions(selectedBankId);
+      await loadQuestions(selectedBankId); await loadBanks();
+      $('questionsInBank').scrollIntoView({behavior:'smooth',block:'start'});
     }catch(e){$('importStatus').textContent='Nhập tệp chưa thành công: '+e.message;}finally{button.disabled=false;}
   });
   let aiDrafts=[];
@@ -540,20 +542,41 @@
     event.preventDefault();
     const button=$('bankForm').querySelector('button');button.disabled=true;$('bankStatus').textContent='Đang tạo ngân hàng...';
     try {
-      await api('/api/question-banks',{method:'POST',body:JSON.stringify({name:$('bankName').value.trim(),subject:$('bankSubject').value.trim(),grade:$('bankGrade').value.trim()})});
+      const created=await api('/api/question-banks',{method:'POST',body:JSON.stringify({name:$('bankName').value.trim(),subject:$('bankSubject').value.trim(),grade:$('bankGrade').value.trim()})});
       $('bankName').value='';$('bankSubject').value='';$('bankGrade').value='';
-      $('bankStatus').textContent='Đã tạo ngân hàng câu hỏi.';await loadBanks();
+      $('bankStatus').textContent='Đã tạo ngân hàng câu hỏi. Đang mở ngân hàng để cô có thể nhập tệp hoặc thêm câu hỏi.';
+      await loadBanks();
+      if(created.questionBank?.id) await openBank(created.questionBank.id,created.questionBank.name || 'Ngân hàng mới');
     } catch(e){$('bankStatus').textContent=e.message;} finally{button.disabled=false;}
   });
+  function updateQuestionTypeFields() {
+    const type=$('questionType').value;
+    const usesOptions=['abcd','multiple','matching','ordering'].includes(type);
+    $('questionOptionsField').classList.toggle('hidden',!usesOptions);
+    $('questionOptionsLabel').textContent=type==='matching'?'Các cặp cần nối (mỗi dòng: Vế trái | Vế phải)':type==='ordering'?'Các mục theo thứ tự đúng (mỗi dòng một mục)':'Các phương án (mỗi dòng một phương án)';
+    $('questionOptionsHelp').textContent=type==='matching'?'Mỗi dòng ghi hai vế, ngăn cách bằng dấu |.':type==='ordering'?'Nhập các mục theo thứ tự đúng; thứ tự này là đáp án.':'Dùng cho câu hỏi trắc nghiệm.';
+    $('questionOptions').placeholder=type==='matching'?'Ví dụ: 2 × 3 | 6\nThủ đô Việt Nam | Hà Nội':type==='ordering'?'Ví dụ:\nBước 1\nBước 2\nBước 3':'A. ...\nB. ...\nC. ...\nD. ...';
+    $('questionAnswerLabel').textContent=type==='true_false'?'Đáp án đúng (Đúng hoặc Sai)':type==='fill_blank'?'Từ/cụm từ cần điền':'Đáp án đúng';
+    $('questionAnswer').placeholder=type==='abcd'?'Nhập A, B, C hoặc D':type==='multiple'?'Nhập các đáp án, cách nhau bằng dấu phẩy':type==='true_false'?'Nhập Đúng hoặc Sai':type==='fill_blank'?'Nhập từ/cụm từ còn thiếu':'Nhập đáp án chính xác';
+  }
+  $('questionType').addEventListener('change',updateQuestionTypeFields);
+  updateQuestionTypeFields();
   $('questionForm').addEventListener('submit', async event => {
     event.preventDefault();
     if(!selectedBankId){$('questionStatus').textContent='Hãy mở một ngân hàng câu hỏi trước.';return;}
     const button=$('questionForm').querySelector('button');button.disabled=true;$('questionStatus').textContent='Đang lưu câu hỏi...';
     try {
       const type=$('questionType').value;
-      const options=$('questionOptions').value.split('\n').map(x=>x.trim()).filter(Boolean);
+      let options=$('questionOptions').value.split('\n').map(x=>x.trim()).filter(Boolean);
       let answer=$('questionAnswer').value.trim();
+      if(type==='true_false') options=['Đúng','Sai'];
       if(type==='multiple') answer=answer.split(/[,;、]/).map(x=>x.trim()).filter(Boolean);
+      if(type==='matching') {
+        const pairs=options.map(line=>line.split('|').map(part=>part.trim()));
+        if(pairs.some(pair=>pair.length!==2||!pair[0]||!pair[1])) throw new Error('Mỗi dòng nối cặp cần có dạng Vế trái | Vế phải.');
+        options=pairs.map(pair=>({left:pair[0],right:pair[1]})); answer=options;
+      }
+      if(type==='ordering') answer=options;
       await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/questions',{method:'POST',body:JSON.stringify({
         type,prompt:$('questionPrompt').value.trim(),options,answer,explanation:$('questionExplanation').value.trim()
       })});
