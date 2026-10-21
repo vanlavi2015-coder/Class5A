@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: lavi-2-0-sandbox
+    runtime: node
+    plan: starter
+    rootDir: lavi2
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: LAVI_DEMO_MODE
+        value: "true"
+      - key: LAVI_DATA_DIR
+        value: /var/data
+      - key: LAVI_JWT_SECRET
+        generateValue: true
+    disk:
+      name: lavi2-sandbox-data
+      mountPath: /var/data
+      sizeGB: 1
