@@ -268,6 +268,8 @@
       $('futureViewSubtitle').textContent = 'Khung giao diện theo cấu trúc LAVI hiện tại · Bản thử nghiệm LAVI 2.0';
       if (label === 'Bài đang giao') {
         renderAssignments().catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else if (label === 'Bài nộp & chấm điểm') {
+        renderSubmissions().catch(e => { $('futureModuleContent').textContent = e.message; });
       } else {
         $('futureModuleContent').replaceChildren();
         const heading=document.createElement('h3');heading.textContent=label;
@@ -620,6 +622,50 @@
     });
     const back=document.createElement('button');back.type='button';back.className='secondary';back.textContent='← Quay lại tổng quan';back.addEventListener('click',()=>activateView('classesView'));panel.append(back);
   }
+
+
+  async function renderSubmissions() {
+    const panel=$('futureModuleContent'); panel.replaceChildren();
+    const heading=document.createElement('h3'); heading.textContent='Bài nộp & chấm điểm';
+    const description=document.createElement('p'); description.className='muted';
+    description.textContent='Chọn bài đã giao để xem kết quả đã lưu theo từng học sinh. Câu hỏi tự luận hoặc câu chưa có đáp án chuẩn cần giáo viên chấm lại.';
+    panel.append(heading,description);
+    const data=await api('/api/assignments');
+    if(!data.assignments.length){const empty=document.createElement('div');empty.className='class';empty.textContent='Chưa có bài giao. Hãy tạo bài ở mục “Bài đang giao” trước.';panel.append(empty);return;}
+    const label=document.createElement('label');label.textContent='Chọn bài giao';
+    const select=document.createElement('select');select.id='submissionAssignment';
+    data.assignments.forEach(a=>{const option=document.createElement('option');option.value=a.id;option.textContent=a.title+' · '+a.className;select.append(option);});
+    label.htmlFor=select.id;panel.append(label,select);
+    const results=document.createElement('div');results.id='submissionResults';panel.append(results);
+    async function refresh(){
+      results.replaceChildren();
+      const result=await api('/api/assignments/'+encodeURIComponent(select.value)+'/submissions');
+      const summary=document.createElement('p');summary.className='muted';
+      const submitted=result.submissions.filter(x=>x.submitted).length;
+      summary.textContent='Sĩ số: '+result.submissions.length+' · Đã có kết quả: '+submitted+' · Chưa có kết quả: '+(result.submissions.length-submitted);
+      results.append(summary);
+      if(!result.submissions.length){const empty=document.createElement('p');empty.textContent='Lớp chưa có danh sách học sinh.';results.append(empty);return;}
+      result.submissions.forEach(student=>{
+        const card=document.createElement('div');card.className='class';
+        const name=document.createElement('h4');name.textContent=(student.code?student.code+' · ':'')+student.displayName;
+        const score=document.createElement('p');score.className='muted';
+        score.textContent=student.submitted?'Điểm: '+student.score+' / '+student.maxScore+' ('+(student.maxScore?Math.round(student.score/student.maxScore*1000)/10:0)+'%)':'Chưa có kết quả chấm';
+        card.append(name,score);
+        if(student.submitted && student.details){
+          const detail=document.createElement('div');detail.className='small-note';
+          const entries=Object.entries(student.details);
+          detail.textContent=entries.map(([id,d],i)=>'Câu '+(i+1)+': '+(d.autoGraded?(d.correct?'Đúng':'Chưa đúng'):'Chờ giáo viên xem')+' · '+d.earned+'/'+d.maxPoints+' điểm').join(' | ');
+          card.append(detail);
+          if(entries.some(([,d])=>!d.autoGraded)){const review=document.createElement('p');review.className='muted';review.textContent='Lưu ý: có câu cần giáo viên chấm thủ công. Chức năng chỉnh sửa điểm thủ công sẽ được bổ sung tiếp.';card.append(review);}
+        }
+        results.append(card);
+      });
+    }
+    select.addEventListener('change',()=>refresh().catch(e=>{results.textContent=e.message;}));
+    await refresh();
+    const reload=document.createElement('button');reload.type='button';reload.className='secondary';reload.textContent='↻ Làm mới kết quả';reload.addEventListener('click',()=>refresh().catch(e=>{results.textContent=e.message;}));panel.append(reload);
+  }
+
 
   $('backupBtn').addEventListener('click', async () => {
     $('backupStatus').textContent = 'Đang tạo bản sao lưu...';
