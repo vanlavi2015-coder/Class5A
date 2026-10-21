@@ -28,6 +28,10 @@ test('sandbox UI and API support teacher registration with email or phone', () =
   assert.match(html, /id="futureView"/);
   assert.match(html, /Chưa kết nối chức năng/);
   assert.match(html, /data-go-view="classesView"/);
+  assert.match(html, /async function renderSubmissions\(\)/);
+  assert.match(html, /Bài nộp & chấm điểm/);
+  assert.match(html, /Chọn bài đã giao để xem kết quả đã lưu/);
+  assert.match(html, /Làm mới kết quả/);
   assert.match(html, /mobileMenuBtn/);
   assert.match(html, /@media\(max-width:650px\)/);
   assert.doesNotMatch(server, /Hoàng Tuệ An|Tô Nguyễn Tâm An/);
