@@ -57,6 +57,14 @@
         <h2 id="greeting">Trang chủ giáo viên</h2>
         <p class="muted" id="accountNotice"></p>
         <h3>Lớp học của tôi</h3>
+        <form id="createClassForm">
+          <label for="newClassName">Tên lớp</label>
+          <input id="newClassName" maxlength="80" required placeholder="Ví dụ: Lớp 5A">
+          <label for="newSchoolName">Tên trường</label>
+          <input id="newSchoolName" maxlength="120" required placeholder="Tên trường của thầy cô">
+          <button type="submit">+ Tạo lớp mới</button>
+          <div class="status" id="classStatus" role="status" aria-live="polite"></div>
+        </form>
         <div id="classList"></div>
         <div id="studentsArea"></div>
         <button class="secondary" id="logoutBtn" type="button">Đăng xuất</button>
@@ -122,6 +130,26 @@
       $('authStatus').textContent = e.message;
     } finally {
       $('submitBtn').disabled = false;
+    }
+  });
+
+  $('createClassForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = $('createClassForm').querySelector('button[type="submit"]');
+    button.disabled = true;
+    $('classStatus').textContent = 'Đang tạo lớp...';
+    try {
+      await api('/api/classes', {method:'POST', body:JSON.stringify({
+        name:$('newClassName').value.trim(),
+        schoolName:$('newSchoolName').value.trim()
+      })});
+      $('newClassName').value = '';
+      $('classStatus').textContent = 'Đã tạo lớp mới.';
+      await loadClasses();
+    } catch (e) {
+      $('classStatus').textContent = e.message;
+    } finally {
+      button.disabled = false;
     }
   });
 
