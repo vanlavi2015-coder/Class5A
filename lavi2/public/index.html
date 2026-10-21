@@ -30,6 +30,53 @@
     @media(max-width:980px){.lavi-sidebar{width:220px;flex-basis:220px}.lavi-content{padding:20px}.lavi-topbar{padding:18px 20px}.lavi-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:650px){#workspace{display:block;overflow:auto}.lavi-sidebar{position:fixed;z-index:1100;inset:0 auto 0 0;width:270px;transform:translateX(-105%);transition:transform .2s ease;box-shadow:12px 0 35px #0f172a33}.lavi-sidebar.open{transform:translateX(0)}.lavi-main{min-height:100%;overflow:visible}.lavi-topbar{padding:13px 14px;min-height:82px;align-items:flex-start}.lavi-topbar h1{font-size:18px}.lavi-version{display:none}.lavi-mobile-menu{display:block!important;flex:0 0 38px;width:38px;height:38px;padding:0;border-radius:10px;background:#eef2ff;color:#3730a3;margin:0;border:1px solid #c7d2fe;font-size:19px}.lavi-topbar>div{flex:1;min-width:0}.lavi-content{padding:14px 12px 28px}.view-heading{align-items:flex-start}.view-heading h2{font-size:19px}.view-chip{display:none}.lavi-kpi-grid{gap:8px}.lavi-kpi{padding:11px;gap:9px}.lavi-kpi>span{width:34px;height:34px;font-size:17px}.lavi-kpi strong{font-size:21px}.lavi-kpi small{font-size:10px}.lavi-panel{padding:13px;border-radius:13px}.lavi-panel .grid{grid-template-columns:1fr}.lavi-panel table{display:block;overflow-x:auto;max-width:100%}.lavi-sidebar-note{margin-top:25px}}
 
+
+    /* LAVI 2.0 visual refinement: clearer lesson builder and LAVI-like login */
+    #authPanel{border:1px solid #e0e7ff;background:linear-gradient(145deg,#fff 0%,#f8faff 100%);box-shadow:0 18px 50px #312e8110}
+    #authPanel h2{font-size:25px;letter-spacing:-.4px;color:#1e1b4b}
+    #authPanel .tag{background:#eef2ff;color:#4338ca}
+    #authPanel .tabs{background:#eef2ff;padding:5px;border-radius:13px;gap:5px}
+    #authPanel .tabs button{border-radius:9px;padding:10px 12px;font-size:13px}
+    #authPanel .tabs button[aria-pressed="true"]{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;box-shadow:0 4px 10px #4f46e533}
+    #authPanel input{background:#fff;border-color:#d0d5ff}
+    #authPanel #submitBtn{width:100%;margin-top:18px;background:linear-gradient(135deg,#4f46e5,#7c3aed);box-shadow:0 6px 16px #4f46e526}
+    #welcome{border-radius:18px;background:linear-gradient(145deg,#171c35,#312e81);color:#fff;min-height:100%;padding:28px}
+    #welcome h2{font-size:26px;line-height:1.25}
+    #welcome p{color:#e0e7ff;line-height:1.7}
+    #welcome .muted{color:#c7d2fe}
+    #questionsView .lavi-panel{padding:22px}
+    #questionsView #learningTools>h3{font-size:21px;margin-bottom:5px}
+    #questionsView #bankForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 14px;align-items:end;background:#f8faff;border:1px solid #e0e7ff;border-radius:14px;padding:16px;margin:16px 0}
+    #questionsView #bankForm label{margin-top:0}
+    #questionsView #bankForm button,#questionsView #bankForm .status{grid-column:1/-1}
+    #questionsView #bankForm button{justify-self:start;margin-top:2px}
+    #questionsView #importQuestionPanel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;background:#fff;border:1px solid #e0e7ff;border-radius:15px;padding:18px;margin-top:16px;cursor:default}
+    #questionsView #importQuestionPanel>h4,#questionsView #importQuestionPanel>p,#questionsView #importQuestionPanel>hr,#questionsView #importQuestionPanel>#aiDraftList,#questionsView #importQuestionPanel>#saveAIDraftsBtn{grid-column:1/-1}
+    #questionsView #importQuestionPanel>h4{margin:0;color:#312e81;font-size:16px}
+    #questionsView #importQuestionPanel>p{margin:0}
+    #questionsView #importQuestionPanel label{margin-top:4px}
+    #questionsView #importQuestionPanel select,#questionsView #importQuestionPanel input[type=file],#questionsView #importQuestionPanel input[type=number]{width:100%;min-width:0}
+    #questionsView #importQuestionPanel>a{align-self:center}
+    #questionsView #importQuestionPanel hr{width:100%;border:0;border-top:1px solid #e4e7ec;margin:12px 0}
+    #questionsView #questionEditor{margin-top:18px;padding:20px;border:1px solid #c7d2fe;border-radius:15px;background:#fbfbff}
+    #questionsView #questionForm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
+    #questionsView #questionForm>label,#questionsView #questionForm>textarea,#questionsView #questionForm>#questionOptionsField,#questionsView #questionForm>#questionAnswer,#questionsView #questionForm>#questionExplanation,#questionsView #questionForm>button,#questionsView #questionForm>.status{grid-column:1/-1}
+    #questionsView #questionForm>label{margin-bottom:0}
+    #questionsView #questionForm input,#questionsView #questionForm select,#questionsView #questionForm textarea{width:100%;min-width:0}
+    #questionsView #questionForm #questionType{grid-column:1/-1;max-width:360px}
+    #questionsView #questionOptionsField{display:grid;gap:6px}
+    #questionsView #bankList .class{cursor:default}
+    #questionsView #bankList button{margin:4px 6px 4px 0}
+    @media(max-width:760px){
+      #questionsView #bankForm{grid-template-columns:1fr}
+      #questionsView #importQuestionPanel{grid-template-columns:1fr;padding:14px}
+      #questionsView #importQuestionPanel>*{grid-column:1!important}
+      #questionsView #questionForm{grid-template-columns:1fr}
+      #questionsView #questionForm>*{grid-column:1!important}
+      #authPanel h2{font-size:22px}
+      #welcome{padding:22px}
+    }
+
   </style>
 </head>
 <body>
@@ -38,8 +85,7 @@
   <div class="notice"><strong>Môi trường thử nghiệm:</strong> chỉ sử dụng dữ liệu giả lập. Tài khoản đăng ký trong bản này chưa được xác minh email/số điện thoại bằng OTP; không dùng cho dữ liệu học sinh thật.</div>
   <div class="grid">
     <section class="panel" id="authPanel">
-      <h2 id="authTitle">Chào mừng thầy cô</h2>
-      <p class="muted" id="authSubtitle">Đăng nhập hoặc tạo tài khoản giáo viên bằng email/số điện thoại.</p>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><div class="brand-mark">L</div><div><span class="tag">LAVI 2.0</span><h2 id="authTitle" style="margin:7px 0 2px">Chào mừng thầy cô</h2><p class="muted" id="authSubtitle" style="margin:0">Đăng nhập không gian giáo viên bằng email hoặc số điện thoại.</p></div></div>
       <div class="tabs">
         <button id="loginTab" type="button" aria-pressed="true">Đăng nhập</button>
         <button id="registerTab" type="button" aria-pressed="false">Đăng ký</button>
