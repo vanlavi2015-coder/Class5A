@@ -229,6 +229,20 @@ function requireTeacher(req, res, next) {
   next();
 }
 
+app.get('/api/question-template.xlsx', (_req, res) => {
+  const sheet = XLSX.utils.aoa_to_sheet([
+    ['ID','Câu hỏi','Đáp án A','Đáp án B','Đáp án C','Đáp án D','Đáp án đúng'],
+    ['1','Ví dụ: 3 m² 5 dm² bằng bao nhiêu dm²?','35 dm²','305 dm²','3005 dm²','350 dm²','B']
+  ]);
+  sheet['!cols'] = [{wch:8},{wch:55},{wch:28},{wch:28},{wch:28},{wch:28},{wch:16}];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, 'Câu hỏi');
+  const buffer = XLSX.write(workbook, {type:'buffer',bookType:'xlsx'});
+  res.set('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.set('Content-Disposition','attachment; filename="mau-cau-hoi-LAVI2.xlsx"');
+  res.send(buffer);
+});
+
 app.get('/api/health', (_req, res) => res.json({
   ok: true,
   app: 'LAVI 2.0 Sandbox',
