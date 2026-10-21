@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('node:path');
-const { randomUUID } = require('node:crypto');
+const { randomUUID, createHash } = require('node:crypto');
 const fs = require('node:fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -130,6 +130,13 @@ db.exec(`
     points INTEGER NOT NULL,
     reason TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS backup_imports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    fingerprint TEXT NOT NULL,
+    imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(owner_user_id, fingerprint)
   );
   CREATE TABLE IF NOT EXISTS audit_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -302,6 +309,10 @@ app.post('/api/backup/restore', authenticate, requireTeacher, (req, res) => {
     return res.status(400).json({ error: 'Tệp sao lưu không đúng định dạng LAVI 2.0.' });
   }
   const allowed = ['classes','students','question_banks','questions','test_sets','test_set_questions','assignments','scores','point_transactions','audit_events'];
+  // Prevent accidental repeated restoration of the exact same backup file.
+  const fingerprint = createHash('sha256').update(JSON.stringify(backup)).digest('hex');
+  const alreadyImported = db.prepare('SELECT 1 FROM backup_imports WHERE owner_user_id=? AND fingerprint=?').get(req.user.id, fingerprint);
+  if (alreadyImported) return res.status(409).json({ error: 'Tệp sao lưu này đã được khôi phục trước đó. Không nhập lặp lại.' });
   for (const key of allowed) {
     if (!Array.isArray(backup.data[key])) return res.status(400).json({ error: 'Tệp sao lưu thiếu dữ liệu hợp lệ: ' + key });
     if (backup.data[key].length > 50000) return res.status(413).json({ error: 'Tệp sao lưu quá lớn.' });
@@ -365,6 +376,7 @@ app.post('/api/backup/restore', authenticate, requireTeacher, (req, res) => {
       db.prepare('INSERT INTO audit_events(actor_user_id,action,entity_type,entity_id,created_at) VALUES(?,?,?,?,?)')
         .run(req.user.id, String(row.action || 'restored').slice(0,80), String(row.entity_type || 'record').slice(0,80), row.entity_id ? String(row.entity_id).slice(0,100) : null, row.created_at || new Date().toISOString());
     }
+    db.prepare('INSERT INTO backup_imports(owner_user_id,fingerprint) VALUES(?,?)').run(req.user.id, fingerprint);
     audit(req.user.id, 'restore_backup', 'backup');
     db.exec('COMMIT');
     res.json({ ok: true, message: 'Đã khôi phục dữ liệu bổ sung. Dữ liệu hiện có không bị xóa.', restored: Object.fromEntries(allowed.map(key => [key, backup.data[key].length])) });
