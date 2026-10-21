@@ -19,6 +19,17 @@
     .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.tabs button{margin:0}.tabs button[aria-pressed="true"]{background:#183b68;color:white}.tabs button[aria-pressed="false"]{background:#e9eff8;color:#183b68}
     .small-note{font-size:12px;line-height:1.5;color:#64748b;margin-top:12px}
     @media(max-width:720px){.grid{grid-template-columns:1fr}.top h1{font-size:22px}}
+  
+    :root{--lavi-primary:#4f46e5;--lavi-purple:#7c3aed;--lavi-ink:#172033;--lavi-muted:#667085;--lavi-bg:#f4f6fb;--lavi-line:#e4e7ec}
+    #workspace.hidden{display:none!important}
+    #workspace{position:fixed;inset:0;z-index:1000;display:flex;background:var(--lavi-bg);color:var(--lavi-ink);overflow:hidden;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+    .lavi-sidebar{width:250px;flex:0 0 250px;background:#111827;color:#f8fafc;padding:20px 14px;display:flex;flex-direction:column;overflow-y:auto}
+    .lavi-brand{display:flex;align-items:center;gap:11px;padding:2px 8px 26px}.brand-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:24px;font-weight:950;color:#fff}.lavi-brand strong{font-size:22px;letter-spacing:.3px}.lavi-brand em{font-style:normal;color:#a5b4fc}.lavi-brand small{display:block;font-size:9px;letter-spacing:1.2px;color:#9ca3af;margin-top:3px}
+    .lavi-menu-label{font-size:10px;letter-spacing:1.3px;color:#9ca3af;padding:0 12px 9px;font-weight:800}.lavi-nav{display:grid;gap:5px}.lavi-nav button{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:11px;padding:12px;background:transparent;color:#d1d5db;text-align:left;font:inherit;cursor:pointer;margin:0}.lavi-nav button span{font-size:19px;width:24px;text-align:center}.lavi-nav button b{font-size:13px;font-weight:700}.lavi-nav button:hover,.lavi-nav button.active{background:#312e81;color:#fff}.lavi-sidebar-note{display:flex;gap:10px;margin-top:auto;margin-bottom:12px;background:#1f2937;border:1px solid #374151;border-radius:12px;padding:12px}.lavi-sidebar-note>span{font-size:20px}.lavi-sidebar-note strong,.lavi-sidebar-note small{display:block}.lavi-sidebar-note strong{font-size:11px}.lavi-sidebar-note small{font-size:10px;color:#d1d5db;line-height:1.5;margin-top:4px}.lavi-logout{width:100%;border:1px solid #374151;border-radius:10px;background:#1f2937;color:#f9fafb;padding:11px;margin:0;text-align:left;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+    .lavi-main{min-width:0;flex:1;overflow-y:auto}.lavi-topbar{min-height:96px;background:#fff;border-bottom:1px solid var(--lavi-line);display:flex;align-items:center;justify-content:space-between;gap:14px;padding:20px 30px}.lavi-topbar h1{font-size:24px;margin:3px 0 2px}.lavi-topbar .muted{margin:0;font-size:12px}.lavi-eyebrow{font-size:10px;font-weight:850;letter-spacing:1.2px;color:var(--lavi-primary)}.lavi-version{font-size:11px;font-weight:850;color:#4338ca;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:7px 11px;white-space:nowrap}.lavi-content{max-width:1450px;margin:0 auto;padding:24px 30px 18px}.notice{padding:12px 15px;border:1px solid #f4d27c;background:#fffbeb;color:#92400e;border-radius:12px;margin-bottom:23px;font-size:12px;line-height:1.55}.lavi-view{display:none}.lavi-view.active{display:block}.view-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.view-heading h2{font-size:22px;margin:0 0 5px}.view-heading p{font-size:13px;color:var(--lavi-muted);margin:0}.view-chip{background:#fff;border:1px solid var(--lavi-line);border-radius:999px;padding:8px 11px;font-size:11px;font-weight:800;white-space:nowrap}.lavi-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:17px}.lavi-kpi{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid var(--lavi-line);border-radius:15px;padding:16px;box-shadow:0 3px 12px #10182808}.lavi-kpi>span{display:grid;place-items:center;width:42px;height:42px;background:#eef2ff;border-radius:12px;font-size:21px}.lavi-kpi strong,.lavi-kpi small{display:block}.lavi-kpi strong{font-size:25px;font-weight:900}.lavi-kpi small{font-size:11px;color:var(--lavi-muted);margin-top:2px}.lavi-panel{background:#fff;border:1px solid var(--lavi-line);border-radius:16px;padding:20px;box-shadow:0 3px 12px #10182806}.lavi-panel>h3{margin-top:0;font-size:18px}.lavi-panel hr{border:0;border-top:1px solid var(--lavi-line);margin:22px 0}.lavi-panel button{width:auto;max-width:100%}.lavi-panel .class{background:#fff}.lavi-panel input,.lavi-panel select,.lavi-panel textarea{max-width:100%}.lavi-panel .status{overflow-wrap:anywhere}.lavi-footer{text-align:center;padding:22px 10px 5px;font-size:11px;color:#98a2b3}.lavi-mobile-menu{display:none!important}
+    @media(max-width:980px){.lavi-sidebar{width:220px;flex-basis:220px}.lavi-content{padding:20px}.lavi-topbar{padding:18px 20px}.lavi-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:650px){#workspace{display:block;overflow:auto}.lavi-sidebar{position:fixed;z-index:1100;inset:0 auto 0 0;width:270px;transform:translateX(-105%);transition:transform .2s ease;box-shadow:12px 0 35px #0f172a33}.lavi-sidebar.open{transform:translateX(0)}.lavi-main{min-height:100%;overflow:visible}.lavi-topbar{padding:13px 14px;min-height:82px;align-items:flex-start}.lavi-topbar h1{font-size:18px}.lavi-version{display:none}.lavi-mobile-menu{display:block!important;flex:0 0 38px;width:38px;height:38px;padding:0;border-radius:10px;background:#eef2ff;color:#3730a3;margin:0;border:1px solid #c7d2fe;font-size:19px}.lavi-topbar>div{flex:1;min-width:0}.lavi-content{padding:14px 12px 28px}.view-heading{align-items:flex-start}.view-heading h2{font-size:19px}.view-chip{display:none}.lavi-kpi-grid{gap:8px}.lavi-kpi{padding:11px;gap:9px}.lavi-kpi>span{width:34px;height:34px;font-size:17px}.lavi-kpi strong{font-size:21px}.lavi-kpi small{font-size:10px}.lavi-panel{padding:13px;border-radius:13px}.lavi-panel .grid{grid-template-columns:1fr}.lavi-panel table{display:block;overflow-x:auto;max-width:100%}.lavi-sidebar-note{margin-top:25px}}
+
   </style>
 </head>
 <body>
@@ -54,9 +65,31 @@
     <section class="panel">
       <div id="welcome"><span class="tag">LAVI 2.0 · MVP</span><h2>Trang chủ giáo viên</h2><p>Sau khi đăng nhập, thầy cô sẽ vào không gian riêng để quản lý lớp học của mình.</p><p class="muted">Mỗi tài khoản giáo viên chỉ được xem dữ liệu thuộc tài khoản đó.</p></div>
       <div id="workspace" class="hidden">
-        <h2 id="greeting">Trang chủ giáo viên</h2>
-        <p class="muted" id="accountNotice"></p>
-        <h3>Lớp học của tôi</h3>
+        <aside class="lavi-sidebar">
+          <div class="lavi-brand"><span class="brand-mark">L</span><div><strong>LAVI <em>2.0</em></strong><small>KHÔNG GIAN GIÁO VIÊN</small></div></div>
+          <div class="lavi-menu-label">MENU CHÍNH</div>
+          <nav class="lavi-nav" aria-label="Điều hướng LAVI 2.0">
+            <button type="button" class="active" data-view="classesView"><span>📊</span><b>Tổng quan</b></button>
+            <button type="button" data-view="questionsView"><span>🤖</span><b>Tạo bài & ngân hàng</b></button>
+            <button type="button" data-view="testsView"><span>📝</span><b>Bộ đề kiểm tra</b></button>
+            <button type="button" data-view="backupView"><span>💾</span><b>Sao lưu dữ liệu</b></button>
+          </nav>
+          <div class="lavi-sidebar-note"><span>🛡️</span><div><strong>Bản thử nghiệm an toàn</strong><small>Chỉ dùng dữ liệu giả lập. Không nhập dữ liệu học sinh thật.</small></div></div>
+          <button class="lavi-logout" id="sidebarLogoutBtn" type="button">↪ Đăng xuất</button>
+        </aside>
+        <div class="lavi-main">
+          <header class="lavi-topbar">
+            <button id="mobileMenuBtn" type="button" class="lavi-mobile-menu" aria-label="Mở menu">☰</button>
+            <div><div class="lavi-eyebrow">NỀN TẢNG LỚP HỌC SỐ</div><h1 id="greeting">Trang chủ giáo viên</h1><p id="accountNotice" class="muted"></p></div>
+            <span class="lavi-version">BETA · 2.0</span>
+          </header>
+          <div class="lavi-content">
+            <div class="notice"><strong>🔒 Môi trường thử nghiệm:</strong> chỉ sử dụng dữ liệu giả lập. Tài khoản chưa xác minh email/số điện thoại bằng OTP; không dùng dữ liệu học sinh thật.</div>
+            <section id="classesView" class="lavi-view active">
+              <div class="view-heading"><div><h2>Tổng quan lớp học</h2><p>Quản lý các lớp thuộc tài khoản của thầy cô.</p></div><span class="view-chip">🏫 Lớp học của tôi</span></div>
+              <div class="lavi-kpi-grid"><div class="lavi-kpi"><span>📚</span><div><strong id="classCount">0</strong><small>Lớp học</small></div></div><div class="lavi-kpi"><span>👩‍🎓</span><div><strong id="studentCount">0</strong><small>Học sinh mẫu</small></div></div><div class="lavi-kpi"><span>🧠</span><div><strong id="bankCount">0</strong><small>Ngân hàng câu hỏi</small></div></div><div class="lavi-kpi"><span>📝</span><div><strong id="testCount">0</strong><small>Bộ đề</small></div></div></div>
+              <div class="lavi-panel">
+                <h3>Lớp học của tôi</h3>
         <form id="createClassForm">
           <label for="newClassName">Tên lớp</label>
           <input id="newClassName" maxlength="80" required placeholder="Ví dụ: Lớp 5A">
@@ -67,8 +100,11 @@
         </form>
         <div id="classList"></div>
         <div id="studentsArea"></div>
-        <hr>
-        <section id="learningTools">
+              </div>
+            </section>
+            <section id="questionsView" class="lavi-view">
+              <div class="view-heading"><div><h2>Tạo bài & ngân hàng câu hỏi</h2><p>Nhập tài liệu, tạo câu hỏi và xem lại trước khi sử dụng.</p></div><span class="view-chip">🤖 AI hỗ trợ</span></div>
+              <div class="lavi-panel"><section id="learningTools">
           <h3>Ngân hàng câu hỏi</h3>
           <p class="muted">Tạo ngân hàng và thêm câu hỏi. Dữ liệu được lưu trong tài khoản giáo viên này.</p>
           <form id="bankForm">
@@ -113,9 +149,11 @@
             </form>
             <div id="questionsInBank"></div>
           </div>
-        </section>
-        <hr>
-        <section id="testTools">
+        </section></div>
+            </section>
+            <section id="testsView" class="lavi-view">
+              <div class="view-heading"><div><h2>Bộ đề kiểm tra</h2><p>Tạo bộ đề và bổ sung câu hỏi từ ngân hàng riêng.</p></div><span class="view-chip">📝 Đánh giá</span></div>
+              <div class="lavi-panel"><section id="testTools">
           <h3>Bộ đề kiểm tra</h3>
           <p class="muted">Tạo bộ đề rồi thêm câu hỏi từ ngân hàng của cô.</p>
           <form id="testSetForm">
@@ -126,17 +164,22 @@
             <div class="status" id="testSetStatus" role="status" aria-live="polite"></div>
           </form>
           <div id="testSetList"></div>
-        </section>
-        <hr>
-        <h3>Sao lưu và khôi phục dữ liệu</h3>
+        </section></div>
+            </section>
+            <section id="backupView" class="lavi-view">
+              <div class="view-heading"><div><h2>Sao lưu & khôi phục</h2><p>Bảo vệ dữ liệu trong không gian riêng của giáo viên.</p></div><span class="view-chip">🛡️ An toàn dữ liệu</span></div>
+              <div class="lavi-panel"><h3>Sao lưu và khôi phục dữ liệu</h3>
         <p class="muted">Lưu bản sao gồm lớp học, học sinh, ngân hàng câu hỏi, bộ đề, bài tập, điểm số và lịch sử điểm của tài khoản này.</p>
         <button id="backupBtn" type="button">Tải bản sao lưu dữ liệu (.json)</button>
         <label for="restoreFile">Khôi phục từ tệp sao lưu LAVI 2.0</label>
         <input id="restoreFile" type="file" accept=".json,application/json">
         <button id="restoreBtn" type="button" class="secondary">Khôi phục dữ liệu bổ sung</button>
         <div class="status" id="backupStatus" role="status" aria-live="polite"></div>
-        <p class="small-note">Khôi phục sẽ thêm bản dữ liệu mới, không xóa dữ liệu hiện có. Hãy giữ tệp sao lưu ở nơi an toàn.</p>
-        <button class="secondary" id="logoutBtn" type="button">Đăng xuất</button>
+        <p class="small-note">Khôi phục sẽ thêm bản dữ liệu mới, không xóa dữ liệu hiện có. Hãy giữ tệp sao lưu ở nơi an toàn.</p><button class="secondary" id="logoutBtn" type="button">Đăng xuất</button></div>
+            </section>
+            <footer class="lavi-footer">LAVI 2.0 · Phát triển độc lập với LAVI hiện tại · Mọi dữ liệu trong bản này là dữ liệu giả lập</footer>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -184,6 +227,26 @@
     $('demoHelp').classList.toggle('hidden', registering);
     $('authStatus').textContent = '';
   }
+  function activateView(viewId) {
+    document.querySelectorAll('.lavi-view').forEach(view => view.classList.toggle('active', view.id === viewId));
+    document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === viewId));
+    document.querySelector('.lavi-sidebar')?.classList.remove('open');
+    const target = document.getElementById(viewId);
+    if (target) target.scrollIntoView({block:'start',behavior:'auto'});
+  }
+  document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.addEventListener('click', () => activateView(button.dataset.view)));
+  $('mobileMenuBtn').addEventListener('click', () => document.querySelector('.lavi-sidebar').classList.toggle('open'));
+  function logoutLavi() {
+    token='';
+    $('workspace').classList.add('hidden');
+    $('authPanel').classList.remove('hidden');
+    $('welcome').classList.remove('hidden');
+    $('password').value='';
+    $('confirmPassword').value='';
+    $('contact').value='';
+    setMode('login');
+  }
+  $('sidebarLogoutBtn').addEventListener('click', logoutLavi);
   $('loginTab').addEventListener('click', () => setMode('login'));
   $('registerTab').addEventListener('click', () => setMode('register'));
 
@@ -248,6 +311,8 @@
       $('classList').append(message);
       return;
     }
+    $('classCount').textContent = data.classes.length;
+    $('studentCount').textContent = data.classes.reduce((sum,c)=>sum + Number(c.studentCount || 0),0);
     data.classes.forEach(c=>{
       const card=document.createElement('div');card.className='class';
       const title=document.createElement('h3');title.textContent=c.name;
@@ -283,6 +348,7 @@
   async function loadBanks() {
     const data = await api('/api/question-banks');
     bankCache = data.questionBanks || [];
+    $('bankCount').textContent = bankCache.length;
     const list = $('bankList'); list.replaceChildren();
     if (!bankCache.length) {
       const empty = document.createElement('p'); empty.className='muted'; empty.textContent='Chưa có ngân hàng câu hỏi. Tạo ngân hàng đầu tiên ở trên.';
@@ -417,6 +483,7 @@
   async function loadTestSets() {
     const data=await api('/api/test-sets');
     testSetCache=data.testSets||[];
+    $('testCount').textContent = testSetCache.length;
     const list=$('testSetList');list.replaceChildren();
     if(!testSetCache.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Chưa có bộ đề. Tạo bộ đề bằng biểu mẫu phía trên.';list.append(empty);}
     testSetCache.forEach(test => {
@@ -477,16 +544,7 @@
     finally { $('restoreBtn').disabled = false; }
   });
 
-  $('logoutBtn').addEventListener('click',()=>{
-    token='';
-    $('workspace').classList.add('hidden');
-    $('authPanel').classList.remove('hidden');
-    $('welcome').classList.remove('hidden');
-    $('password').value='';
-    $('confirmPassword').value='';
-    $('contact').value='';
-    setMode('login');
-  });
+  $('logoutBtn').addEventListener('click', logoutLavi);
 })();
 </script>
 </body>
