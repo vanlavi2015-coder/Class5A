@@ -124,6 +124,22 @@ body.menu-collapsed .menuToggle{left:14px}
  </section>
 
  <section id="create" class="section">
+  <details id="fileQuestionImportDetails" class="card" style="margin-top:14px">
+     <summary style="cursor:pointer;font-weight:900;color:#166534;font-size:17px">📥 Tạo câu hỏi từ file Excel / Word</summary>
+     <p class="sub" style="margin-top:10px">Tải file câu hỏi có sẵn lên để LAVI đọc nội dung và đáp án. Cô xem trước rồi mới tạo bản nháp; không cần nhập lại từng câu.</p>
+     <div class="grid2">
+      <div class="field"><label>File câu hỏi (.xlsx, .xls, .csv, .docx)</label><input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv,.docx"></div>
+      <div class="field"><label>Môn học (nếu file không có)</label><input id="questionImportSubject" placeholder="Ví dụ: Tiếng Việt"></div>
+     </div>
+     <div class="grid2">
+      <div class="field"><label>Tên bài / chủ đề (nếu file không có)</label><input id="questionImportLesson" placeholder="Ví dụ: Từ đa nghĩa"></div>
+      <div class="field"><label>Đối tượng giao bài</label><select id="questionImportGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option selected>Tất cả</option></select></div>
+     </div>
+     <div class="row"><button type="button" class="btn" onclick="parseQuestionImportFile()">🔍 Đọc file và xem trước</button><button type="button" class="btn" onclick="downloadQuestionImportTemplate()">⬇️ Tải file mẫu CSV</button></div>
+     <div id="questionImportStatus" class="sub" role="status" aria-live="polite" style="margin-top:10px"></div>
+     <div id="questionImportPreview" style="margin-top:10px"></div>
+     <div class="row" style="margin-top:10px"><button type="button" class="btn primary" id="questionImportCreateDraft" onclick="createQuestionImportDraft()" disabled>➕ Tạo bản nháp từ các câu đã đọc</button></div>
+    </details>
   <div class="card">
    <h2>🤖 Tạo bài theo chương trình <span style="display:inline-block;font-size:12px;font-weight:700;background:#eef2ff;color:#4338ca;border-radius:999px;padding:4px 9px;vertical-align:middle">V4 • CHỌN NHIỀU BÀI</span></h2>
    <div class="grid3">
@@ -157,22 +173,6 @@ body.menu-collapsed .menuToggle{left:14px}
    <div class="field"><label>🎞️ GIF minh họa từ Gifhut</label><input id="cGifUrl" type="url" placeholder="Dán liên kết GIF/ảnh từ Gifhut (https://...) " oninput="previewGif(this.value)"><div id="gifPreview" class="gif-preview"></div><div class="sub">GIF là tùy chọn. Nếu Gifhut cung cấp liên kết trực tiếp tới ảnh/GIF, LAVI sẽ hiển thị ngay trong bài.</div></div>
    <div class="row"><button class="btn primary" onclick="generate()">✨ Tạo bài</button><button class="btn" onclick="clearDraft()">Xóa nháp</button></div>
   </div>
-  <details id="fileQuestionImportDetails" class="card" style="margin-top:14px">
-   <summary style="cursor:pointer;font-weight:900;color:#166534;font-size:17px">📥 Tạo câu hỏi từ file Excel / Word</summary>
-   <p class="sub" style="margin-top:10px">Tải file câu hỏi có sẵn lên để LAVI đọc nội dung và đáp án. Cô xem trước rồi mới tạo bản nháp; không cần nhập lại từng câu.</p>
-   <div class="grid2">
-    <div class="field"><label>File câu hỏi (.xlsx, .xls, .csv, .docx)</label><input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv,.docx"></div>
-    <div class="field"><label>Môn học (nếu file không có)</label><input id="questionImportSubject" placeholder="Ví dụ: Tiếng Việt"></div>
-   </div>
-   <div class="grid2">
-    <div class="field"><label>Tên bài / chủ đề (nếu file không có)</label><input id="questionImportLesson" placeholder="Ví dụ: Từ đa nghĩa"></div>
-    <div class="field"><label>Đối tượng giao bài</label><select id="questionImportGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option selected>Tất cả</option></select></div>
-   </div>
-   <div class="row"><button type="button" class="btn" onclick="parseQuestionImportFile()">🔍 Đọc file và xem trước</button><button type="button" class="btn" onclick="downloadQuestionImportTemplate()">⬇️ Tải file mẫu CSV</button></div>
-   <div id="questionImportStatus" class="sub" role="status" aria-live="polite" style="margin-top:10px"></div>
-   <div id="questionImportPreview" style="margin-top:10px"></div>
-   <div class="row" style="margin-top:10px"><button type="button" class="btn primary" id="questionImportCreateDraft" onclick="createQuestionImportDraft()" disabled>➕ Tạo bản nháp từ các câu đã đọc</button></div>
-  </details>
   <details id="manualQuestionDetails" class="card" style="margin-top:14px">
    <summary style="cursor:pointer;font-weight:900;color:#3730a3;font-size:17px">＋ Thêm mới / tạo câu hỏi thủ công</summary>
    <p class="sub" style="margin-top:10px">Mở phần này khi muốn tự nhập câu hỏi. Có thể lưu thành nháp hoặc giao bài sau khi xem lại.</p>
