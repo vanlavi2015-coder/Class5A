@@ -242,6 +242,18 @@ body.menu-collapsed .menuToggle{left:14px}
      <button class="btn primary" onclick="openKnowledgeGame()">▶️ Chơi ngay</button>
     </div>
    </div>
+   <div class="card" style="margin-top:14px">
+    <h3>📚 Tạo trò chơi từ ngân hàng câu hỏi</h3>
+    <p class="sub">Chọn nhiều bộ câu hỏi đã lưu trong Kho bài tập hoặc tải file Excel/Word để tạo trò chơi nhanh.</p>
+    <div class="field"><label>Chọn bộ câu hỏi trong kho (có thể chọn nhiều)</label><select id="gameBankSelect" multiple size="5" style="width:100%;min-height:120px"></select><div class="sub">Giữ Ctrl (máy tính) để chọn nhiều bộ. Trên điện thoại, chạm chọn nhiều mục nếu trình duyệt hỗ trợ.</div></div>
+    <div class="row"><button class="btn primary" onclick="playSelectedBankGames()">🎮 Chơi bộ đã chọn</button><button class="btn" onclick="refreshGameBankSelect()">↻ Làm mới danh sách</button></div>
+    <div class="divider" style="margin:14px 0"></div>
+    <div class="field"><label>📥 Tải file câu hỏi (.xlsx, .xls, .csv, .docx)</label><input id="gameQuestionFile" type="file" accept=".xlsx,.xls,.csv,.docx"></div>
+    <div class="grid2"><div class="field"><label>Môn học (nếu file thiếu)</label><input id="gameQuestionSubject" placeholder="Ví dụ: Toán"></div><div class="field"><label>Tên trò chơi</label><input id="gameQuestionTitle" placeholder="Ví dụ: Ôn tập hình thang"></div></div>
+    <div class="row"><button class="btn" onclick="previewGameQuestionFile()">🔍 Đọc file và xem trước</button><button class="btn primary" onclick="playImportedGameQuestions()">▶️ Chơi với câu hỏi từ file</button></div>
+    <div id="gameQuestionFileStatus" class="sub" role="status" aria-live="polite" style="margin-top:8px"></div>
+    <div id="gameQuestionFilePreview" style="margin-top:8px"></div>
+   </div>
    <div id="gameArea" style="margin-top:14px"></div>
   </div>
   <div class="race-stat" style="margin-top:14px">
@@ -1953,6 +1965,58 @@ function createManualDraft(){
 }
 function clearDraft(){draft=null;document.getElementById("draft").innerHTML=""}
 function findSet(a,g){return a.sets.find(x=>x.group===g)||a.sets.find(x=>x.group==="Tất cả")||a.sets.find(x=>x.group==="Cả 4 nhóm")||a.sets[0]}
+let importedGameQuestions=[];
+function refreshGameBankSelect(){
+ const el=document.getElementById("gameBankSelect");if(!el)return;
+ const previous=[...el.selectedOptions].map(x=>x.value),items=questionBankItems();
+ el.innerHTML=items.length?items.map(a=>'<option value="'+esc(a.id)+'">'+esc((a.subject||"")+' — '+(a.lesson||a.topic||"Bài chưa đặt tên"))+'</option>').join(""):'<option disabled>Kho chưa có bộ câu hỏi</option>';
+ [...el.options].forEach(o=>o.selected=previous.includes(o.value));
+}
+function playSelectedBankGames(){
+ const ids=[...(document.getElementById("gameBankSelect")?.selectedOptions||[])].map(o=>o.value);
+ if(!ids.length)return alert("Cô hãy chọn ít nhất một bộ câu hỏi trong kho.");
+ const qs=[];
+ ids.forEach(id=>{const item=questionBankItems().find(a=>a.id===id);if(!item)return;
+  (item.sets||[]).forEach(set=>(set.questions||[]).forEach(q=>{
+   let options=Array.isArray(q.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\\-:]\\s*/i,"").trim()):[];
+   let text=String(q.text||"");
+   if(!options.length){const lines=text.split(/\\r?\\n/);options=lines.slice(1).filter(x=>/^[A-D][.)\\-:]/i.test(x)).map(x=>x.replace(/^[A-D][.)\\-:]\\s*/i,"").trim());}
+   if(options.length>=2){let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;qs.push({text:text.split(/\\r?\\n/)[0],options,answer});}
+  }));
+ });
+ if(!qs.length)return alert("Các bộ đã chọn chưa có đủ câu hỏi trắc nghiệm để chơi.");
+ startGame("🎮 Trò chơi từ ngân hàng câu hỏi",shuffleGameQuestions(qs),"bank-custom");
+}
+async function previewGameQuestionFile(){
+ const file=document.getElementById("gameQuestionFile")?.files?.[0],status=document.getElementById("gameQuestionFileStatus"),preview=document.getElementById("gameQuestionFilePreview");
+ importedGameQuestions=[];if(preview)preview.innerHTML="";
+ if(!file){if(status)status.textContent="Cô hãy chọn file trước.";return;}
+ if(status)status.textContent="Đang đọc file…";
+ try{
+  const ext=file.name.split(".").pop().toLowerCase();let rows=[];
+  if(["xlsx","xls","csv"].includes(ext)){
+   if(!window.XLSX)throw new Error("Thư viện đọc Excel chưa tải được.");
+   const wb=XLSX.read(await file.arrayBuffer(),{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];
+   rows=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+   if(!rows.length){const m=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});if(m.length>1)rows=m.slice(1).map(r=>Object.fromEntries(m[0].map((h,i)=>[String(h||""),r[i]??""])));}
+   importedGameQuestions=mapQuestionImportRows(rows);
+  }else if(ext==="docx"){
+   if(!window.mammoth)throw new Error("Thư viện đọc Word chưa tải được.");
+   const result=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
+   importedGameQuestions=parseQuestionTextBlock(result.value);
+  }else throw new Error("Chỉ hỗ trợ .xlsx, .xls, .csv, .docx.");
+  importedGameQuestions=importedGameQuestions.filter(q=>q.text&&Array.isArray(q.options)&&q.options.length>=2&&q.answer);
+  if(!importedGameQuestions.length)throw new Error("Không tìm thấy câu trắc nghiệm có phương án và đáp án. Kiểm tra file mẫu.");
+  if(status)status.textContent="Đã đọc "+importedGameQuestions.length+" câu trắc nghiệm hợp lệ.";
+  if(preview)preview.innerHTML='<div class="assignment"><b>Xem trước 5 câu đầu</b>'+importedGameQuestions.slice(0,5).map((q,i)=>'<p><b>'+(i+1)+'. '+esc(q.text)+'</b><br>'+q.options.map(x=>esc(String(x).replace(/^[A-D][.)\\-:]\\s*/i,""))).join(" · ")+'<br><span class="sub">Đáp án: '+esc(String(q.answer))+'</span></p>').join("")+'</div>';
+ }catch(e){importedGameQuestions=[];if(status)status.textContent="Không đọc được file: "+e.message;}
+}
+function playImportedGameQuestions(){
+ if(!importedGameQuestions.length)return alert("Cô hãy chọn file và bấm “Đọc file và xem trước” trước.");
+ const title=(document.getElementById("gameQuestionTitle")?.value||"").trim()||"Trò chơi từ file";
+ const qs=importedGameQuestions.map(q=>{let options=(q.options||[]).map(x=>String(x).replace(/^[A-D][.)\\-:]\\s*/i,"").trim());let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;return {text:q.text,options,answer};});
+ startGame("🎮 "+title,shuffleGameQuestions(qs),"file-custom");
+}
 function questionBankItems(){return (state.assignments||[]).filter(a=>a.status==="Kho bài");}
 function renderQuestionBank(){
  const box=document.getElementById("questionBankList");if(!box)return;
@@ -2455,7 +2519,7 @@ async function loadMonthlyScores(){
    '</tbody></table></div>';
  }catch(e){box.innerHTML='<div class="empty">⚠️ '+esc(e.message||'Không tải được dữ liệu')+'</div>';if(summary)summary.innerHTML='';}
 }
-function renderAll(){renderHome();renderAssignments("assignList");renderQuestionBank();renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
+function renderAll(){renderHome();renderAssignments("assignList");renderQuestionBank();refreshGameBankSelect();renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
 document.getElementById("cDue").value=new Date(Date.now()+86400000).toISOString().slice(0,16);
 fillSubjects();fillNotifyTargets();renderAll();
 
