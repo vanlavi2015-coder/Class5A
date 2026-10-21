@@ -67,12 +67,34 @@
       <div id="workspace" class="hidden">
         <aside class="lavi-sidebar">
           <div class="lavi-brand"><span class="brand-mark">L</span><div><strong>LAVI <em>2.0</em></strong><small>KHÔNG GIAN GIÁO VIÊN</small></div></div>
-          <div class="lavi-menu-label">MENU CHÍNH</div>
+          <div class="lavi-menu-label">TỔNG QUAN</div>
           <nav class="lavi-nav" aria-label="Điều hướng LAVI 2.0">
             <button type="button" class="active" data-view="classesView"><span>📊</span><b>Tổng quan</b></button>
+            <button type="button" data-view="classesView"><span>🏫</span><b>Lớp học của tôi</b></button>
+          </nav>
+          <div class="lavi-menu-label">DẠY HỌC & ĐÁNH GIÁ</div>
+          <nav class="lavi-nav" aria-label="Dạy học và đánh giá">
             <button type="button" data-view="questionsView"><span>🤖</span><b>Tạo bài & ngân hàng</b></button>
             <button type="button" data-view="testsView"><span>📝</span><b>Bộ đề kiểm tra</b></button>
+            <button type="button" data-view="futureView" data-module="Bài đang giao"><span>📤</span><b>Bài đang giao</b></button>
+            <button type="button" data-view="futureView" data-module="Bài nộp & chấm điểm"><span>📥</span><b>Bài nộp & chấm điểm</b></button>
+            <button type="button" data-view="futureView" data-module="Phạm vi kiến thức"><span>🗂️</span><b>Phạm vi kiến thức</b></button>
+            <button type="button" data-view="futureView" data-module="Trợ lý VnEdu"><span>🔗</span><b>Trợ lý VnEdu</b></button>
+          </nav>
+          <div class="lavi-menu-label">HỌC SINH & ĐỘNG LỰC</div>
+          <nav class="lavi-nav" aria-label="Học sinh và động lực">
+            <button type="button" data-view="futureView" data-module="Danh sách học sinh"><span>👩‍🎓</span><b>Học sinh</b></button>
+            <button type="button" data-view="futureView" data-module="Sao thưởng & khen thưởng"><span>⭐</span><b>Sao & Khen</b></button>
+            <button type="button" data-view="futureView" data-module="Trò chơi kiến thức"><span>🎮</span><b>Trò chơi kiến thức</b></button>
+            <button type="button" data-view="futureView" data-module="Trò chơi & xếp hạng"><span>🏆</span><b>Trò chơi & Xếp hạng</b></button>
+          </nav>
+          <div class="lavi-menu-label">BÁO CÁO & HỆ THỐNG</div>
+          <nav class="lavi-nav" aria-label="Báo cáo và hệ thống">
+            <button type="button" data-view="futureView" data-module="Lịch lớp học"><span>🗓️</span><b>Lịch</b></button>
+            <button type="button" data-view="futureView" data-module="Thống kê học tập"><span>📈</span><b>Thống kê</b></button>
+            <button type="button" data-view="futureView" data-module="Xếp loại tháng"><span>🥇</span><b>Xếp loại tháng</b></button>
             <button type="button" data-view="backupView"><span>💾</span><b>Sao lưu dữ liệu</b></button>
+            <button type="button" data-view="futureView" data-module="Tài khoản giáo viên"><span>⚙️</span><b>Tài khoản</b></button>
           </nav>
           <div class="lavi-sidebar-note"><span>🛡️</span><div><strong>Bản thử nghiệm an toàn</strong><small>Chỉ dùng dữ liệu giả lập. Không nhập dữ liệu học sinh thật.</small></div></div>
           <button class="lavi-logout" id="sidebarLogoutBtn" type="button">↪ Đăng xuất</button>
@@ -166,6 +188,18 @@
           <div id="testSetList"></div>
         </section></div>
             </section>
+            <section id="futureView" class="lavi-view">
+              <div class="view-heading"><div><h2 id="futureViewTitle">Mô-đun đang phát triển</h2><p id="futureViewSubtitle">Khung giao diện được chuẩn bị theo cấu trúc LAVI hiện tại.</p></div><span class="view-chip">🧩 LAVI 2.0</span></div>
+              <div class="lavi-panel">
+                <h3 id="futureModuleName">Chức năng đang được hoàn thiện</h3>
+                <p id="futureModuleDescription">Mục này đã có trong thanh điều hướng để thống nhất cấu trúc giao diện. Chức năng thực tế sẽ được xây dựng và kiểm thử trước khi mở sử dụng.</p>
+                <div class="class">
+                  <strong>Trạng thái: Chưa kết nối chức năng</strong>
+                  <p class="muted">Không có dữ liệu giả vờ hoặc nút thao tác chưa hoạt động. Khi mô-đun được triển khai, mục này sẽ được thay bằng chức năng thật.</p>
+                </div>
+                <button type="button" class="secondary" data-go-view="classesView">← Quay lại tổng quan</button>
+              </div>
+            </section>
             <section id="backupView" class="lavi-view">
               <div class="view-heading"><div><h2>Sao lưu & khôi phục</h2><p>Bảo vệ dữ liệu trong không gian riêng của giáo viên.</p></div><span class="view-chip">🛡️ An toàn dữ liệu</span></div>
               <div class="lavi-panel"><h3>Sao lưu và khôi phục dữ liệu</h3>
@@ -227,14 +261,23 @@
     $('demoHelp').classList.toggle('hidden', registering);
     $('authStatus').textContent = '';
   }
-  function activateView(viewId) {
+  function activateView(viewId, moduleName='') {
     document.querySelectorAll('.lavi-view').forEach(view => view.classList.toggle('active', view.id === viewId));
-    document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === viewId));
+    document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === viewId && (!moduleName || button.dataset.module === moduleName || button.textContent.includes(moduleName))));
+    document.querySelector('.lavi-sidebar')?.classList.remove('open');
+    if (viewId === 'futureView') {
+      const label = moduleName || 'Mô-đun đang phát triển';
+      $('futureViewTitle').textContent = label;
+      $('futureModuleName').textContent = label;
+      $('futureViewSubtitle').textContent = 'Khung giao diện theo cấu trúc LAVI hiện tại · Bản thử nghiệm LAVI 2.0';
+      $('futureModuleDescription').textContent = 'Mục “' + label + '” đã được đưa vào cấu trúc điều hướng. Chức năng và dữ liệu thật chưa được kết nối; mục này sẽ chỉ mở sử dụng sau khi được phát triển và kiểm thử.';
+    }
     document.querySelector('.lavi-sidebar')?.classList.remove('open');
     const target = document.getElementById(viewId);
     if (target) target.scrollIntoView({block:'start',behavior:'auto'});
   }
-  document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.addEventListener('click', () => activateView(button.dataset.view)));
+  document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.addEventListener('click', () => activateView(button.dataset.view, button.dataset.module || button.querySelector('b')?.textContent || '')));
+  document.querySelectorAll('[data-go-view]').forEach(button => button.addEventListener('click', () => activateView(button.dataset.goView)));
   $('mobileMenuBtn').addEventListener('click', () => document.querySelector('.lavi-sidebar').classList.toggle('open'));
   function logoutLavi() {
     token='';
