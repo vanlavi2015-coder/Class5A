@@ -143,6 +143,7 @@ test('demo teachers remain isolated and registration/login works for email and p
     assert.equal(backup.data.questions.length, 1);
     assert.equal(backup.data.test_sets.length, 1);
     assert.equal(backup.data.test_set_questions.length, 1);
+    assert.ok(Array.isArray(backup.data.audit_events));
     const restoreResponse = await fetch(base + '/api/backup/restore', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + teacherCToken },
