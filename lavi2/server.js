@@ -523,6 +523,16 @@ async function extractUploadedFile(fileName, base64) {
   throw new Error('Định dạng chưa hỗ trợ. Dùng .xlsx, .xls, .csv, .docx, .txt hoặc .md.');
 }
 
+app.post('/api/documents/extract', authenticate, requireTeacher, async (req, res) => {
+  try {
+    const extracted = await extractUploadedFile(req.body?.fileName, req.body?.dataBase64);
+    if (!extracted.text || extracted.text.trim().length < 20) return res.status(400).json({ error:'Không đọc được nội dung văn bản trong tệp.' });
+    res.json({ text: extracted.text, rows: extracted.rows.length, fileName: String(req.body.fileName || '') });
+  } catch (err) {
+    res.status(400).json({ error:err.message || 'Không đọc được tài liệu.' });
+  }
+});
+
 app.post('/api/question-banks/:bankId/import', authenticate, requireTeacher, async (req, res) => {
   const bank = db.prepare('SELECT id FROM question_banks WHERE id=? AND owner_user_id=?').get(String(req.params.bankId), req.user.id);
   if (!bank) return res.status(404).json({ error:'Không tìm thấy ngân hàng câu hỏi.' });
