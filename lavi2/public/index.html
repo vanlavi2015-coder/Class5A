@@ -67,6 +67,15 @@
         </form>
         <div id="classList"></div>
         <div id="studentsArea"></div>
+        <hr>
+        <h3>Sao lưu và khôi phục dữ liệu</h3>
+        <p class="muted">Lưu bản sao gồm lớp học, học sinh, ngân hàng câu hỏi, bộ đề, bài tập, điểm số và lịch sử điểm của tài khoản này.</p>
+        <button id="backupBtn" type="button">Tải bản sao lưu dữ liệu (.json)</button>
+        <label for="restoreFile">Khôi phục từ tệp sao lưu LAVI 2.0</label>
+        <input id="restoreFile" type="file" accept=".json,application/json">
+        <button id="restoreBtn" type="button" class="secondary">Khôi phục dữ liệu bổ sung</button>
+        <div class="status" id="backupStatus" role="status" aria-live="polite"></div>
+        <p class="small-note">Khôi phục sẽ thêm bản dữ liệu mới, không xóa dữ liệu hiện có. Hãy giữ tệp sao lưu ở nơi an toàn.</p>
         <button class="secondary" id="logoutBtn" type="button">Đăng xuất</button>
       </div>
     </section>
@@ -184,6 +193,46 @@
       table.append(thead,tbody);area.append(table);
     } catch(e) {$('studentsArea').textContent=e.message;}
   }
+  $('backupBtn').addEventListener('click', async () => {
+    $('backupStatus').textContent = 'Đang tạo bản sao lưu...';
+    try {
+      const response = await fetch('/api/backup', { headers: { Authorization: 'Bearer ' + token } });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Không thể tạo bản sao lưu.');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lavi2-backup-' + new Date().toISOString().slice(0,10) + '.json';
+      document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      $('backupStatus').textContent = 'Đã tải bản sao lưu xuống thiết bị.';
+    } catch (e) { $('backupStatus').textContent = e.message; }
+  });
+
+  $('restoreBtn').addEventListener('click', async () => {
+    const file = $('restoreFile').files[0];
+    if (!file) { $('backupStatus').textContent = 'Vui lòng chọn tệp sao lưu JSON trước.'; return; }
+    if (file.size > 15 * 1024 * 1024) { $('backupStatus').textContent = 'Tệp quá lớn (giới hạn 15 MB).'; return; }
+    if (!confirm('Khôi phục sẽ thêm dữ liệu từ tệp vào tài khoản hiện tại, không xóa dữ liệu đang có. Tiếp tục?')) return;
+    $('restoreBtn').disabled = true;
+    $('backupStatus').textContent = 'Đang kiểm tra và khôi phục dữ liệu...';
+    try {
+      const backup = JSON.parse(await file.text());
+      const response = await fetch('/api/backup/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify(backup)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Không thể khôi phục tệp.');
+      $('backupStatus').textContent = result.message || 'Khôi phục hoàn tất.';
+      await loadClasses();
+    } catch (e) { $('backupStatus').textContent = e instanceof SyntaxError ? 'Tệp JSON không hợp lệ.' : e.message; }
+    finally { $('restoreBtn').disabled = false; }
+  });
+
   $('logoutBtn').addEventListener('click',()=>{
     token='';
     $('workspace').classList.add('hidden');
