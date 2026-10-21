@@ -78,6 +78,26 @@
             <button type="submit">+ Tạo ngân hàng câu hỏi</button>
             <div class="status" id="bankStatus" role="status" aria-live="polite"></div>
           </form>
+          <div class="class" id="importQuestionPanel">
+            <h4>Nhập câu hỏi từ Excel / Word</h4>
+            <p class="muted">Excel dùng đúng mẫu 7 cột của LAVI. Word hỗ trợ .docx để trích nội dung làm nguồn cho AI.</p>
+            <a href="/api/question-template.xlsx" download>Tải mẫu Excel câu hỏi LAVI</a>
+            <label for="questionImportFile">Chọn tệp Excel/CSV/Word/TXT</label>
+            <input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv,.docx,.txt,.md">
+            <button id="importQuestionsBtn" type="button">Nhập câu hỏi từ tệp</button>
+            <div class="status" id="importStatus" role="status" aria-live="polite"></div>
+            <hr>
+            <h4>Tạo câu hỏi bằng AI từ tài liệu</h4>
+            <p class="muted">Tải tài liệu đã cung cấp; AI sẽ tạo bản nháp bám sát nội dung nguồn. Giáo viên xem lại và chọn câu hỏi cần lưu.</p>
+            <label for="aiSourceFile">Tài liệu nguồn (.docx, .xlsx, .xls, .csv, .txt, .md)</label>
+            <input id="aiSourceFile" type="file" accept=".docx,.xlsx,.xls,.csv,.txt,.md">
+            <label for="aiQuestionCount">Số câu hỏi muốn tạo (1–30)</label>
+            <input id="aiQuestionCount" type="number" min="1" max="30" value="10">
+            <button id="generateAIQuestionsBtn" type="button">AI tạo bản nháp từ tài liệu</button>
+            <div class="status" id="aiStatus" role="status" aria-live="polite"></div>
+            <div id="aiDraftList"></div>
+            <button id="saveAIDraftsBtn" type="button" class="secondary hidden">Lưu các câu đã chọn vào ngân hàng</button>
+          </div>
           <div id="bankList"></div>
           <div id="questionEditor" class="hidden">
             <hr><h4 id="questionEditorTitle">Thêm câu hỏi</h4>
@@ -284,6 +304,77 @@
     await loadBanks();
     await loadTestSets();
   }
+
+  async function fileAsPayload(file) {
+    const dataUrl = await new Promise((resolve,reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Không đọc được tệp.'));
+      reader.readAsDataURL(file);
+    });
+    return { fileName:file.name, dataBase64:dataUrl.split(',')[1] || '' };
+  }
+  $('importQuestionsBtn').addEventListener('click', async () => {
+    const file=$('questionImportFile').files[0];
+    if(!selectedBankId){$('importStatus').textContent='Hãy mở ngân hàng câu hỏi trước khi nhập.';return;}
+    if(!file){$('importStatus').textContent='Cô hãy chọn một tệp trước.';return;}
+    if(file.size>10*1024*1024){$('importStatus').textContent='Tệp tối đa 10 MB.';return;}
+    const button=$('importQuestionsBtn');button.disabled=true;$('importStatus').textContent='Đang đọc và nhập tệp...';
+    try{
+      const payload=await fileAsPayload(file);
+      const result=await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/import',{method:'POST',body:JSON.stringify(payload)});
+      $('importStatus').textContent=result.message || ('Đã nhập '+result.imported+' câu hỏi.');
+      $('questionImportFile').value='';
+      await loadQuestions(selectedBankId);
+    }catch(e){$('importStatus').textContent=e.message;}finally{button.disabled=false;}
+  });
+  let aiDrafts=[];
+  $('generateAIQuestionsBtn').addEventListener('click', async () => {
+    const file=$('aiSourceFile').files[0];
+    if(!selectedBankId){$('aiStatus').textContent='Hãy mở ngân hàng câu hỏi trước.';return;}
+    if(!file){$('aiStatus').textContent='Chọn tài liệu nguồn cô muốn AI dựa vào.';return;}
+    if(file.size>10*1024*1024){$('aiStatus').textContent='Tài liệu tối đa 10 MB.';return;}
+    const button=$('generateAIQuestionsBtn');button.disabled=true;$('aiStatus').textContent='Đang đọc tài liệu nguồn...';
+    try{
+      const payload=await fileAsPayload(file);
+      const extracted=await api('/api/documents/extract',{method:'POST',body:JSON.stringify(payload)});
+      $('aiStatus').textContent='Đã đọc tài liệu. AI đang tạo câu hỏi...';
+      const result=await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/ai-generate',{method:'POST',body:JSON.stringify({sourceText:extracted.text,count:Number($('aiQuestionCount').value)||10})});
+      aiDrafts=result.questions||[];
+      const list=$('aiDraftList');list.replaceChildren();
+      aiDrafts.forEach((q,i)=>{
+        const card=document.createElement('div');card.className='class';
+        const label=document.createElement('label');label.style.display='flex';label.style.gap='8px';label.style.alignItems='start';
+        const check=document.createElement('input');check.type='checkbox';check.checked=true;check.dataset.index=String(i);check.style.width='auto';check.style.marginTop='5px';
+        const title=document.createElement('strong');title.textContent=(i+1)+'. '+q.prompt;
+        label.append(check,title);card.append(label);
+        const options=document.createElement('ol');options.type='A';
+        q.options.forEach(value=>{const li=document.createElement('li');li.textContent=value;options.append(li);});
+        const answer=document.createElement('p');answer.className='muted';answer.textContent='Đáp án dự kiến: '+q.answer+(q.explanation?' · Giải thích: '+q.explanation:'');
+        card.append(options,answer);list.append(card);
+      });
+      $('aiStatus').textContent='Đã tạo '+aiDrafts.length+' câu nháp. Cô hãy kiểm tra nội dung và đáp án, bỏ chọn câu chưa đạt rồi mới lưu.';
+      $('saveAIDraftsBtn').classList.toggle('hidden',!aiDrafts.length);
+    }catch(e){$('aiStatus').textContent=e.message;}finally{button.disabled=false;}
+  });
+  $('saveAIDraftsBtn').addEventListener('click',async()=>{
+    if(!selectedBankId||!aiDrafts.length)return;
+    const checks=[...$('aiDraftList').querySelectorAll('input[type="checkbox"]')];
+    const selected=checks.filter(c=>c.checked).map(c=>aiDrafts[Number(c.dataset.index)]);
+    if(!selected.length){$('aiStatus').textContent='Chọn ít nhất một câu đã kiểm tra.';return;}
+    const button=$('saveAIDraftsBtn');button.disabled=true;
+    try{
+      let saved=0;
+      for(const q of selected){
+        await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/questions',{method:'POST',body:JSON.stringify({type:'abcd',prompt:q.prompt,options:q.options,answer:q.answer,explanation:q.explanation||''})});
+        saved++;
+      }
+      $('aiStatus').textContent='Đã lưu '+saved+' câu đã chọn. Cô vẫn nên kiểm tra lại trước khi dùng cho học sinh.';
+      aiDrafts=[];$('aiDraftList').replaceChildren();button.classList.add('hidden');
+      await loadQuestions(selectedBankId);
+    }catch(e){$('aiStatus').textContent='Đã lưu được một phần nếu lỗi xảy ra giữa chừng. '+e.message;await loadQuestions(selectedBankId);}finally{button.disabled=false;}
+  });
+
   $('bankForm').addEventListener('submit', async event => {
     event.preventDefault();
     const button=$('bankForm').querySelector('button');button.disabled=true;$('bankStatus').textContent='Đang tạo ngân hàng...';
