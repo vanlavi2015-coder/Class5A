@@ -1739,13 +1739,13 @@ function syncQuestionStyles(){
  const checks=[...document.querySelectorAll("#questionStyleGrid input[type=checkbox]")];
  const selected=checks.filter(x=>x.checked).map(x=>x.value);
  const note=document.getElementById("cNote");if(!note)return;
- const existing=note.value.split("\\n").filter(line=>line.trim()&&!line.startsWith(QUESTION_STYLE_PREFIX));
- note.value=[...selected.length?[QUESTION_STYLE_PREFIX+" "+selected.join(" ")]:[],...existing].join("\\n");
+ const existing=note.value.split("\n").filter(line=>line.trim()&&!line.startsWith(QUESTION_STYLE_PREFIX));
+ note.value=[...selected.length?[QUESTION_STYLE_PREFIX+" "+selected.join(" ")]:[],...existing].join("\n");
  const summary=document.getElementById("questionStyleSummary");if(summary)summary.textContent=selected.length?"Đã chọn "+selected.length+" dạng/yêu cầu bổ sung.":"Chưa chọn dạng bổ sung.";
 }
 function syncQuestionStyleChecksFromNote(){
  const note=document.getElementById("cNote")?.value||"";
- const line=note.split("\\n").find(x=>x.startsWith(QUESTION_STYLE_PREFIX))||"";
+ const line=note.split("\n").find(x=>x.startsWith(QUESTION_STYLE_PREFIX))||"";
  document.querySelectorAll("#questionStyleGrid input[type=checkbox]").forEach(x=>{x.checked=!!line.includes(x.value)});
  const summary=document.getElementById("questionStyleSummary"),n=[...document.querySelectorAll("#questionStyleGrid input[type=checkbox]:checked")].length;
  if(summary)summary.textContent=n?"Đã chọn "+n+" dạng/yêu cầu bổ sung.":"Chưa chọn dạng bổ sung.";
