@@ -86,6 +86,10 @@
   <div class="grid">
     <section class="panel" id="authPanel">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><div class="brand-mark">L</div><div><span class="tag">LAVI 2.0</span><h2 id="authTitle" style="margin:7px 0 2px">Chào mừng thầy cô</h2><p class="muted" id="authSubtitle" style="margin:0">Đăng nhập không gian giáo viên bằng email hoặc số điện thoại.</p></div></div>
+      <div id="loginRoleTabs" class="tabs" style="margin-top:16px">
+        <button id="teacherRoleTab" type="button" aria-pressed="true">👩‍🏫 Giáo viên</button>
+        <button id="studentRoleTab" type="button" aria-pressed="false">🎒 Học sinh</button>
+      </div>
       <div class="tabs">
         <button id="loginTab" type="button" aria-pressed="true">Đăng nhập</button>
         <button id="registerTab" type="button" aria-pressed="false">Đăng ký</button>
@@ -291,6 +295,22 @@
     if (!Object.keys(data).length && raw.trim().startsWith('<')) throw new Error('Máy chủ trả về trang HTML thay vì dữ liệu API. Có thể đang dùng bản triển khai cũ.');
     return data;
   }
+  let loginRole = 'teacher';
+  function setLoginRole(nextRole) {
+    loginRole = nextRole;
+    const student = loginRole === 'student';
+    $('teacherRoleTab').setAttribute('aria-pressed', String(!student));
+    $('studentRoleTab').setAttribute('aria-pressed', String(student));
+    $('registerTab').classList.toggle('hidden', student);
+    $('nameField').classList.add('hidden');
+    $('confirmField').classList.add('hidden');
+    if (student && mode === 'register') setMode('login');
+    $('authTitle').textContent = student ? 'Chào mừng học sinh' : (mode === 'register' ? 'Tạo tài khoản giáo viên' : 'Chào mừng thầy cô');
+    $('authSubtitle').textContent = student ? 'Đăng nhập vào không gian học tập LAVI bằng tài khoản học sinh.' : (mode === 'register' ? 'Dùng Gmail hoặc số điện thoại của thầy cô và tạo mật khẩu.' : 'Đăng nhập bằng Gmail/số điện thoại đã đăng ký.');
+    $('contact').placeholder = student ? 'Tên đăng nhập học sinh' : 'ten@gmail.com hoặc 09xxxxxxxx';
+    $('demoHelp').textContent = student ? 'Dùng tài khoản học sinh do giáo viên hoặc nhà trường cấp.' : 'Tài khoản demo có sẵn: teacher1 hoặc teacher2 · Mật khẩu: Demo1234!';
+    $('authStatus').textContent = '';
+  }
   function setMode(nextMode) {
     mode = nextMode;
     const registering = mode === 'register';
@@ -304,6 +324,10 @@
     $('password').autocomplete = registering ? 'new-password' : 'current-password';
     $('demoHelp').classList.toggle('hidden', registering);
     $('authStatus').textContent = '';
+    $('registerTab').classList.toggle('hidden', loginRole === 'student');
+    $('authTitle').textContent = loginRole === 'student' ? 'Chào mừng học sinh' : (registering ? 'Tạo tài khoản giáo viên' : 'Chào mừng thầy cô');
+    $('authSubtitle').textContent = loginRole === 'student' ? 'Đăng nhập vào không gian học tập LAVI bằng tài khoản học sinh.' : (registering ? 'Dùng Gmail hoặc số điện thoại của thầy cô và tạo mật khẩu.' : 'Đăng nhập bằng Gmail/số điện thoại đã đăng ký.');
+    $('contact').placeholder = loginRole === 'student' ? 'Tên đăng nhập học sinh' : 'ten@gmail.com hoặc 09xxxxxxxx';
   }
   function activateView(viewId, moduleName='') {
     document.querySelectorAll('.lavi-view').forEach(view => view.classList.toggle('active', view.id === viewId));
@@ -344,8 +368,10 @@
     setMode('login');
   }
   $('sidebarLogoutBtn').addEventListener('click', logoutLavi);
+  $('teacherRoleTab').addEventListener('click', () => setLoginRole('teacher'));
+  $('studentRoleTab').addEventListener('click', () => setLoginRole('student'));
   $('loginTab').addEventListener('click', () => setMode('login'));
-  $('registerTab').addEventListener('click', () => setMode('register'));
+  $('registerTab').addEventListener('click', () => { if(loginRole==='student') return; setMode('register'); });
 
   $('authForm').addEventListener('submit', async event => {
     event.preventDefault();
@@ -362,6 +388,9 @@
       } else {
         result = await api('/api/login', {method:'POST',body:JSON.stringify({contact,password})});
       }
+      if (mode === 'login' && loginRole === 'student' && result.user.role !== 'student') throw new Error('Đây là tài khoản giáo viên. Hãy chọn “Giáo viên” để đăng nhập.');
+      if (mode === 'login' && loginRole === 'teacher' && result.user.role !== 'teacher') throw new Error('Đây là tài khoản học sinh. Hãy chọn “Học sinh” để đăng nhập.');
+      if (loginRole === 'student') throw new Error('Đăng nhập học sinh đã được nhận diện, nhưng trang bài tập học sinh chưa được kết nối trong bản thử nghiệm này.');
       token = result.token;
       $('authPanel').classList.add('hidden');
       $('welcome').classList.add('hidden');
