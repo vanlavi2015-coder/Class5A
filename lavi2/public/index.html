@@ -572,7 +572,17 @@
       c.name===options.openClassName &&
       (c.schoolName||'')===(options.openSchoolName||'')
     );
-    if(requestedClass) await openClassWorkspace(requestedClass);
+    // If the teacher has exactly one class, go straight into that class workspace.
+    // If a class was just created, prioritize that newly created class.
+    if(requestedClass){
+      await openClassWorkspace(requestedClass);
+    }else if((data.classes||[]).length===1){
+      await openClassWorkspace(data.classes[0]);
+    }else{
+      $('createClassForm').classList.remove('is-open');
+      $('createClassForm').style.display='none';
+      $('toggleClassFormBtn').classList.remove('hidden');
+    }
   }
   async function openClassWorkspace(cls){
     selectedClass=cls;
