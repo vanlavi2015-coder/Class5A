@@ -446,6 +446,73 @@ app.post('/api/classes', authenticate, requireTeacher, (req, res) => {
   }
 });
 
+app.get('/api/question-banks', authenticate, requireTeacher, (req, res) => {
+  const banks = db.prepare(`
+    SELECT b.id,b.name,b.subject,b.grade,b.created_at AS createdAt,
+      (SELECT COUNT(*) FROM questions q WHERE q.bank_id=b.id) AS questionCount
+    FROM question_banks b WHERE b.owner_user_id=? ORDER BY b.created_at DESC
+  `).all(req.user.id);
+  res.json({ questionBanks: banks });
+});
+
+app.post('/api/question-banks', authenticate, requireTeacher, (req, res) => {
+  const name = String(req.body?.name || '').trim();
+  if (name.length < 2 || name.length > 120) return res.status(400).json({ error: 'Tên ngân hàng cần từ 2 đến 120 ký tự.' });
+  const id = randomUUID();
+  db.prepare('INSERT INTO question_banks(id,owner_user_id,name,subject,grade) VALUES(?,?,?,?,?)')
+    .run(id, req.user.id, name, String(req.body?.subject || '').slice(0,80), String(req.body?.grade || '').slice(0,40));
+  audit(req.user.id, 'create', 'question_bank', id);
+  res.status(201).json({ questionBank: { id, name } });
+});
+
+app.post('/api/question-banks/:bankId/questions', authenticate, requireTeacher, (req, res) => {
+  const bank = db.prepare('SELECT id FROM question_banks WHERE id=? AND owner_user_id=?').get(String(req.params.bankId), req.user.id);
+  if (!bank) return res.status(404).json({ error: 'Không tìm thấy ngân hàng câu hỏi.' });
+  const prompt = String(req.body?.prompt || '').trim();
+  const type = String(req.body?.type || 'short');
+  if (prompt.length < 3 || prompt.length > 5000) return res.status(400).json({ error: 'Nội dung câu hỏi cần từ 3 đến 5000 ký tự.' });
+  if (!['abcd','multiple','true_false','short','fill_blank','matching','ordering'].includes(type)) return res.status(400).json({ error: 'Loại câu hỏi không được hỗ trợ.' });
+  const options = Array.isArray(req.body?.options) ? req.body.options.slice(0,20) : [];
+  const id = randomUUID();
+  db.prepare('INSERT INTO questions(id,bank_id,question_type,prompt,options_json,answer_json,explanation) VALUES(?,?,?,?,?,?,?)')
+    .run(id, bank.id, type, prompt, JSON.stringify(options), JSON.stringify(req.body?.answer ?? null), String(req.body?.explanation || '').slice(0,3000));
+  audit(req.user.id, 'create', 'question', id);
+  res.status(201).json({ question: { id, bankId: bank.id, type, prompt } });
+});
+
+app.get('/api/test-sets', authenticate, requireTeacher, (req, res) => {
+  const sets = db.prepare(`
+    SELECT t.id,t.name,t.subject,t.grade,t.created_at AS createdAt,
+      (SELECT COUNT(*) FROM test_set_questions tq WHERE tq.test_set_id=t.id) AS questionCount
+    FROM test_sets t WHERE t.owner_user_id=? ORDER BY t.created_at DESC
+  `).all(req.user.id);
+  res.json({ testSets: sets });
+});
+
+app.post('/api/test-sets', authenticate, requireTeacher, (req, res) => {
+  const name = String(req.body?.name || '').trim();
+  if (name.length < 2 || name.length > 120) return res.status(400).json({ error: 'Tên bộ đề cần từ 2 đến 120 ký tự.' });
+  const id = randomUUID();
+  db.prepare('INSERT INTO test_sets(id,owner_user_id,name,subject,grade) VALUES(?,?,?,?,?)')
+    .run(id, req.user.id, name, String(req.body?.subject || '').slice(0,80), String(req.body?.grade || '').slice(0,40));
+  audit(req.user.id, 'create', 'test_set', id);
+  res.status(201).json({ testSet: { id, name } });
+});
+
+app.post('/api/test-sets/:testSetId/questions', authenticate, requireTeacher, (req, res) => {
+  const testSet = db.prepare('SELECT id FROM test_sets WHERE id=? AND owner_user_id=?').get(String(req.params.testSetId), req.user.id);
+  if (!testSet) return res.status(404).json({ error: 'Không tìm thấy bộ đề.' });
+  const questionId = String(req.body?.questionId || '');
+  const question = db.prepare(`
+    SELECT q.id FROM questions q JOIN question_banks b ON b.id=q.bank_id
+    WHERE q.id=? AND b.owner_user_id=?
+  `).get(questionId, req.user.id);
+  if (!question) return res.status(404).json({ error: 'Không tìm thấy câu hỏi thuộc tài khoản của thầy cô.' });
+  db.prepare('INSERT OR IGNORE INTO test_set_questions(test_set_id,question_id,position,points) VALUES(?,?,?,?)')
+    .run(testSet.id, question.id, Math.max(0, Math.min(10000, Number(req.body?.position) || 0)), Math.max(0, Math.min(100, Number(req.body?.points) || 1)));
+  res.status(201).json({ ok: true });
+});
+
 app.get('/api/classes', authenticate, requireTeacher, (req, res) => {
   const rows = db.prepare(`
     SELECT c.id,c.name,c.school_name AS schoolName,
