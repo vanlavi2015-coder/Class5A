@@ -68,6 +68,46 @@
         <div id="classList"></div>
         <div id="studentsArea"></div>
         <hr>
+        <section id="learningTools">
+          <h3>Ngân hàng câu hỏi</h3>
+          <p class="muted">Tạo ngân hàng và thêm câu hỏi. Dữ liệu được lưu trong tài khoản giáo viên này.</p>
+          <form id="bankForm">
+            <label for="bankName">Tên ngân hàng</label><input id="bankName" maxlength="120" required placeholder="Ví dụ: Toán 5 – Đổi đơn vị diện tích">
+            <label for="bankSubject">Môn học</label><input id="bankSubject" maxlength="80" placeholder="Toán">
+            <label for="bankGrade">Khối lớp</label><input id="bankGrade" maxlength="40" placeholder="Lớp 5">
+            <button type="submit">+ Tạo ngân hàng câu hỏi</button>
+            <div class="status" id="bankStatus" role="status" aria-live="polite"></div>
+          </form>
+          <div id="bankList"></div>
+          <div id="questionEditor" class="hidden">
+            <hr><h4 id="questionEditorTitle">Thêm câu hỏi</h4>
+            <form id="questionForm">
+              <label for="questionType">Loại câu hỏi</label>
+              <select id="questionType"><option value="abcd">Trắc nghiệm A/B/C/D</option><option value="true_false">Đúng / Sai</option><option value="short">Trả lời ngắn</option><option value="fill_blank">Điền khuyết</option><option value="multiple">Chọn nhiều đáp án</option><option value="matching">Nối cặp</option><option value="ordering">Sắp xếp</option></select>
+              <label for="questionPrompt">Nội dung câu hỏi</label><textarea id="questionPrompt" maxlength="5000" required rows="3" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></textarea>
+              <label for="questionOptions">Các phương án (mỗi dòng một phương án; dùng cho trắc nghiệm)</label><textarea id="questionOptions" rows="4" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit" placeholder="A. ...&#10;B. ...&#10;C. ...&#10;D. ..."></textarea>
+              <label for="questionAnswer">Đáp án đúng</label><input id="questionAnswer" required placeholder="Ví dụ: B hoặc 125">
+              <label for="questionExplanation">Giải thích (không bắt buộc)</label><textarea id="questionExplanation" rows="2" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></textarea>
+              <button type="submit">Lưu câu hỏi</button>
+              <div class="status" id="questionStatus" role="status" aria-live="polite"></div>
+            </form>
+            <div id="questionsInBank"></div>
+          </div>
+        </section>
+        <hr>
+        <section id="testTools">
+          <h3>Bộ đề kiểm tra</h3>
+          <p class="muted">Tạo bộ đề rồi thêm câu hỏi từ ngân hàng của cô.</p>
+          <form id="testSetForm">
+            <label for="testSetName">Tên bộ đề</label><input id="testSetName" maxlength="120" required placeholder="Ví dụ: Kiểm tra Toán 5 – Tuần 1">
+            <label for="testSetSubject">Môn học</label><input id="testSetSubject" maxlength="80" placeholder="Toán">
+            <label for="testSetGrade">Khối lớp</label><input id="testSetGrade" maxlength="40" placeholder="Lớp 5">
+            <button type="submit">+ Tạo bộ đề</button>
+            <div class="status" id="testSetStatus" role="status" aria-live="polite"></div>
+          </form>
+          <div id="testSetList"></div>
+        </section>
+        <hr>
         <h3>Sao lưu và khôi phục dữ liệu</h3>
         <p class="muted">Lưu bản sao gồm lớp học, học sinh, ngân hàng câu hỏi, bộ đề, bài tập, điểm số và lịch sử điểm của tài khoản này.</p>
         <button id="backupBtn" type="button">Tải bản sao lưu dữ liệu (.json)</button>
