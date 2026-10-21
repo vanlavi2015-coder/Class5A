@@ -233,7 +233,7 @@ app.get('/api/health', (_req, res) => res.json({
   demoMode: DEMO_MODE,
   syntheticDataOnly: true,
   database: 'sqlite',
-  schemaVersion: 1
+  schemaVersion: 3
 }));
 
 function ownedClassIds(userId) {
@@ -270,7 +270,8 @@ app.get('/api/backup', authenticate, requireTeacher, (req, res) => {
       test_set_questions: testQuestionRows,
       assignments,
       scores: inRows('scores', 'assignment_id', assignmentIds),
-      point_transactions: inRows('point_transactions', 'class_id', classIds)
+      point_transactions: inRows('point_transactions', 'class_id', classIds),
+      audit_events: db.prepare('SELECT action,entity_type,entity_id,created_at FROM audit_events WHERE actor_user_id=? ORDER BY id').all(req.user.id)
     }
   };
   audit(req.user.id, 'export_backup', 'backup');
@@ -284,7 +285,7 @@ app.post('/api/backup/restore', authenticate, requireTeacher, (req, res) => {
   if (!backup || backup.format !== 'LAVI2_BACKUP' || backup.version !== 1 || !backup.data || typeof backup.data !== 'object') {
     return res.status(400).json({ error: 'Tệp sao lưu không đúng định dạng LAVI 2.0.' });
   }
-  const allowed = ['classes','students','question_banks','questions','test_sets','test_set_questions','assignments','scores','point_transactions'];
+  const allowed = ['classes','students','question_banks','questions','test_sets','test_set_questions','assignments','scores','point_transactions','audit_events'];
   for (const key of allowed) {
     if (!Array.isArray(backup.data[key])) return res.status(400).json({ error: 'Tệp sao lưu thiếu dữ liệu hợp lệ: ' + key });
     if (backup.data[key].length > 50000) return res.status(413).json({ error: 'Tệp sao lưu quá lớn.' });
@@ -343,6 +344,10 @@ app.post('/api/backup/restore', authenticate, requireTeacher, (req, res) => {
       if (!classMap.has(row.class_id) || !studentMap.has(row.student_id)) continue;
       db.prepare('INSERT INTO point_transactions(id,owner_user_id,class_id,student_id,points,reason,created_at) VALUES(?,?,?,?,?,?,?)')
         .run(remapId(row.id), req.user.id, classMap.get(row.class_id), studentMap.get(row.student_id), Number(row.points) || 0, String(row.reason || '').slice(0,500), row.created_at || new Date().toISOString());
+    }
+    for (const row of backup.data.audit_events) {
+      db.prepare('INSERT INTO audit_events(actor_user_id,action,entity_type,entity_id,created_at) VALUES(?,?,?,?,?)')
+        .run(req.user.id, String(row.action || 'restored').slice(0,80), String(row.entity_type || 'record').slice(0,80), row.entity_id ? String(row.entity_id).slice(0,100) : null, row.created_at || new Date().toISOString());
     }
     audit(req.user.id, 'restore_backup', 'backup');
     db.exec('COMMIT');
