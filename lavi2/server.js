@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('node:path');
+const { randomUUID } = require('node:crypto');
 const fs = require('node:fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -241,6 +242,29 @@ app.post('/api/login', (req, res) => {
 
 app.get('/api/me', authenticate, (req, res) => {
   res.json({ user: { id: req.user.id, username: req.user.username, role: req.user.role, displayName: req.user.display_name } });
+});
+
+app.post('/api/classes', authenticate, requireTeacher, (req, res) => {
+  const name = String(req.body?.name || '').trim().replace(/\\s+/g, ' ');
+  const schoolName = String(req.body?.schoolName || '').trim().replace(/\\s+/g, ' ');
+  if (name.length < 2 || name.length > 80) {
+    return res.status(400).json({ error: 'Tên lớp cần từ 2 đến 80 ký tự.' });
+  }
+  if (schoolName.length < 2 || schoolName.length > 120) {
+    return res.status(400).json({ error: 'Tên trường cần từ 2 đến 120 ký tự.' });
+  }
+  const id = randomUUID();
+  try {
+    db.prepare('INSERT INTO classes(id,owner_user_id,name,school_name) VALUES(?,?,?,?)')
+      .run(id, req.user.id, name, schoolName);
+    audit(req.user.id, 'create', 'class', id);
+    res.status(201).json({ class: { id, name, schoolName, studentCount: 0 } });
+  } catch (err) {
+    if (err && err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: 'Thầy cô đã có lớp cùng tên trong tài khoản này.' });
+    }
+    throw err;
+  }
 });
 
 app.get('/api/classes', authenticate, requireTeacher, (req, res) => {
