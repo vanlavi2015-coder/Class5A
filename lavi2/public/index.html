@@ -138,8 +138,9 @@
           </form>
           <div class="class" id="importQuestionPanel">
             <h4>Nhập câu hỏi từ Excel / Word</h4>
-            <p class="muted">Excel dùng đúng mẫu 7 cột của LAVI. Word hỗ trợ .docx để trích nội dung làm nguồn cho AI.</p>
-            <a href="/api/question-template.xlsx" download>Tải mẫu Excel câu hỏi LAVI</a>
+            <p class="muted">Để nhập bài: tải mẫu Excel, điền 7 cột theo đúng thứ tự, lưu tệp rồi mở một ngân hàng câu hỏi và chọn tệp để nhập. Cột “Đáp án đúng” ghi A, B, C hoặc D. Mỗi dòng là một câu.</p>
+            <a href="/api/question-template.xlsx" download>Tải mẫu Excel câu hỏi LAVI (.xlsx)</a>
+            <p class="muted">Nếu chưa có ngân hàng, tạo ngân hàng ở phía trên trước. Tệp .docx dùng làm tài liệu nguồn cho AI, không phải mẫu nhập câu hỏi trực tiếp.</p>
             <label for="questionImportFile">Chọn tệp Excel/CSV/Word/TXT</label>
             <input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv,.docx,.txt,.md">
             <button id="importQuestionsBtn" type="button">Nhập câu hỏi từ tệp</button>
