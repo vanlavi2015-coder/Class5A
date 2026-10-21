@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LAVI 2.0 — Trang chủ giáo viên</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#f4f7fb}
+    *{box-sizing:border-box}body{margin:0}.top{padding:22px max(20px,calc((100% - 1040px)/2));background:#183b68;color:white}
+    .top h1{margin:0;font-size:27px}.top p{margin:6px 0 0;color:#dce8fa}
+    main{max-width:1040px;margin:24px auto;padding:0 18px}.notice{padding:13px 16px;border:1px solid #e6c56a;background:#fff8df;border-radius:12px;margin-bottom:18px}
+    .grid{display:grid;grid-template-columns:340px 1fr;gap:18px}.panel{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:20px;box-shadow:0 4px 16px #1d35570b}
+    label{display:block;font-weight:650;margin:12px 0 6px}input{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}
+    button{border:0;border-radius:9px;padding:11px 14px;background:#2158a5;color:white;font:inherit;font-weight:700;cursor:pointer;margin-top:12px;width:100%}
+    button.secondary{background:#e9eff8;color:#183b68}.muted{color:#64748b;font-size:13px}.status{min-height:24px;color:#9a3412;margin-top:8px;white-space:pre-wrap}
+    .class{border:1px solid #dce5f1;border-radius:12px;padding:14px;margin:10px 0;cursor:pointer}.class:hover{background:#f6f9ff}.class h3{margin:0 0 5px;font-size:17px}
+    table{width:100%;border-collapse:collapse;margin-top:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e2e8f0}th{background:#f7f9fc}
+    .hidden{display:none}.tag{display:inline-block;padding:4px 8px;border-radius:99px;background:#e9f3ff;color:#174785;font-size:12px;font-weight:700}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.tabs button{margin:0}.tabs button[aria-pressed="true"]{background:#183b68;color:white}.tabs button[aria-pressed="false"]{background:#e9eff8;color:#183b68}
+    .small-note{font-size:12px;line-height:1.5;color:#64748b;margin-top:12px}
+    @media(max-width:720px){.grid{grid-template-columns:1fr}.top h1{font-size:22px}}
+  
+    :root{--lavi-primary:#4f46e5;--lavi-purple:#7c3aed;--lavi-ink:#172033;--lavi-muted:#667085;--lavi-bg:#f4f6fb;--lavi-line:#e4e7ec}
+    #workspace.hidden{display:none!important}
+    #workspace{position:fixed;inset:0;z-index:1000;display:flex;background:var(--lavi-bg);color:var(--lavi-ink);overflow:hidden;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+    .lavi-sidebar{width:250px;flex:0 0 250px;background:#111827;color:#f8fafc;padding:20px 14px;display:flex;flex-direction:column;overflow-y:auto}
+    .lavi-brand{display:flex;align-items:center;gap:11px;padding:2px 8px 26px}.brand-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:24px;font-weight:950;color:#fff}.lavi-brand strong{font-size:22px;letter-spacing:.3px}.lavi-brand em{font-style:normal;color:#a5b4fc}.lavi-brand small{display:block;font-size:9px;letter-spacing:1.2px;color:#9ca3af;margin-top:3px}
+    .lavi-menu-label{font-size:10px;letter-spacing:1.3px;color:#9ca3af;padding:0 12px 9px;font-weight:800}.lavi-nav{display:grid;gap:5px}.lavi-nav button{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:11px;padding:12px;background:transparent;color:#d1d5db;text-align:left;font:inherit;cursor:pointer;margin:0}.lavi-nav button span{font-size:19px;width:24px;text-align:center}.lavi-nav button b{font-size:13px;font-weight:700}.lavi-nav button:hover,.lavi-nav button.active{background:#312e81;color:#fff}.lavi-sidebar-note{display:flex;gap:10px;margin-top:auto;margin-bottom:12px;background:#1f2937;border:1px solid #374151;border-radius:12px;padding:12px}.lavi-sidebar-note>span{font-size:20px}.lavi-sidebar-note strong,.lavi-sidebar-note small{display:block}.lavi-sidebar-note strong{font-size:11px}.lavi-sidebar-note small{font-size:10px;color:#d1d5db;line-height:1.5;margin-top:4px}.lavi-logout{width:100%;border:1px solid #374151;border-radius:10px;background:#1f2937;color:#f9fafb;padding:11px;margin:0;text-align:left;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+    .lavi-main{min-width:0;flex:1;overflow-y:auto}.lavi-topbar{min-height:96px;background:#fff;border-bottom:1px solid var(--lavi-line);display:flex;align-items:center;justify-content:space-between;gap:14px;padding:20px 30px}.lavi-topbar h1{font-size:24px;margin:3px 0 2px}.lavi-topbar .muted{margin:0;font-size:12px}.lavi-eyebrow{font-size:10px;font-weight:850;letter-spacing:1.2px;color:var(--lavi-primary)}.lavi-version{font-size:11px;font-weight:850;color:#4338ca;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:7px 11px;white-space:nowrap}.lavi-content{max-width:1450px;margin:0 auto;padding:24px 30px 18px}.notice{padding:12px 15px;border:1px solid #f4d27c;background:#fffbeb;color:#92400e;border-radius:12px;margin-bottom:23px;font-size:12px;line-height:1.55}.lavi-view{display:none}.lavi-view.active{display:block}.view-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.view-heading h2{font-size:22px;margin:0 0 5px}.view-heading p{font-size:13px;color:var(--lavi-muted);margin:0}.view-chip{background:#fff;border:1px solid var(--lavi-line);border-radius:999px;padding:8px 11px;font-size:11px;font-weight:800;white-space:nowrap}.lavi-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:17px}.lavi-kpi{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid var(--lavi-line);border-radius:15px;padding:16px;box-shadow:0 3px 12px #10182808}.lavi-kpi>span{display:grid;place-items:center;width:42px;height:42px;background:#eef2ff;border-radius:12px;font-size:21px}.lavi-kpi strong,.lavi-kpi small{display:block}.lavi-kpi strong{font-size:25px;font-weight:900}.lavi-kpi small{font-size:11px;color:var(--lavi-muted);margin-top:2px}.lavi-panel{background:#fff;border:1px solid var(--lavi-line);border-radius:16px;padding:20px;box-shadow:0 3px 12px #10182806}.lavi-panel>h3{margin-top:0;font-size:18px}.lavi-panel hr{border:0;border-top:1px solid var(--lavi-line);margin:22px 0}.lavi-panel button{width:auto;max-width:100%}.lavi-panel .class{background:#fff}.lavi-panel input,.lavi-panel select,.lavi-panel textarea{max-width:100%}.lavi-panel .status{overflow-wrap:anywhere}.lavi-footer{text-align:center;padding:22px 10px 5px;font-size:11px;color:#98a2b3}.lavi-mobile-menu{display:none!important}
+    @media(max-width:980px){.lavi-sidebar{width:220px;flex-basis:220px}.lavi-content{padding:20px}.lavi-topbar{padding:18px 20px}.lavi-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:650px){#workspace{display:block;overflow:auto}.lavi-sidebar{position:fixed;z-index:1100;inset:0 auto 0 0;width:270px;transform:translateX(-105%);transition:transform .2s ease;box-shadow:12px 0 35px #0f172a33}.lavi-sidebar.open{transform:translateX(0)}.lavi-main{min-height:100%;overflow:visible}.lavi-topbar{padding:13px 14px;min-height:82px;align-items:flex-start}.lavi-topbar h1{font-size:18px}.lavi-version{display:none}.lavi-mobile-menu{display:block!important;flex:0 0 38px;width:38px;height:38px;padding:0;border-radius:10px;background:#eef2ff;color:#3730a3;margin:0;border:1px solid #c7d2fe;font-size:19px}.lavi-topbar>div{flex:1;min-width:0}.lavi-content{padding:14px 12px 28px}.view-heading{align-items:flex-start}.view-heading h2{font-size:19px}.view-chip{display:none}.lavi-kpi-grid{gap:8px}.lavi-kpi{padding:11px;gap:9px}.lavi-kpi>span{width:34px;height:34px;font-size:17px}.lavi-kpi strong{font-size:21px}.lavi-kpi small{font-size:10px}.lavi-panel{padding:13px;border-radius:13px}.lavi-panel .grid{grid-template-columns:1fr}.lavi-panel table{display:block;overflow-x:auto;max-width:100%}.lavi-sidebar-note{margin-top:25px}}
+
+
+    /* LAVI 2.0 visual refinement: clearer lesson builder and LAVI-like login */
+    #authPanel{border:1px solid #e0e7ff;background:linear-gradient(145deg,#fff 0%,#f8faff 100%);box-shadow:0 18px 50px #312e8110}
+    #authPanel h2{font-size:25px;letter-spacing:-.4px;color:#1e1b4b}
+    #authPanel .tag{background:#eef2ff;color:#4338ca}
+    #authPanel .tabs{background:#eef2ff;padding:5px;border-radius:13px;gap:5px}
+    #authPanel .tabs button{border-radius:9px;padding:10px 12px;font-size:13px}
+    #authPanel .tabs button[aria-pressed="true"]{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;box-shadow:0 4px 10px #4f46e533}
+    #authPanel input{background:#fff;border-color:#d0d5ff}
+    #authPanel #submitBtn{width:100%;margin-top:18px;background:linear-gradient(135deg,#4f46e5,#7c3aed);box-shadow:0 6px 16px #4f46e526}
+    #welcome{border-radius:18px;background:linear-gradient(145deg,#171c35,#312e81);color:#fff;min-height:100%;padding:28px}
+    #welcome h2{font-size:26px;line-height:1.25}
+    #welcome p{color:#e0e7ff;line-height:1.7}
+    #welcome .muted{color:#c7d2fe}
+    #questionsView .lavi-panel{padding:22px}
+    #questionsView #learningTools>h3{font-size:21px;margin-bottom:5px}
+    #questionsView #bankForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 14px;align-items:end;background:#f8faff;border:1px solid #e0e7ff;border-radius:14px;padding:16px;margin:16px 0}
+    #questionsView #bankForm label{margin-top:0}
+    #questionsView #bankForm button,#questionsView #bankForm .status{grid-column:1/-1}
+    #questionsView #bankForm button{justify-self:start;margin-top:2px}
+    #questionsView #importQuestionPanel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;background:#fff;border:1px solid #e0e7ff;border-radius:15px;padding:18px;margin-top:16px;cursor:default}
+    #questionsView #importQuestionPanel>h4,#questionsView #importQuestionPanel>p,#questionsView #importQuestionPanel>hr,#questionsView #importQuestionPanel>#aiDraftList,#questionsView #importQuestionPanel>#saveAIDraftsBtn{grid-column:1/-1}
+    #questionsView #importQuestionPanel>h4{margin:0;color:#312e81;font-size:16px}
+    #questionsView #importQuestionPanel>p{margin:0}
+    #questionsView #importQuestionPanel label{margin-top:4px}
+    #questionsView #importQuestionPanel select,#questionsView #importQuestionPanel input[type=file],#questionsView #importQuestionPanel input[type=number]{width:100%;min-width:0}
+    #questionsView #importQuestionPanel>a{align-self:center}
+    #questionsView #importQuestionPanel hr{width:100%;border:0;border-top:1px solid #e4e7ec;margin:12px 0}
+    #questionsView #questionEditor{margin-top:18px;padding:20px;border:1px solid #c7d2fe;border-radius:15px;background:#fbfbff}
+    #questionsView #questionForm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
+    #questionsView #questionForm>label,#questionsView #questionForm>textarea,#questionsView #questionForm>#questionOptionsField,#questionsView #questionForm>#questionAnswer,#questionsView #questionForm>#questionExplanation,#questionsView #questionForm>button,#questionsView #questionForm>.status{grid-column:1/-1}
+    #questionsView #questionForm>label{margin-bottom:0}
+    #questionsView #questionForm input,#questionsView #questionForm select,#questionsView #questionForm textarea{width:100%;min-width:0}
+    #questionsView #questionForm #questionType{grid-column:1/-1;max-width:360px}
+    #questionsView #questionOptionsField{display:grid;gap:6px}
+    #questionsView #bankList .class{cursor:default}
+    #questionsView #bankList button{margin:4px 6px 4px 0}
+    @media(max-width:760px){
+      #questionsView #bankForm{grid-template-columns:1fr}
+      #questionsView #importQuestionPanel{grid-template-columns:1fr;padding:14px}
+      #questionsView #importQuestionPanel>*{grid-column:1!important}
+      #questionsView #questionForm{grid-template-columns:1fr}
+      #questionsView #questionForm>*{grid-column:1!important}
+      #authPanel h2{font-size:22px}
+      #welcome{padding:22px}
+    }
+
+
+    #questionsView .lavi-panel{padding:22px}
+    #questionsView #learningTools{display:flex;flex-direction:column;gap:18px}
+    #questionsView #learningTools>h3{font-size:21px;margin:0}
+    #questionsView #learningTools>p.muted{margin:-13px 0 0}
+    #questionsView .workflow-label{display:flex;align-items:flex-start;gap:11px;margin:0 0 12px}
+    #questionsView .workflow-label .step-number{flex:0 0 32px;width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:#eef2ff;color:#4338ca;font-weight:900}
+    #questionsView .workflow-label h4{font-size:16px;margin:0 0 4px;color:#20284a}
+    #questionsView .workflow-label p{font-size:12px;line-height:1.5;color:#667085;margin:0}
+    #questionsView #bankForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;padding:16px;border:1px dashed #c7cbea;border-radius:14px;background:#fafaff}
+    #questionsView #bankForm label{margin-top:0}
+    #questionsView #bankForm input{width:100%;min-width:0}
+    #questionsView #bankForm button,#questionsView #bankForm .status{grid-column:1/-1;justify-self:start}
+    #questionsView #bankList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    #questionsView #bankList .class{margin:0;padding:14px;border:1px solid #dfe3f5;border-radius:13px;background:#fff;cursor:default;min-width:0}
+    #questionsView #bankList .class h3{overflow-wrap:anywhere;font-size:14px}
+    #questionsView #bankList button{width:100%;margin-top:10px;background:#eef2ff;color:#3730a3}
+    #questionsView #importQuestionPanel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;padding:18px;border:1px solid #e0e7ff;border-radius:15px;background:#fff}
+    #questionsView #importQuestionPanel>h4,#questionsView #importQuestionPanel>p,#questionsView #importQuestionPanel>hr,#questionsView #importQuestionPanel>#aiDraftList,#questionsView #importQuestionPanel>#saveAIDraftsBtn{grid-column:1/-1}
+    #questionsView #importQuestionPanel>h4{margin:0;color:#312e81;font-size:16px}
+    #questionsView #importQuestionPanel>p{margin:0}
+    #questionsView #importQuestionPanel label{margin-top:4px}
+    #questionsView #importQuestionPanel select,#questionsView #importQuestionPanel input[type=file],#questionsView #importQuestionPanel input[type=number]{width:100%;min-width:0;max-width:100%}
+    #questionsView #importQuestionPanel>a{align-self:center}
+    #questionsView #importQuestionPanel hr{width:100%;border:0;border-top:1px solid #e4e7ec;margin:12px 0}
+    #questionsView #questionEditor{padding:18px;border:1px solid #c7d2fe;border-radius:15px;background:#fbfbff}
+    #questionsView #questionForm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
+    #questionsView #questionForm>label,#questionsView #questionForm>textarea,#questionsView #questionForm>#questionOptionsField,#questionsView #questionForm>#questionAnswer,#questionsView #questionForm>button,#questionsView #questionForm>.status{grid-column:1/-1}
+    #questionsView #questionForm>label{margin-bottom:0}
+    #questionsView #questionForm input,#questionsView #questionForm select,#questionsView #questionForm textarea{width:100%;min-width:0;max-width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;background:white}
+    #questionsView #questionOptionsField{display:grid;gap:5px}
+    @media(max-width:760px){#questionsView .lavi-panel{padding:14px}#questionsView #bankForm{grid-template-columns:1fr}#questionsView #bankList{grid-template-columns:1fr}#questionsView #importQuestionPanel{grid-template-columns:1fr;padding:14px}#questionsView #importQuestionPanel>*{grid-column:1!important}#questionsView #questionForm{grid-template-columns:1fr}#questionsView #questionForm>*{grid-column:1!important}}
+
+
+
+    /* Dashboard refresh: lively but teacher-focused */
+    .lavi-topbar{background:linear-gradient(115deg,#fff 0%,#f2f0ff 55%,#f4f8ff 100%)}
+    .lavi-content{padding-top:22px}
+    #classesView .view-heading{padding:20px 22px;border-radius:18px;background:linear-gradient(115deg,#5546d8 0%,#7c3aed 58%,#a855f7 100%);color:#fff;margin-bottom:17px;box-shadow:0 10px 24px #6d28d91c}
+    #classesView .view-heading h2{font-size:25px;letter-spacing:-.4px}
+    #classesView .view-heading p{color:#ede9fe}
+    #classesView .view-chip{background:#ffffff20;border-color:#ffffff45;color:#fff}
+    #classesView .lavi-kpi{transition:transform .18s,box-shadow .18s;border-radius:16px}
+    #classesView .lavi-kpi:hover{transform:translateY(-2px);box-shadow:0 9px 22px #4338ca12}
+    #classRegistrationPanel{overflow:hidden}
+    #classRegistrationPanel .class-panel-heading{padding-bottom:12px;border-bottom:1px solid #edf0f7}
+    #classRegistrationPanel .class-panel-heading h3{font-size:19px}
+    #createClassForm.class-create-form{display:none!important}
+    #createClassForm.class-create-form.is-open{display:block!important}
+    #classList .class{position:relative;border-radius:14px;cursor:pointer}
+    #classList .class:focus-visible{outline:3px solid #a5b4fc;outline-offset:2px}
+    #selectedClassWorkspace .class-home-hero{background:linear-gradient(115deg,#5145cd,#7c3aed 65%,#a855f7);color:white;border:0;box-shadow:0 10px 24px #6d28d91c}
+    #selectedClassWorkspace .class-home-hero p{color:#ede9fe}
+    #selectedClassWorkspace .class-home-hero .secondary{background:#fff;color:#4338ca}
+    #selectedClassWorkspace .class-home-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+    #selectedClassWorkspace .class-home-action{transition:transform .16s,box-shadow .16s;border-radius:15px}
+    #selectedClassWorkspace .class-home-action:hover{transform:translateY(-2px);box-shadow:0 8px 22px #4338ca12;border-color:#c4b5fd}
+    #selectedClassWorkspace .class-home-action span{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:13px;background:#eef2ff}
+    #studentsArea{margin-top:16px}
+    @media(max-width:650px){#classesView .view-heading{padding:16px;border-radius:14px}#classesView .view-heading h2{font-size:21px}#selectedClassWorkspace .class-home-actions{grid-template-columns:1fr}}
+
+    .class-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}.class-panel-heading h3{margin:0}.compact-toggle{margin:0!important;white-space:nowrap;padding:9px 12px!important}.class-create-form{display:none;padding:12px 14px;margin:10px 0 16px;background:#f8faff;border:1px solid #e4e7ec;border-radius:12px}.class-create-form.is-open{display:block}.class-create-form label:first-child{margin-top:0}#classList .class{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px;margin:10px 0;border-color:#dbe4f4;transition:background .15s,border-color .15s}#classList .class:hover{background:#f5f7ff;border-color:#a5b4fc}#classList .class h3{margin:0 0 5px}#classList .class p{margin:0}#classList .class:after{content:"Vào lớp →";flex:0 0 auto;color:#4338ca;font-size:12px;font-weight:800}#selectedClassWorkspace{margin-top:16px}#selectedClassWorkspace .class-home-hero{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px;background:linear-gradient(120deg,#eef2ff,#faf5ff);border:1px solid #ddd6fe;border-radius:15px;margin-bottom:16px}#selectedClassWorkspace .class-home-hero h3{font-size:22px;margin:0 0 5px}#selectedClassWorkspace .class-home-hero p{margin:0;color:#667085;font-size:13px}#selectedClassWorkspace .class-home-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}#selectedClassWorkspace .class-home-action{border:1px solid #e4e7ec;background:#fff;border-radius:13px;padding:16px;cursor:pointer;text-align:left;color:#172033}#selectedClassWorkspace .class-home-action strong{display:block;margin:6px 0;font-size:14px}#selectedClassWorkspace .class-home-action small{display:block;color:#667085;line-height:1.5}#selectedClassWorkspace .class-home-action span{font-size:22px}@media(max-width:650px){.class-panel-heading{align-items:flex-start}.class-create-form{padding:10px}#selectedClassWorkspace .class-home-hero{align-items:flex-start;flex-direction:column}#selectedClassWorkspace .class-home-actions{grid-template-columns:1fr}}
+    .data-table{width:100%;border-collapse:collapse;margin:14px 0;background:#fff;font-size:13px}
+    .data-table th,.data-table td{padding:10px 12px;border-bottom:1px solid #e6eaf2;text-align:left;vertical-align:top}
+    .data-table th{background:#f5f7ff;color:#3730a3;font-weight:750;white-space:nowrap}
+    .data-table tr:hover td{background:#fafbff}
+    #futureModuleContent{min-width:0;overflow-x:auto}
+    #futureModuleContent select{max-width:100%;min-width:220px}
+    @media(max-width:680px){.data-table{font-size:12px}.data-table th,.data-table td{padding:8px}.lavi-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.data-table{width:100%;border-collapse:collapse;margin:14px 0;background:#fff;font-size:13px}.data-table th,.data-table td{padding:10px 12px;border-bottom:1px solid #e6eaf2;text-align:left;vertical-align:top}.data-table th{background:#f5f7ff;color:#3730a3;font-weight:750;white-space:nowrap}#futureModuleContent{min-width:0;overflow-x:auto}#futureModuleContent textarea{display:block;max-width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}#futureModuleContent select{max-width:100%;min-width:220px}@media(max-width:680px){.data-table{font-size:12px}.data-table th,.data-table td{padding:8px}.lavi-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  </style>
+</head>
+<body>
+<header class="top"><h1>LAVI 2.0</h1><p>Không gian lớp học số dành cho giáo viên · Bản thử nghiệm</p></header>
+<main>
+  <div class="notice"><strong>Môi trường thử nghiệm:</strong> chỉ sử dụng dữ liệu giả lập. Tài khoản đăng ký trong bản này chưa được xác minh email/số điện thoại bằng OTP; không dùng cho dữ liệu học sinh thật.</div>
+  <div class="grid">
+    <section class="panel" id="authPanel">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><div class="brand-mark">L</div><div><span class="tag">LAVI 2.0</span><h2 id="authTitle" style="margin:7px 0 2px">Chào mừng thầy cô</h2><p class="muted" id="authSubtitle" style="margin:0">Đăng nhập không gian giáo viên bằng email hoặc số điện thoại.</p></div></div>
+      <div id="loginRoleTabs" class="tabs" style="margin-top:16px">
+        <button id="teacherRoleTab" type="button" aria-pressed="true">👩‍🏫 Giáo viên</button>
+        <button id="studentRoleTab" type="button" aria-pressed="false">🎒 Học sinh</button>
+      </div>
+      <div class="tabs">
+        <button id="loginTab" type="button" aria-pressed="true">Đăng nhập</button>
+        <button id="registerTab" type="button" aria-pressed="false">Đăng ký</button>
+      </div>
+      <form id="authForm">
+        <div id="nameField" class="hidden">
+          <label for="displayName">Họ và tên giáo viên</label>
+          <input id="displayName" name="displayName" autocomplete="name" maxlength="100" placeholder="Ví dụ: Nguyễn Văn A">
+        </div>
+        <label for="contact">Gmail hoặc số điện thoại</label>
+        <input id="contact" name="contact" autocomplete="username" maxlength="254" required placeholder="ten@gmail.com hoặc 09xxxxxxxx">
+        <label for="password">Mật khẩu</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="200" required placeholder="Tối thiểu 8 ký tự">
+        <div id="confirmField" class="hidden">
+          <label for="confirmPassword">Nhập lại mật khẩu</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="200" placeholder="Nhập lại mật khẩu">
+        </div>
+        <button id="submitBtn" type="submit">Đăng nhập</button>
+      </form>
+      <div class="status" id="authStatus" role="status" aria-live="polite"></div>
+      <p class="small-note" id="demoHelp">Tài khoản demo có sẵn: teacher1 hoặc teacher2 · Mật khẩu: Demo1234!</p>
+    </section>
+    <section class="panel">
+      <div id="welcome"><span class="tag">LAVI 2.0 · MVP</span><h2>Trang chủ giáo viên</h2><p>Sau khi đăng nhập, thầy cô sẽ vào không gian riêng để quản lý lớp học của mình.</p><p class="muted">Mỗi tài khoản giáo viên chỉ được xem dữ liệu thuộc tài khoản đó.</p></div>
+      <div id="workspace" class="hidden">
+        <aside class="lavi-sidebar">
+          <div class="lavi-brand"><span class="brand-mark">L</span><div><strong>LAVI <em>2.0</em></strong><small>KHÔNG GIAN GIÁO VIÊN</small></div></div>
+          <div class="lavi-menu-label">TỔNG QUAN</div>
+          <nav class="lavi-nav" aria-label="Điều hướng LAVI 2.0">
+            <button type="button" class="active" data-view="classesView"><span>📊</span><b>Tổng quan</b></button>
+            <button type="button" data-view="classesView"><span>🏫</span><b>Lớp học của tôi</b></button>
+          </nav>
+          <div class="lavi-menu-label">DẠY HỌC & ĐÁNH GIÁ</div>
+          <nav class="lavi-nav" aria-label="Dạy học và đánh giá">
+            <button type="button" data-view="questionsView"><span>🤖</span><b>Tạo bài & ngân hàng</b></button>
+            <button type="button" data-view="testsView"><span>📝</span><b>Bộ đề kiểm tra</b></button>
+            <button type="button" data-view="futureView" data-module="Bài đang giao"><span>📤</span><b>Bài đang giao</b></button>
+            <button type="button" data-view="futureView" data-module="Bài nộp & chấm điểm"><span>📥</span><b>Bài nộp & chấm điểm</b></button>
+            <button type="button" data-view="futureView" data-module="Thống kê học tập"><span>📈</span><b>Thống kê học tập</b></button>
+            <button type="button" data-view="futureView" data-module="Xếp loại tháng"><span>🏆</span><b>Xếp loại tháng</b></button>
+            <button type="button" data-view="futureView" data-module="Phạm vi kiến thức"><span>🗂️</span><b>Phạm vi kiến thức</b></button>
+            <button type="button" data-view="futureView" data-module="Trợ lý VnEdu"><span>🔗</span><b>Trợ lý VnEdu</b></button>
+          </nav>
+          <div class="lavi-menu-label">NĂNG LỰC SỐ</div>
+          <nav class="lavi-nav" aria-label="Phát triển năng lực số">
+            <button type="button" data-view="futureView" data-module="Trung tâm năng lực số"><span>💻</span><b>Trung tâm năng lực số</b></button>
+            <button type="button" data-view="futureView" data-module="Phân nhóm học sinh"><span>👥</span><b>Phân nhóm học sinh</b></button>
+            <button type="button" data-view="futureView" data-module="Nhiệm vụ năng lực số"><span>🧩</span><b>Giao nhiệm vụ số</b></button>
+            <button type="button" data-view="futureView" data-module="Sản phẩm học sinh"><span>📁</span><b>Sản phẩm học sinh</b></button>
+            <button type="button" data-view="futureView" data-module="AI đánh giá năng lực số"><span>✨</span><b>AI gợi ý đánh giá</b></button>
+          </nav>
+          <div class="lavi-menu-label">HỌC SINH & ĐỘNG LỰC</div>
+          <nav class="lavi-nav" aria-label="Học sinh và động lực">
+            <button type="button" data-view="futureView" data-module="Danh sách học sinh"><span>👩‍🎓</span><b>Học sinh</b></button>
+            <button type="button" data-view="futureView" data-module="Sao thưởng & khen thưởng"><span>⭐</span><b>Sao & Khen</b></button>
+            <button type="button" data-view="futureView" data-module="Trò chơi kiến thức"><span>🎮</span><b>Trò chơi kiến thức</b></button>
+            <button type="button" data-view="futureView" data-module="Trò chơi & xếp hạng"><span>🏆</span><b>Trò chơi & Xếp hạng</b></button>
+          </nav>
+          <div class="lavi-menu-label">BÁO CÁO & HỆ THỐNG</div>
+          <nav class="lavi-nav" aria-label="Báo cáo và hệ thống">
+            <button type="button" data-view="futureView" data-module="Lịch lớp học"><span>🗓️</span><b>Lịch</b></button>
+            <button type="button" data-view="futureView" data-module="Thống kê học tập"><span>📈</span><b>Thống kê</b></button>
+            <button type="button" data-view="futureView" data-module="Xếp loại tháng"><span>🥇</span><b>Xếp loại tháng</b></button>
+            <button type="button" data-view="backupView"><span>💾</span><b>Sao lưu dữ liệu</b></button>
+            <button type="button" data-view="futureView" data-module="Tài khoản giáo viên"><span>⚙️</span><b>Tài khoản</b></button>
+          </nav>
+          <div class="lavi-sidebar-note"><span>🛡️</span><div><strong>Bản thử nghiệm an toàn</strong><small>Chỉ dùng dữ liệu giả lập. Không nhập dữ liệu học sinh thật.</small></div></div>
+          <button class="lavi-logout" id="sidebarLogoutBtn" type="button">↪ Đăng xuất</button>
+        </aside>
+        <div class="lavi-main">
+          <header class="lavi-topbar">
+            <button id="mobileMenuBtn" type="button" class="lavi-mobile-menu" aria-label="Mở menu">☰</button>
+            <div><div class="lavi-eyebrow">NỀN TẢNG LỚP HỌC SỐ</div><h1 id="greeting">Trang chủ giáo viên</h1><p id="accountNotice" class="muted"></p></div>
+            <span class="lavi-version">BETA · 2.0</span>
+          </header>
+          <div class="lavi-content">
+            <div class="notice"><strong>🔒 Môi trường thử nghiệm:</strong> chỉ sử dụng dữ liệu giả lập. Tài khoản chưa xác minh email/số điện thoại bằng OTP; không dùng dữ liệu học sinh thật.</div>
+            <section id="classesView" class="lavi-view active">
+              <div class="view-heading"><div><h2>Tổng quan lớp học</h2><p>Quản lý các lớp thuộc tài khoản của thầy cô.</p></div><span class="view-chip">🏫 Lớp học của tôi</span></div>
+              <div class="lavi-kpi-grid"><div class="lavi-kpi"><span>📚</span><div><strong id="classCount">0</strong><small>Lớp học</small></div></div><div class="lavi-kpi"><span>👩‍🎓</span><div><strong id="studentCount">0</strong><small>Học sinh mẫu</small></div></div><div class="lavi-kpi"><span>🧠</span><div><strong id="bankCount">0</strong><small>Ngân hàng câu hỏi</small></div></div><div class="lavi-kpi"><span>📝</span><div><strong id="testCount">0</strong><small>Bộ đề</small></div></div></div>
+              <div class="lavi-panel" id="classRegistrationPanel">
+                <div class="class-panel-heading"><div><h3>Lớp học của tôi</h3><p class="muted">Tạo lớp một lần; sau đó chọn lớp để vào không gian quản lý riêng.</p></div><button type="button" id="toggleClassFormBtn" class="secondary compact-toggle">＋ Tạo lớp mới</button></div>
+        <form id="createClassForm" class="class-create-form">
+          <label for="newClassName">Tên lớp</label>
+          <input id="newClassName" maxlength="80" required placeholder="Ví dụ: Lớp 5A">
+          <label for="newSchoolName">Tên trường</label>
+          <input id="newSchoolName" maxlength="120" required placeholder="Tên trường của thầy cô">
+          <button type="submit">+ Tạo lớp mới</button>
+          <div class="status" id="classStatus" role="status" aria-live="polite"></div>
+        </form>
+        <div id="classList"></div>
+        <div id="studentsArea"></div>
+        <div id="selectedClassWorkspace" class="hidden"></div>
+              </div>
+            </section>
+            <section id="questionsView" class="lavi-view">
+              <div class="view-heading"><div><h2>Tạo bài & ngân hàng câu hỏi</h2><p>Nhập tài liệu, tạo câu hỏi và xem lại trước khi sử dụng.</p></div><span class="view-chip">🤖 AI hỗ trợ</span></div>
+              <div class="lavi-panel"><section id="learningTools">
+          <h3>Ngân hàng câu hỏi</h3>
+          <p class="muted">Tạo ngân hàng và thêm câu hỏi. Dữ liệu được lưu trong tài khoản giáo viên này.</p>
+          <form id="bankForm">
+            <label for="bankName">Tên ngân hàng</label><input id="bankName" maxlength="120" required placeholder="Ví dụ: Toán 5 – Đổi đơn vị diện tích">
+            <label for="bankSubject">Môn học</label><input id="bankSubject" maxlength="80" placeholder="Toán">
+            <label for="bankGrade">Khối lớp</label><input id="bankGrade" maxlength="40" placeholder="Lớp 5">
+            <button type="submit">+ Tạo ngân hàng câu hỏi</button>
+            <div class="status" id="bankStatus" role="status" aria-live="polite"></div>
+          </form>
+          <div class="class" id="importQuestionPanel">
+            <h4>1. Nhập bộ câu hỏi có sẵn</h4>
+            <p class="muted">Dùng Excel (.xlsx/.xls) hoặc CSV theo mẫu để nhập trực tiếp vào ngân hàng. Với Word hoặc tài liệu dài, dùng mục 2 để AI đọc tài liệu và tạo bản nháp.</p>
+            <label for="questionImportType">Dạng câu hỏi trong tệp mẫu</label>
+            <select id="questionImportType"><option value="abcd">Trắc nghiệm A/B/C/D</option><option value="true_false">Đúng / Sai</option><option value="fill_blank">Điền khuyết</option><option value="short">Trả lời ngắn</option><option value="multiple">Chọn nhiều đáp án</option><option value="matching">Nối cặp</option><option value="ordering">Sắp xếp</option></select>
+            <p><a id="questionTemplateLink" href="/api/question-template.xlsx?type=abcd" download>Tải mẫu Excel theo dạng câu hỏi đã chọn (.xlsx)</a></p>
+            <label for="questionImportFile">Chọn tệp Excel/CSV</label><input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv">
+            <button id="importQuestionsBtn" type="button">Nhập câu hỏi vào ngân hàng đang mở</button>
+            <div class="status" id="importStatus" role="status" aria-live="polite"></div>
+            <hr>
+            <h4>2. Tạo câu hỏi bằng AI từ tài liệu Word hoặc tài liệu nguồn</h4>
+            <p class="muted">Tải tài liệu đã cung cấp; AI sẽ tạo bản nháp bám sát nội dung nguồn. Giáo viên xem lại và chọn câu hỏi cần lưu.</p>
+            <label for="aiSourceFile">Tài liệu nguồn (.docx, .xlsx, .xls, .csv, .txt, .md)</label>
+            <input id="aiSourceFile" type="file" accept=".docx,.xlsx,.xls,.csv,.txt,.md">
+            <label for="aiQuestionCount">Số câu hỏi muốn tạo (1–30)</label>
+            <input id="aiQuestionCount" type="number" min="1" max="30" value="10">
+            <button id="generateAIQuestionsBtn" type="button">AI tạo bản nháp từ tài liệu</button>
+            <div class="status" id="aiStatus" role="status" aria-live="polite"></div>
+            <div id="aiDraftList"></div>
+            <button id="saveAIDraftsBtn" type="button" class="secondary hidden">Lưu các câu đã chọn vào ngân hàng</button>
+          </div>
+          <div id="bankList"></div>
+          <div id="questionEditor" class="hidden">
+            <hr><h4 id="questionEditorTitle">Thêm câu hỏi</h4>
+            <form id="questionForm">
+              <label for="questionType">Loại câu hỏi</label>
+              <select id="questionType"><option value="abcd">Trắc nghiệm A/B/C/D</option><option value="true_false">Đúng / Sai</option><option value="short">Trả lời ngắn</option><option value="fill_blank">Điền khuyết</option><option value="multiple">Chọn nhiều đáp án</option><option value="matching">Nối cặp</option><option value="ordering">Sắp xếp</option></select>
+              <label for="questionPrompt">Nội dung câu hỏi</label><textarea id="questionPrompt" maxlength="5000" required rows="3" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></textarea>
+              <div id="questionOptionsField"><label id="questionOptionsLabel" for="questionOptions">Các phương án (mỗi dòng một phương án)</label><textarea id="questionOptions" rows="4" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit" placeholder="A. ...&#10;B. ...&#10;C. ...&#10;D. ..."></textarea><small id="questionOptionsHelp" class="muted">Dùng cho câu hỏi trắc nghiệm.</small></div>
+              <label for="questionAnswer" id="questionAnswerLabel">Đáp án đúng</label><input id="questionAnswer" required placeholder="Ví dụ: B hoặc 125">
+              <label for="questionExplanation">Giải thích (không bắt buộc)</label><textarea id="questionExplanation" rows="2" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit"></textarea>
+              <button type="submit">Lưu câu hỏi</button>
+              <div class="status" id="questionStatus" role="status" aria-live="polite"></div>
+            </form>
+            <div id="questionsInBank"></div>
+          </div>
+        </section></div>
+            </section>
+            <section id="testsView" class="lavi-view">
+              <div class="view-heading"><div><h2>Bộ đề kiểm tra</h2><p>Tạo bộ đề và bổ sung câu hỏi từ ngân hàng riêng.</p></div><span class="view-chip">📝 Đánh giá</span></div>
+              <div class="lavi-panel"><section id="testTools">
+          <h3>Bộ đề kiểm tra</h3>
+          <p class="muted">Tạo bộ đề rồi thêm câu hỏi từ ngân hàng của cô.</p>
+          <form id="testSetForm">
+            <label for="testSetName">Tên bộ đề</label><input id="testSetName" maxlength="120" required placeholder="Ví dụ: Kiểm tra Toán 5 – Tuần 1">
+            <label for="testSetSubject">Môn học</label><input id="testSetSubject" maxlength="80" placeholder="Toán">
+            <label for="testSetGrade">Khối lớp</label><input id="testSetGrade" maxlength="40" placeholder="Lớp 5">
+            <button type="submit">+ Tạo bộ đề</button>
+            <div class="status" id="testSetStatus" role="status" aria-live="polite"></div>
+          </form>
+          <div id="testSetList"></div>
+        </section></div>
+            </section>
+            <section id="futureView" class="lavi-view">
+              <div class="view-heading"><div><h2 id="futureViewTitle">Mô-đun đang phát triển</h2><p id="futureViewSubtitle">Khung giao diện được chuẩn bị theo cấu trúc LAVI hiện tại.</p></div><span class="view-chip">🧩 LAVI 2.0</span></div>
+              <div class="lavi-panel" id="futureModuleContent">
+                <h3 id="futureModuleName">Chức năng đang được hoàn thiện</h3>
+                <p id="futureModuleDescription">Mục này đã có trong thanh điều hướng để thống nhất cấu trúc giao diện. Chức năng thực tế sẽ được xây dựng và kiểm thử trước khi mở sử dụng.</p>
+                <div class="class"><strong>Trạng thái: Chưa kết nối chức năng</strong><p class="muted">Không có dữ liệu giả vờ hoặc nút thao tác chưa hoạt động. Khi mô-đun được triển khai, mục này sẽ được thay bằng chức năng thật.</p></div>
+                <button type="button" class="secondary" data-go-view="classesView">← Quay lại tổng quan</button>
+              </div>
+            </section>
+            <section id="backupView" class="lavi-view">
+              <div class="view-heading"><div><h2>Sao lưu & khôi phục</h2><p>Bảo vệ dữ liệu trong không gian riêng của giáo viên.</p></div><span class="view-chip">🛡️ An toàn dữ liệu</span></div>
+              <div class="lavi-panel"><h3>Sao lưu và khôi phục dữ liệu</h3>
+        <p class="muted">Lưu bản sao gồm lớp học, học sinh, ngân hàng câu hỏi, bộ đề, bài tập, điểm số và lịch sử điểm của tài khoản này.</p>
+        <button id="backupBtn" type="button">Tải bản sao lưu dữ liệu (.json)</button>
+        <label for="restoreFile">Khôi phục từ tệp sao lưu LAVI 2.0</label>
+        <input id="restoreFile" type="file" accept=".json,application/json">
+        <button id="restoreBtn" type="button" class="secondary">Khôi phục dữ liệu bổ sung</button>
+        <div class="status" id="backupStatus" role="status" aria-live="polite"></div>
+        <p class="small-note">Khôi phục sẽ thêm bản dữ liệu mới, không xóa dữ liệu hiện có. Hãy giữ tệp sao lưu ở nơi an toàn.</p><button class="secondary" id="logoutBtn" type="button">Đăng xuất</button></div>
+            </section>
+            <footer class="lavi-footer">LAVI 2.0 · Phát triển độc lập với LAVI hiện tại · Mọi dữ liệu trong bản này là dữ liệu giả lập</footer>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  let token = '';
+  let mode = 'login';
+  const $ = id => document.getElementById(id);
+  const arrangeQuestionWorkspace = () => {
+    const tools=$('learningTools'), bankForm=$('bankForm'), bankList=$('bankList'), importPanel=$('importQuestionPanel'), editor=$('questionEditor');
+    if(!tools||!bankForm||!bankList||!importPanel||!editor||tools.querySelector('[data-workflow-step="banks"]'))return;
+    const makeStep=(number,title,detail)=>{const node=document.createElement('div');node.className='workflow-label';const badge=document.createElement('span');badge.className='step-number';badge.textContent=number;const copy=document.createElement('div');const heading=document.createElement('h4');heading.textContent=title;const desc=document.createElement('p');desc.textContent=detail;copy.append(heading,desc);node.append(badge,copy);return node;};
+    tools.querySelector('h3')?.remove();tools.querySelector(':scope > p.muted')?.remove();
+    const bankHeading=makeStep('1','Chọn ngân hàng câu hỏi','Chọn ngân hàng đã có hoặc tạo ngân hàng mới. Mọi câu hỏi sẽ được lưu vào ngân hàng đang mở.');bankHeading.dataset.workflowStep='banks';
+    tools.insertBefore(bankHeading,bankForm);tools.insertBefore(bankList,bankForm);
+    const details=document.createElement('details');details.className='create-bank-details';const summary=document.createElement('summary');summary.textContent='＋ Tạo ngân hàng câu hỏi mới';details.append(summary,bankForm);tools.insertBefore(details,bankList.nextSibling);
+    const importHeading=makeStep('2','Thêm câu hỏi','Nhập câu hỏi từ Excel/CSV hoặc tạo bản nháp bằng AI từ tài liệu.');importHeading.dataset.workflowStep='import';importPanel.parentNode.insertBefore(importHeading,importPanel);
+    const editorHeading=makeStep('3','Soạn và kiểm tra câu hỏi','Chọn dạng câu hỏi, nhập nội dung và đáp án, sau đó lưu.');editorHeading.dataset.workflowStep='editor';editor.insertBefore(editorHeading,editor.firstChild);
+  };
+  arrangeQuestionWorkspace();
+
+  async function api(url, options={}) {
+    let response;
+    try {
+      response = await fetch(url, { ...options, headers: {
+        'Content-Type':'application/json',
+        ...(token ? {Authorization:'Bearer '+token} : {}),
+        ...(options.headers||{})
+      }});
+    } catch (error) {
+      throw new Error('Không kết nối được máy chủ. Kiểm tra mạng hoặc trạng thái triển khai Render rồi thử lại.');
+    }
+    const raw = await response.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; } catch {}
+    if (!response.ok) {
+      if (response.status === 404) throw new Error('Máy chủ hiện tại chưa có chức năng này (404). Có thể Render chưa triển khai bản LAVI 2.0 mới. Mở Render > Deploys để kiểm tra bản mới nhất.');
+      if (response.status === 413) throw new Error('Tệp gửi lên quá lớn so với giới hạn máy chủ.');
+      if (response.status === 401) throw new Error(data.error || 'Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi thử.');
+      throw new Error((data.error || 'Máy chủ trả về lỗi.') + ' (HTTP ' + response.status + ')');
+    }
+    if (!raw) return {};
+    if (!Object.keys(data).length && raw.trim().startsWith('<')) throw new Error('Máy chủ trả về trang HTML thay vì dữ liệu API. Có thể đang dùng bản triển khai cũ.');
+    return data;
+  }
+  let loginRole = 'teacher';
+  function setLoginRole(nextRole) {
+    loginRole = nextRole;
+    const student = loginRole === 'student';
+    $('teacherRoleTab').setAttribute('aria-pressed', String(!student));
+    $('studentRoleTab').setAttribute('aria-pressed', String(student));
+    $('registerTab').classList.toggle('hidden', student);
+    $('nameField').classList.add('hidden');
+    $('confirmField').classList.add('hidden');
+    if (student && mode === 'register') setMode('login');
+    $('authTitle').textContent = student ? 'Chào mừng học sinh' : (mode === 'register' ? 'Tạo tài khoản giáo viên' : 'Chào mừng thầy cô');
+    $('authSubtitle').textContent = student ? 'Đăng nhập vào không gian học tập LAVI bằng tài khoản học sinh.' : (mode === 'register' ? 'Dùng Gmail hoặc số điện thoại của thầy cô và tạo mật khẩu.' : 'Đăng nhập bằng Gmail/số điện thoại đã đăng ký.');
+    $('contact').placeholder = student ? 'Tên đăng nhập học sinh' : 'ten@gmail.com hoặc 09xxxxxxxx';
+    $('demoHelp').textContent = student ? 'Dùng tài khoản học sinh do giáo viên hoặc nhà trường cấp.' : 'Tài khoản demo có sẵn: teacher1 hoặc teacher2 · Mật khẩu: Demo1234!';
+    $('authStatus').textContent = '';
+  }
+  function setMode(nextMode) {
+    mode = nextMode;
+    const registering = mode === 'register';
+    $('loginTab').setAttribute('aria-pressed', String(!registering));
+    $('registerTab').setAttribute('aria-pressed', String(registering));
+    $('nameField').classList.toggle('hidden', !registering);
+    $('confirmField').classList.toggle('hidden', !registering);
+    $('authTitle').textContent = registering ? 'Tạo tài khoản giáo viên' : 'Chào mừng thầy cô';
+    $('authSubtitle').textContent = registering ? 'Dùng Gmail hoặc số điện thoại của thầy cô và tạo mật khẩu.' : 'Đăng nhập bằng Gmail/số điện thoại đã đăng ký.';
+    $('submitBtn').textContent = registering ? 'Đăng ký và vào trang chủ' : 'Đăng nhập';
+    $('password').autocomplete = registering ? 'new-password' : 'current-password';
+    $('demoHelp').classList.toggle('hidden', registering);
+    $('authStatus').textContent = '';
+    $('registerTab').classList.toggle('hidden', loginRole === 'student');
+    $('authTitle').textContent = loginRole === 'student' ? 'Chào mừng học sinh' : (registering ? 'Tạo tài khoản giáo viên' : 'Chào mừng thầy cô');
+    $('authSubtitle').textContent = loginRole === 'student' ? 'Đăng nhập vào không gian học tập LAVI bằng tài khoản học sinh.' : (registering ? 'Dùng Gmail hoặc số điện thoại của thầy cô và tạo mật khẩu.' : 'Đăng nhập bằng Gmail/số điện thoại đã đăng ký.');
+    $('contact').placeholder = loginRole === 'student' ? 'Tên đăng nhập học sinh' : 'ten@gmail.com hoặc 09xxxxxxxx';
+  }
+  function activateView(viewId, moduleName='') {
+    document.querySelectorAll('.lavi-view').forEach(view => view.classList.toggle('active', view.id === viewId));
+    document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === viewId && (!moduleName || button.dataset.module === moduleName || button.textContent.includes(moduleName))));
+    document.querySelector('.lavi-sidebar')?.classList.remove('open');
+    if (viewId === 'futureView') {
+      const label = moduleName || 'Mô-đun đang phát triển';
+      $('futureViewTitle').textContent = label;
+      $('futureViewSubtitle').textContent = 'Khung giao diện theo cấu trúc LAVI hiện tại · Bản thử nghiệm LAVI 2.0';
+      if (label === 'Bài đang giao') {
+        renderAssignments().catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else if (label === 'Bài nộp & chấm điểm') {
+        renderSubmissions().catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else if (label === 'Thống kê học tập' || label === 'Xếp loại tháng' || label === 'Trò chơi & Xếp hạng') {
+        renderClassReport(label).catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else if (['Trung tâm năng lực số','Phân nhóm học sinh','Nhiệm vụ năng lực số','Sản phẩm học sinh','AI đánh giá năng lực số'].includes(label)) {
+        renderDigitalCompetence(label).catch(e=>{ $('futureModuleContent').textContent=e.message; });
+      } else if (label === 'Danh sách học sinh') {
+        renderStudentDirectory().catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else {
+        $('futureModuleContent').replaceChildren();
+        const heading=document.createElement('h3');heading.textContent=label;
+        const description=document.createElement('p');description.className='muted';description.textContent='Mục này đã có trong cấu trúc điều hướng. Chức năng thực tế sẽ được bổ sung sau khi hoàn thiện và kiểm thử.';
+        const status=document.createElement('div');status.className='class';status.textContent='Trạng thái: Chưa kết nối chức năng.';
+        const back=document.createElement('button');back.type='button';back.className='secondary';back.textContent='← Quay lại tổng quan';back.addEventListener('click',()=>activateView('classesView'));
+        $('futureModuleContent').append(heading,description,status,back);
+      }
+    }
+    document.querySelector('.lavi-sidebar')?.classList.remove('open');
+    const target = document.getElementById(viewId);
+    if (target) target.scrollIntoView({block:'start',behavior:'auto'});
+  }
+  document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.addEventListener('click', () => activateView(button.dataset.view, button.dataset.module || button.querySelector('b')?.textContent || '')));
+  document.querySelectorAll('[data-go-view]').forEach(button => button.addEventListener('click', () => activateView(button.dataset.goView)));
+  $('mobileMenuBtn').addEventListener('click', () => document.querySelector('.lavi-sidebar').classList.toggle('open'));
+  function logoutLavi() {
+    token='';
+    $('workspace').classList.add('hidden');
+    $('authPanel').classList.remove('hidden');
+    $('welcome').classList.remove('hidden');
+    $('password').value='';
+    $('confirmPassword').value='';
+    $('contact').value='';
+    setMode('login');
+  }
+  $('sidebarLogoutBtn').addEventListener('click', logoutLavi);
+  $('teacherRoleTab').addEventListener('click', () => setLoginRole('teacher'));
+  $('studentRoleTab').addEventListener('click', () => setLoginRole('student'));
+  $('loginTab').addEventListener('click', () => setMode('login'));
+  $('registerTab').addEventListener('click', () => { if(loginRole==='student') return; setMode('register'); });
+
+  $('authForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    $('submitBtn').disabled = true;
+    $('authStatus').textContent = mode === 'register' ? 'Đang tạo tài khoản...' : 'Đang đăng nhập...';
+    try {
+      const contact = $('contact').value.trim();
+      const password = $('password').value;
+      let result;
+      if (mode === 'register') {
+        if ($('displayName').value.trim().length < 2) throw new Error('Vui lòng nhập họ và tên giáo viên.');
+        if (password !== $('confirmPassword').value) throw new Error('Mật khẩu nhập lại chưa khớp.');
+        result = await api('/api/register', {method:'POST',body:JSON.stringify({displayName:$('displayName').value,contact,password})});
+      } else {
+        result = await api('/api/login', {method:'POST',body:JSON.stringify({contact,password})});
+      }
+      if (mode === 'login' && loginRole === 'student' && result.user.role !== 'student') throw new Error('Đây là tài khoản giáo viên. Hãy chọn “Giáo viên” để đăng nhập.');
+      if (mode === 'login' && loginRole === 'teacher' && result.user.role !== 'teacher') throw new Error('Đây là tài khoản học sinh. Hãy chọn “Học sinh” để đăng nhập.');
+      if (loginRole === 'student') throw new Error('Đăng nhập học sinh đã được nhận diện, nhưng trang bài tập học sinh chưa được kết nối trong bản thử nghiệm này.');
+      token = result.token;
+      $('authPanel').classList.add('hidden');
+      $('welcome').classList.add('hidden');
+      $('workspace').classList.remove('hidden');
+      $('greeting').textContent = 'Xin chào, ' + result.user.displayName;
+      $('accountNotice').textContent = result.user.contactVerified ? 'Thông tin liên hệ đã xác minh.' : 'Tài khoản thử nghiệm · Chưa xác minh email/số điện thoại bằng OTP.';
+      await loadClasses();
+      await loadBanks();
+      await loadTestSets();
+    } catch(e) {
+      $('authStatus').textContent = e.message;
+    } finally {
+      $('submitBtn').disabled = false;
+    }
+  });
+
+  $('createClassForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = $('createClassForm').querySelector('button[type="submit"]');
+    button.disabled = true;
+    $('classStatus').textContent = 'Đang tạo lớp...';
+    try {
+      const createdName=$('newClassName').value.trim();
+      const createdSchool=$('newSchoolName').value.trim();
+      await api('/api/classes', {method:'POST', body:JSON.stringify({
+        name:createdName,
+        schoolName:createdSchool
+      })});
+      $('newClassName').value = '';
+      $('newSchoolName').value = '';
+      $('classStatus').textContent = 'Đã tạo lớp mới. Đang mở không gian làm việc của lớp...';
+      await loadClasses({openClassName:createdName,openSchoolName:createdSchool});
+    } catch (e) {
+      $('classStatus').textContent = e.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  let selectedClass = null;
+  $('toggleClassFormBtn').addEventListener('click',()=>{
+    const form=$('createClassForm');const opening=!form.classList.contains('is-open');form.classList.toggle('is-open',opening);form.style.display=opening?'block':'none';
+    $('toggleClassFormBtn').textContent=opening?'× Đóng biểu mẫu':'＋ Tạo lớp mới';
+    if(opening)$('newClassName').focus();
+  });
+  async function loadClasses(options={}){
+    const data=await api('/api/classes');
+    $('classList').replaceChildren();
+    $('studentsArea').replaceChildren();
+    $('selectedClassWorkspace').replaceChildren();
+    $('selectedClassWorkspace').classList.add('hidden');
+    $('classList').classList.remove('hidden');
+    const hasClasses=(data.classes||[]).length>0;
+    $('createClassForm').classList.toggle('is-open',!hasClasses);
+    $('toggleClassFormBtn').classList.remove('hidden');
+    $('toggleClassFormBtn').textContent='＋ Tạo lớp mới';
+    $('createClassForm').style.display=hasClasses?'none':'block';
+    if(!data.classes.length){
+      const message=document.createElement('p');
+      message.textContent='Tài khoản đã sẵn sàng. Chưa có lớp nào được tạo cho tài khoản này.';
+      $('classList').append(message);
+      return;
+    }
+    $('classCount').textContent = data.classes.length;
+    $('studentCount').textContent = data.classes.reduce((sum,c)=>sum + Number(c.studentCount || 0),0);
+    data.classes.forEach(c=>{
+      const card=document.createElement('div');card.className='class';
+      const title=document.createElement('h3');title.textContent=c.name;
+      const detail=document.createElement('p');detail.className='muted';detail.textContent=c.schoolName+' · '+c.studentCount+' học sinh giả lập';
+      card.append(title,detail);
+      card.setAttribute('role','button');card.setAttribute('tabindex','0');
+      const openClass=()=>openClassWorkspace(c);
+      card.addEventListener('click',openClass);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openClass();}});
+      $('classList').append(card);
+    });
+    const requestedClass=(data.classes||[]).find(c=>
+      options.openClassName &&
+      c.name===options.openClassName &&
+      (c.schoolName||'')===(options.openSchoolName||'')
+    );
+    // If the teacher has exactly one class, go straight into that class workspace.
+    // If a class was just created, prioritize that newly created class.
+    if(requestedClass){
+      await openClassWorkspace(requestedClass);
+    }else if((data.classes||[]).length===1){
+      await openClassWorkspace(data.classes[0]);
+    }else{
+      $('createClassForm').classList.remove('is-open');
+      $('createClassForm').style.display='none';
+      $('toggleClassFormBtn').classList.remove('hidden');
+    }
+  }
+  async function openClassWorkspace(cls){
+    selectedClass=cls;
+    $('classList').classList.add('hidden');$('createClassForm').classList.remove('is-open');$('createClassForm').style.display='none';$('toggleClassFormBtn').textContent='＋ Tạo lớp mới';$('toggleClassFormBtn').classList.remove('hidden');
+    $('selectedClassWorkspace').classList.remove('hidden');$('studentsArea').replaceChildren();
+    const host=$('selectedClassWorkspace');host.replaceChildren();
+    const hero=document.createElement('div');hero.className='class-home-hero';
+    const intro=document.createElement('div');const title=document.createElement('h3');title.textContent=cls.name;
+    const subtitle=document.createElement('p');subtitle.textContent=(cls.schoolName||'Chưa khai báo trường')+' · '+(cls.studentCount||0)+' học sinh';intro.append(title,subtitle);
+    const back=document.createElement('button');back.type='button';back.className='secondary';back.style.margin='0';back.textContent='← Danh sách lớp';back.addEventListener('click',()=>{host.classList.add('hidden');$('classList').classList.remove('hidden');$('toggleClassFormBtn').classList.remove('hidden');$('createClassForm').style.display='none';});hero.append(intro,back);host.append(hero);
+    const desc=document.createElement('p');desc.className='muted';desc.textContent='Không gian làm việc riêng của lớp. Chọn một chức năng để bắt đầu.';host.append(desc);
+    const actions=[['👩‍🎓','Danh sách học sinh','Xem, thêm và quản lý học sinh trong lớp.',()=>loadStudents(cls.id,cls.name)],['📝','Bài tập & đánh giá','Tạo bài, giao nhiệm vụ và theo dõi kết quả.',()=>activateView('futureView','Bài đang giao')],['📊','Thống kê lớp','Xem kết quả học tập và tiến độ của lớp.',()=>activateView('futureView','Thống kê học tập')]];
+    const grid=document.createElement('div');grid.className='class-home-actions';actions.forEach(([icon,label,detail,fn])=>{const b=document.createElement('button');b.type='button';b.className='class-home-action';const i=document.createElement('span');i.textContent=icon;const t=document.createElement('strong');t.textContent=label;const d=document.createElement('small');d.textContent=detail;b.append(i,t,d);b.addEventListener('click',fn);grid.append(b);});host.append(grid);
+  }
+  async function loadStudents(id,name){
+    try {
+      const data=await api('/api/classes/'+encodeURIComponent(id)+'/students');
+      const area=$('studentsArea');area.replaceChildren();
+      const heading=document.createElement('h3');heading.textContent='Danh sách học sinh: '+name;area.append(heading);
+      const form=document.createElement('form');form.className='class';
+      const formTitle=document.createElement('h4');formTitle.textContent='Thêm học sinh';form.append(formTitle);
+      const codeLabel=document.createElement('label');codeLabel.textContent='Mã học sinh';codeLabel.htmlFor='newStudentCode';
+      const codeInput=document.createElement('input');codeInput.id='newStudentCode';codeInput.required=true;codeInput.maxLength=40;codeInput.placeholder='Ví dụ: 5A01';
+      const nameLabel=document.createElement('label');nameLabel.textContent='Họ và tên học sinh';nameLabel.htmlFor='newStudentName';
+      const nameInput=document.createElement('input');nameInput.id='newStudentName';nameInput.required=true;nameInput.maxLength=120;nameInput.placeholder='Nhập họ và tên';
+      const submit=document.createElement('button');submit.type='submit';submit.textContent='+ Thêm học sinh';
+      const status=document.createElement('div');status.className='status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+      form.append(codeLabel,codeInput,nameLabel,nameInput,submit,status);
+      form.addEventListener('submit',async event=>{
+        event.preventDefault();submit.disabled=true;status.textContent='Đang lưu học sinh...';
+        try{
+          await api('/api/classes/'+encodeURIComponent(id)+'/students',{method:'POST',body:JSON.stringify({code:codeInput.value,displayName:nameInput.value})});
+          await loadStudents(id,name);await loadClasses();
+        }catch(e){status.textContent=e.message;}finally{submit.disabled=false;}
+      });
+      area.append(form);
+      const table=document.createElement('table');
+      const thead=document.createElement('thead');thead.innerHTML='<tr><th>Mã HS</th><th>Họ và tên</th><th>Đánh giá</th><th>Thao tác</th></tr>';
+      const tbody=document.createElement('tbody');
+      data.students.forEach(student=>{
+        const tr=document.createElement('tr');
+        [student.code,student.displayName,student.level].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.append(td);});
+        const actionCell=document.createElement('td');
+        const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Xóa';
+        remove.addEventListener('click',async()=>{
+          if(!confirm('Xóa học sinh '+student.displayName+' khỏi lớp này? Dữ liệu điểm liên quan của học sinh có thể bị xóa theo.'))return;
+          remove.disabled=true;
+          try{await api('/api/classes/'+encodeURIComponent(id)+'/students/'+encodeURIComponent(student.id),{method:'DELETE'});await loadStudents(id,name);await loadClasses();}
+          catch(e){status.textContent=e.message;remove.disabled=false;}
+        });
+        actionCell.append(remove);tr.append(actionCell);tbody.append(tr);
+      });
+      table.append(thead,tbody);area.append(table);
+      const total=document.createElement('p');total.className='muted';total.textContent='Tổng số học sinh: '+data.students.length;area.append(total);
+    } catch(e) {$('studentsArea').textContent=e.message;}
+  }
+  let selectedBankId = '';
+  let bankCache = [];
+  let questionCache = [];
+  let testSetCache = [];
+
+  function makeCard(titleText, detailText) {
+    const card = document.createElement('div'); card.className = 'class';
+    const title = document.createElement('h3'); title.textContent = titleText;
+    const detail = document.createElement('p'); detail.className = 'muted'; detail.textContent = detailText;
+    card.append(title, detail); return card;
+  }
+  async function loadBanks() {
+    const data = await api('/api/question-banks');
+    bankCache = data.questionBanks || [];
+    $('bankCount').textContent = bankCache.length;
+    const list = $('bankList'); list.replaceChildren();
+    if (!bankCache.length) {
+      const empty = document.createElement('p'); empty.className='muted'; empty.textContent='Chưa có ngân hàng câu hỏi. Tạo ngân hàng đầu tiên ở trên.';
+      list.append(empty);
+    }
+    bankCache.forEach(bank => {
+      const card = makeCard(bank.name, (bank.subject || 'Chưa chọn môn') + ' · ' + (bank.grade || 'Chưa chọn khối') + ' · ' + bank.questionCount + ' câu hỏi');
+      const open = document.createElement('button'); open.type='button'; open.textContent='Mở ngân hàng / thêm câu hỏi';
+      open.addEventListener('click', () => openBank(bank.id, bank.name));
+      card.append(open); list.append(card);
+    });
+  }
+  async function openBank(id, name) {
+    selectedBankId = id;
+    $('questionEditor').classList.remove('hidden');
+    $('questionEditorTitle').textContent = 'Ngân hàng: ' + name;
+    $('questionStatus').textContent = '';
+    await loadQuestions(id);
+    $('questionEditor').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  async function loadQuestions(bankId) {
+    const data = await api('/api/question-banks/' + encodeURIComponent(bankId) + '/questions');
+    const questions = data.questions || [];
+    questionCache = [...questionCache.filter(q => q.bankId !== bankId), ...questions];
+    const list = $('questionsInBank'); list.replaceChildren();
+    const heading = document.createElement('h4'); heading.textContent='Câu hỏi trong ngân hàng ('+questions.length+')'; list.append(heading);
+    if (!questions.length) { const empty=document.createElement('p'); empty.className='muted'; empty.textContent='Chưa có câu hỏi. Dùng biểu mẫu phía trên để thêm.'; list.append(empty); }
+    questions.forEach((q,i) => {
+      const card=makeCard((i+1)+'. '+q.prompt, 'Loại: '+q.type+' · Đáp án: '+(Array.isArray(q.answer)?q.answer.join(', '):String(q.answer ?? '')));
+      if(q.explanation){const exp=document.createElement('p');exp.className='muted';exp.textContent='Giải thích: '+q.explanation;card.append(exp);}
+      list.append(card);
+    });
+    await loadBanks();
+    await loadTestSets();
+  }
+
+  async function fileAsPayload(file) {
+    const dataUrl = await new Promise((resolve,reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Không đọc được tệp.'));
+      reader.readAsDataURL(file);
+    });
+    return { fileName:file.name, dataBase64:dataUrl.split(',')[1] || '' };
+  }
+  $('questionImportType').addEventListener('change',()=>{$('questionTemplateLink').href='/api/question-template.xlsx?type='+encodeURIComponent($('questionImportType').value);});
+  $('importQuestionsBtn').addEventListener('click', async () => {
+    const file=$('questionImportFile').files[0];
+    if(!selectedBankId){$('importStatus').textContent='Cô hãy mở ngân hàng muốn nhập bằng nút “Mở ngân hàng / thêm câu hỏi”, rồi thử lại.';return;}
+    if(!file){$('importStatus').textContent='Cô hãy chọn tệp Excel/CSV trước.';return;}
+    if(file.size>10*1024*1024){$('importStatus').textContent='Tệp tối đa 10 MB.';return;}
+    const button=$('importQuestionsBtn');button.disabled=true;$('importStatus').textContent='Đang đọc và nhập tệp...';
+    try{
+      const payload=await fileAsPayload(file);
+      const result=await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/import?type='+encodeURIComponent($('questionImportType').value),{method:'POST',body:JSON.stringify(payload)});
+      $('importStatus').textContent=result.message || ('Đã nhập '+result.imported+' câu hỏi.');
+      $('questionImportFile').value='';
+      await loadQuestions(selectedBankId); await loadBanks();
+      $('questionsInBank').scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(e){$('importStatus').textContent='Nhập tệp chưa thành công: '+e.message;}finally{button.disabled=false;}
+  });
+  let aiDrafts=[];
+  $('generateAIQuestionsBtn').addEventListener('click', async () => {
+    const file=$('aiSourceFile').files[0];
+    if(!selectedBankId){$('aiStatus').textContent='Hãy mở ngân hàng câu hỏi trước.';return;}
+    if(!file){$('aiStatus').textContent='Chọn tài liệu nguồn cô muốn AI dựa vào.';return;}
+    if(file.size>10*1024*1024){$('aiStatus').textContent='Tài liệu tối đa 10 MB.';return;}
+    const button=$('generateAIQuestionsBtn');button.disabled=true;$('aiStatus').textContent='Đang đọc tài liệu nguồn...';
+    try{
+      const payload=await fileAsPayload(file);
+      const extracted=await api('/api/documents/extract',{method:'POST',body:JSON.stringify(payload)});
+      $('aiStatus').textContent='Đã đọc tài liệu. AI đang tạo câu hỏi...';
+      const result=await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/ai-generate',{method:'POST',body:JSON.stringify({sourceText:extracted.text,count:Number($('aiQuestionCount').value)||10})});
+      aiDrafts=result.questions||[];
+      const list=$('aiDraftList');list.replaceChildren();
+      aiDrafts.forEach((q,i)=>{
+        const card=document.createElement('div');card.className='class';
+        const label=document.createElement('label');label.style.display='flex';label.style.gap='8px';label.style.alignItems='start';
+        const check=document.createElement('input');check.type='checkbox';check.checked=true;check.dataset.index=String(i);check.style.width='auto';check.style.marginTop='5px';
+        const title=document.createElement('strong');title.textContent=(i+1)+'. '+q.prompt;
+        label.append(check,title);card.append(label);
+        const options=document.createElement('ol');options.type='A';
+        q.options.forEach(value=>{const li=document.createElement('li');li.textContent=value;options.append(li);});
+        const answer=document.createElement('p');answer.className='muted';answer.textContent='Đáp án dự kiến: '+q.answer+(q.explanation?' · Giải thích: '+q.explanation:'');
+        card.append(options,answer);list.append(card);
+      });
+      $('aiStatus').textContent='Đã tạo '+aiDrafts.length+' câu nháp. Cô hãy kiểm tra nội dung và đáp án, bỏ chọn câu chưa đạt rồi mới lưu.';
+      $('saveAIDraftsBtn').classList.toggle('hidden',!aiDrafts.length);
+    }catch(e){$('aiStatus').textContent=e.message;}finally{button.disabled=false;}
+  });
+  $('saveAIDraftsBtn').addEventListener('click',async()=>{
+    if(!selectedBankId||!aiDrafts.length)return;
+    const checks=[...$('aiDraftList').querySelectorAll('input[type="checkbox"]')];
+    const selected=checks.filter(c=>c.checked).map(c=>aiDrafts[Number(c.dataset.index)]);
+    if(!selected.length){$('aiStatus').textContent='Chọn ít nhất một câu đã kiểm tra.';return;}
+    const button=$('saveAIDraftsBtn');button.disabled=true;
+    try{
+      let saved=0;
+      for(const q of selected){
+        await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/questions',{method:'POST',body:JSON.stringify({type:'abcd',prompt:q.prompt,options:q.options,answer:q.answer,explanation:q.explanation||''})});
+        saved++;
+      }
+      $('aiStatus').textContent='Đã lưu '+saved+' câu đã chọn. Cô vẫn nên kiểm tra lại trước khi dùng cho học sinh.';
+      aiDrafts=[];$('aiDraftList').replaceChildren();button.classList.add('hidden');
+      await loadQuestions(selectedBankId);
+    }catch(e){$('aiStatus').textContent='Đã lưu được một phần nếu lỗi xảy ra giữa chừng. '+e.message;await loadQuestions(selectedBankId);}finally{button.disabled=false;}
+  });
+
+  $('bankForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button=$('bankForm').querySelector('button');button.disabled=true;$('bankStatus').textContent='Đang tạo ngân hàng...';
+    try {
+      const created=await api('/api/question-banks',{method:'POST',body:JSON.stringify({name:$('bankName').value.trim(),subject:$('bankSubject').value.trim(),grade:$('bankGrade').value.trim()})});
+      $('bankName').value='';$('bankSubject').value='';$('bankGrade').value='';
+      $('bankStatus').textContent='Đã tạo ngân hàng câu hỏi. Đang mở ngân hàng để cô có thể nhập tệp hoặc thêm câu hỏi.';
+      await loadBanks();
+      if(created.questionBank?.id) await openBank(created.questionBank.id,created.questionBank.name || 'Ngân hàng mới');
+    } catch(e){$('bankStatus').textContent=e.message;} finally{button.disabled=false;}
+  });
+  function updateQuestionTypeFields() {
+    const type=$('questionType').value;
+    const usesOptions=['abcd','multiple','matching','ordering'].includes(type);
+    $('questionOptionsField').classList.toggle('hidden',!usesOptions);
+    $('questionOptionsLabel').textContent=type==='matching'?'Các cặp cần nối (mỗi dòng: Vế trái | Vế phải)':type==='ordering'?'Các mục theo thứ tự đúng (mỗi dòng một mục)':'Các phương án (mỗi dòng một phương án)';
+    $('questionOptionsHelp').textContent=type==='matching'?'Mỗi dòng ghi hai vế, ngăn cách bằng dấu |.':type==='ordering'?'Nhập các mục theo thứ tự đúng; thứ tự này là đáp án.':'Dùng cho câu hỏi trắc nghiệm.';
+    $('questionOptions').placeholder=type==='matching'?'Ví dụ: 2 × 3 | 6\nThủ đô Việt Nam | Hà Nội':type==='ordering'?'Ví dụ:\nBước 1\nBước 2\nBước 3':'A. ...\nB. ...\nC. ...\nD. ...';
+    $('questionAnswerLabel').textContent=type==='true_false'?'Đáp án đúng (Đúng hoặc Sai)':type==='fill_blank'?'Từ/cụm từ cần điền':'Đáp án đúng';
+    $('questionAnswer').placeholder=type==='abcd'?'Nhập A, B, C hoặc D':type==='multiple'?'Nhập các đáp án, cách nhau bằng dấu phẩy':type==='true_false'?'Nhập Đúng hoặc Sai':type==='fill_blank'?'Nhập từ/cụm từ còn thiếu':'Nhập đáp án chính xác';
+  }
+  $('questionType').addEventListener('change',updateQuestionTypeFields);
+  updateQuestionTypeFields();
+  $('questionForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!selectedBankId){$('questionStatus').textContent='Hãy mở một ngân hàng câu hỏi trước.';return;}
+    const button=$('questionForm').querySelector('button');button.disabled=true;$('questionStatus').textContent='Đang lưu câu hỏi...';
+    try {
+      const type=$('questionType').value;
+      let options=$('questionOptions').value.split('\n').map(x=>x.trim()).filter(Boolean);
+      let answer=$('questionAnswer').value.trim();
+      if(type==='true_false') options=['Đúng','Sai'];
+      if(type==='multiple') answer=answer.split(/[,;、]/).map(x=>x.trim()).filter(Boolean);
+      if(type==='matching') {
+        const pairs=options.map(line=>line.split('|').map(part=>part.trim()));
+        if(pairs.some(pair=>pair.length!==2||!pair[0]||!pair[1])) throw new Error('Mỗi dòng nối cặp cần có dạng Vế trái | Vế phải.');
+        options=pairs.map(pair=>({left:pair[0],right:pair[1]})); answer=options;
+      }
+      if(type==='ordering') answer=options;
+      await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/questions',{method:'POST',body:JSON.stringify({
+        type,prompt:$('questionPrompt').value.trim(),options,answer,explanation:$('questionExplanation').value.trim()
+      })});
+      $('questionPrompt').value='';$('questionOptions').value='';$('questionAnswer').value='';$('questionExplanation').value='';
+      $('questionStatus').textContent='Đã lưu câu hỏi.';await loadQuestions(selectedBankId);
+    } catch(e){$('questionStatus').textContent=e.message;} finally{button.disabled=false;}
+  });
+  async function loadTestSets() {
+    const data=await api('/api/test-sets');
+    testSetCache=data.testSets||[];
+    $('testCount').textContent = testSetCache.length;
+    const list=$('testSetList');list.replaceChildren();
+    if(!testSetCache.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Chưa có bộ đề. Tạo bộ đề bằng biểu mẫu phía trên.';list.append(empty);}
+    testSetCache.forEach(test => {
+      const card=makeCard(test.name,(test.subject||'Chưa chọn môn')+' · '+(test.grade||'Chưa chọn khối')+' · '+test.questionCount+' câu hỏi');
+      const selector=document.createElement('select');selector.setAttribute('aria-label','Chọn câu hỏi để thêm vào '+test.name);selector.style.width='100%';selector.style.padding='10px';selector.style.borderRadius='8px';
+      const first=document.createElement('option');first.value='';first.textContent='Chọn câu hỏi từ ngân hàng';selector.append(first);
+      questionCache.forEach(q=>{const option=document.createElement('option');option.value=q.id;option.textContent=q.prompt.slice(0,120);selector.append(option);});
+      const add=document.createElement('button');add.type='button';add.textContent='Thêm câu hỏi đã chọn vào bộ đề';
+      add.addEventListener('click',async()=>{if(!selector.value){$('testSetStatus').textContent='Cô hãy chọn một câu hỏi trước.';return;}add.disabled=true;try{await api('/api/test-sets/'+encodeURIComponent(test.id)+'/questions',{method:'POST',body:JSON.stringify({questionId:selector.value,points:1})});$('testSetStatus').textContent='Đã thêm câu hỏi vào bộ đề.';await loadTestSets();}catch(e){$('testSetStatus').textContent=e.message;}finally{add.disabled=false;}});
+      card.append(selector,add);list.append(card);
+    });
+  }
+  $('testSetForm').addEventListener('submit',async event=>{
+    event.preventDefault();const button=$('testSetForm').querySelector('button');button.disabled=true;$('testSetStatus').textContent='Đang tạo bộ đề...';
+    try{await api('/api/test-sets',{method:'POST',body:JSON.stringify({name:$('testSetName').value.trim(),subject:$('testSetSubject').value.trim(),grade:$('testSetGrade').value.trim()})});$('testSetName').value='';$('testSetSubject').value='';$('testSetGrade').value='';$('testSetStatus').textContent='Đã tạo bộ đề.';await loadTestSets();}
+    catch(e){$('testSetStatus').textContent=e.message;}finally{button.disabled=false;}
+  });
+
+  async function renderAssignments() {
+    const panel=$('futureModuleContent');
+    panel.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent='Tạo bài giao cho lớp';
+    const description=document.createElement('p');description.className='muted';description.textContent='Tạo bản ghi giao bài gắn với lớp và bộ đề của chính tài khoản giáo viên. Phần nộp bài và chấm điểm sẽ được phát triển ở bước tiếp theo.';
+    panel.append(heading,description);
+    const [classData,testData,assignmentData]=await Promise.all([api('/api/classes'),api('/api/test-sets'),api('/api/assignments')]);
+    const form=document.createElement('form');form.className='class';
+    function addField(labelText,id,control){const label=document.createElement('label');label.textContent=labelText;label.htmlFor=id;control.id=id;form.append(label,control);return control;}
+    const titleInput=addField('Tên bài giao','assignmentTitle',document.createElement('input'));titleInput.required=true;titleInput.maxLength=160;titleInput.placeholder='Ví dụ: Ôn tập Toán tuần 1';
+    const classSelect=addField('Lớp nhận bài','assignmentClass',document.createElement('select'));classSelect.required=true;
+    const classPlaceholder=document.createElement('option');classPlaceholder.value='';classPlaceholder.textContent='-- Chọn lớp --';classSelect.append(classPlaceholder);
+    classData.classes.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name+' · '+c.studentCount+' học sinh';classSelect.append(o);});
+    const testSelect=addField('Bộ đề (không bắt buộc)','assignmentTestSet',document.createElement('select'));
+    const noTest=document.createElement('option');noTest.value='';noTest.textContent='Chưa gắn bộ đề';testSelect.append(noTest);
+    testData.testSets.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name+' · '+t.questionCount+' câu';testSelect.append(o);});
+    const dueInput=addField('Hạn nộp (không bắt buộc)','assignmentDueAt',document.createElement('input'));dueInput.type='datetime-local';
+    const submit=document.createElement('button');submit.type='submit';submit.textContent='+ Tạo bài giao';
+    const status=document.createElement('div');status.className='status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    form.append(submit,status);
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();submit.disabled=true;status.textContent='Đang tạo bài giao...';
+      try{
+        await api('/api/assignments',{method:'POST',body:JSON.stringify({title:titleInput.value,classId:classSelect.value,testSetId:testSelect.value,dueAt:dueInput.value ? new Date(dueInput.value).toISOString() : null})});
+        await renderAssignments();
+      }catch(e){status.textContent=e.message;}finally{submit.disabled=false;}
+    });
+    panel.append(form);
+    const listHeading=document.createElement('h3');listHeading.textContent='Danh sách bài đã giao';panel.append(listHeading);
+    if(!assignmentData.assignments.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Chưa có bài giao nào.';panel.append(empty);}
+    assignmentData.assignments.forEach(a=>{
+      const card=document.createElement('div');card.className='class';
+      const title=document.createElement('h4');title.textContent=a.title;
+      const detail=document.createElement('p');detail.className='muted';detail.textContent='Lớp: '+a.className+' · Bộ đề: '+(a.testSetName||'Chưa gắn bộ đề');
+      const due=document.createElement('p');due.className='muted';due.textContent=a.dueAt?'Hạn nộp: '+new Date(a.dueAt).toLocaleString('vi-VN'):'Chưa đặt hạn nộp';
+      const progress=document.createElement('p');progress.className='muted';progress.textContent='Bản ghi điểm: '+a.gradedCount+' · Chưa có chức năng học sinh nộp bài trong bản thử nghiệm này.';
+      card.append(title,detail,due,progress);panel.append(card);
+    });
+    const back=document.createElement('button');back.type='button';back.className='secondary';back.textContent='← Quay lại tổng quan';back.addEventListener('click',()=>activateView('classesView'));panel.append(back);
+  }
+
+
+
+
+  async function renderDigitalCompetence(label){
+    const panel=$('futureModuleContent');panel.replaceChildren();
+    const title=document.createElement('h3');title.textContent=label;panel.append(title);
+    const intro=document.createElement('p');intro.className='muted';intro.textContent='Không gian tổ chức hoạt động phát triển năng lực số: giáo viên giao nhiệm vụ, học sinh thực hiện và nộp sản phẩm, giáo viên xem minh chứng và dùng AI để tham khảo khi đánh giá.';panel.append(intro);
+    const [classData,assignmentData]=await Promise.all([api('/api/classes'),api('/api/assignments')]);
+    const classes=classData.classes||[], assignments=assignmentData.assignments||[];
+    const classSelect=document.createElement('select');classSelect.setAttribute('aria-label','Chọn lớp');
+    const blank=document.createElement('option');blank.value='';blank.textContent='-- Chọn lớp --';classSelect.append(blank);
+    classes.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name+' · '+c.studentCount+' học sinh';classSelect.append(o);});
+    const classLabel=document.createElement('label');classLabel.textContent='Lớp học';classLabel.append(classSelect);panel.append(classLabel);
+    const content=document.createElement('div');panel.append(content);
+    const info=(msg)=>{const p=document.createElement('p');p.className='muted';p.textContent=msg;content.append(p);};
+    if(label==='Trung tâm năng lực số'){
+      const grid=document.createElement('div');grid.className='lavi-kpi-grid';panel.append(grid);
+      [['Lớp học',classes.length],['Nhiệm vụ đã giao',assignments.filter(a=>/năng lực số/i.test(a.title||'')).length],['Sản phẩm đã nộp','Chưa kết nối'],['Đánh giá AI','Cần kiểm thử']].forEach(([t,v])=>{const card=document.createElement('div');card.className='lavi-kpi';const strong=document.createElement('strong');strong.textContent=v;const small=document.createElement('small');small.textContent=t;card.append(strong,small);grid.append(card);});
+      info('Bảng tổng quan sẽ có số liệu thực khi chức năng phân nhóm, nộp sản phẩm và lưu đánh giá được kết nối.');
+      return;
+    }
+    if(label==='Phân nhóm học sinh'){
+      const help=document.createElement('p');help.textContent='Chọn lớp để xem danh sách học sinh. Giáo viên có thể lập nhóm theo kỹ năng, nhiệm vụ hoặc mức độ hỗ trợ; bản hiện tại mới hiển thị danh sách và chưa lưu phân nhóm.';content.append(help);
+      const list=document.createElement('div');content.append(list);
+      async function show(){list.replaceChildren();if(!classSelect.value){const p=document.createElement('p');p.textContent='Hãy chọn lớp.';list.append(p);return;}const data=await api('/api/classes/'+encodeURIComponent(classSelect.value)+'/students');const table=document.createElement('table');table.className='data-table';const thead=document.createElement('thead');thead.innerHTML='<tr><th>Chọn</th><th>Mã HS</th><th>Họ và tên</th><th>Nhóm đề xuất</th></tr>';table.append(thead);const tbody=document.createElement('tbody');data.students.forEach(s=>{const tr=document.createElement('tr');const td=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';td.append(cb);tr.append(td);[s.code||'—',s.displayName||s.name||'Học sinh'].forEach(v=>{const x=document.createElement('td');x.textContent=v;tr.append(x);});const group=document.createElement('td');const sel=document.createElement('select');['Chưa phân nhóm','Nhóm 1','Nhóm 2','Nhóm 3','Cần hỗ trợ thêm'].forEach(v=>{const o=document.createElement('option');o.textContent=v;sel.append(o);});group.append(sel);tr.append(group);tbody.append(tr);});table.append(tbody);list.append(table);const note=document.createElement('p');note.className='muted';note.textContent='Lưu ý: lựa chọn phân nhóm hiện chỉ là bản xem thử, chưa được lưu vào dữ liệu.';list.append(note);}
+      classSelect.addEventListener('change',()=>show().catch(e=>info(e.message)));await show();return;
+    }
+    if(label==='Nhiệm vụ năng lực số'){
+      const form=document.createElement('form');form.className='class';
+      const add=(text,type,placeholder)=>{const label=document.createElement('label');label.textContent=text;const input=document.createElement(type==='textarea'?'textarea':'input');if(type!=='textarea')input.type=type;input.placeholder=placeholder||'';label.append(input);form.append(label);return input;};
+      const task=add('Tên nhiệm vụ','text','Ví dụ: Thiết kế áp phích tuyên truyền an toàn trên mạng');
+      const skill=add('Năng lực số trọng tâm','text','Tìm kiếm thông tin; sáng tạo nội dung; an toàn số...');
+      const due=add('Hạn nộp','date','');const desc=add('Yêu cầu và tiêu chí sản phẩm','textarea','Mô tả yêu cầu, định dạng nộp, tiêu chí đánh giá...');
+      const submit=document.createElement('button');submit.type='submit';submit.textContent='Lưu bản nháp nhiệm vụ';form.append(submit);
+      form.addEventListener('submit',e=>{e.preventDefault();const preview=document.createElement('div');preview.className='class';preview.textContent='Bản nháp (chưa lưu lên máy chủ): '+task.value+' · '+skill.value+' · Hạn: '+(due.value||'chưa đặt')+' · '+desc.value;content.prepend(preview);});
+      content.append(form);info('Bản thử nghiệm này mới tạo bản xem trước; cần xây dựng API lưu nhiệm vụ và phân phối nhiệm vụ tới tài khoản học sinh.');return;
+    }
+    if(label==='Sản phẩm học sinh'){
+      const taskLabel=document.createElement('label');taskLabel.textContent='Bài giao';const taskSelect=document.createElement('select');const opt=document.createElement('option');opt.value='';opt.textContent='-- Chọn bài giao --';taskSelect.append(opt);assignments.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.title+' · '+a.className;taskSelect.append(o);});taskLabel.append(taskSelect);content.append(taskLabel);
+      const note=document.createElement('p');note.className='muted';note.textContent='Khi học sinh nộp tệp, liên kết hoặc nội dung, sản phẩm cần được lưu theo học sinh và nhiệm vụ. API hiện tại mới hỗ trợ kết quả bài tập, chưa có kho sản phẩm số độc lập.';content.append(note);return;
+    }
+    if(label==='AI đánh giá năng lực số'){
+      const task= document.createElement('textarea');task.rows=3;task.placeholder='Mô tả sản phẩm hoặc dán phần nội dung học sinh nộp (không đưa thông tin nhạy cảm).';task.style.width='100%';
+      const rubric=document.createElement('textarea');rubric.rows=3;rubric.placeholder='Tiêu chí đánh giá: xác định vấn đề, sử dụng công cụ số, sáng tạo, an toàn số, hợp tác...';rubric.style.width='100%';
+      const l1=document.createElement('label');l1.textContent='Minh chứng sản phẩm';l1.append(task);const l2=document.createElement('label');l2.textContent='Tiêu chí đánh giá';l2.append(rubric);
+      const button=document.createElement('button');button.type='button';button.textContent='Tạo gợi ý nhận xét';button.addEventListener('click',()=>{const result=document.createElement('div');result.className='class';result.textContent='Khung gợi ý để giáo viên tự đối chiếu: (1) Mức độ hoàn thành yêu cầu; (2) Kỹ năng tìm kiếm và chọn lọc thông tin; (3) Sử dụng công cụ số phù hợp; (4) Sáng tạo và trình bày; (5) An toàn, bản quyền và hợp tác. Đây là khung tham khảo tĩnh, chưa gọi mô hình AI và không tự động kết luận xếp loại.';content.append(result);});
+      content.append(l1,l2,button);info('Đây là khung đánh giá tham khảo; chưa kết nối dịch vụ AI thực tế. Giáo viên duyệt mọi nhận xét trước khi dùng.');return;
+    }
+  }
+  async function renderStudentDirectory(){
+    const panel=$('futureModuleContent');panel.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent='Quản lý học sinh theo lớp';panel.append(heading);
+    const desc=document.createElement('p');desc.className='muted';desc.textContent='Chọn lớp để xem danh sách, mã học sinh và sĩ số. Thêm hoặc xóa học sinh trong mục Lớp học của tôi.';panel.append(desc);
+    const data=await api('/api/classes');
+    const label=document.createElement('label');label.textContent='Lớp học';const select=document.createElement('select');
+    (data.classes||[]).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name+' · '+c.studentCount+' học sinh';select.append(o);});
+    panel.append(label,select);const list=document.createElement('div');panel.append(list);
+    async function load(){list.replaceChildren();if(!select.value){list.textContent='Chưa có lớp. Hãy tạo lớp trong mục Lớp học của tôi.';return;}
+      const d=await api('/api/classes/'+encodeURIComponent(select.value)+'/students');
+      const summary=document.createElement('p');summary.className='muted';summary.textContent='Tổng số học sinh: '+d.students.length;list.append(summary);
+      const table=document.createElement('table');table.className='data-table';const thead=document.createElement('thead');thead.innerHTML='<tr><th>STT</th><th>Mã học sinh</th><th>Họ và tên</th></tr>';table.append(thead);const tbody=document.createElement('tbody');
+      d.students.forEach((s,i)=>{const tr=document.createElement('tr');[String(i+1),s.code||'—',s.displayName||s.name||'Chưa có tên'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});tbody.append(tr);});table.append(tbody);list.append(table);
+    }
+    select.addEventListener('change',()=>load().catch(e=>{list.textContent=e.message;}));await load();
+  }
+  async function renderClassReport(label){
+    const panel=$('futureModuleContent');panel.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent=label;panel.append(heading);
+    const desc=document.createElement('p');desc.className='muted';desc.textContent=label==='Xếp loại tháng'?'Bảng xếp hạng tạm tính từ kết quả bài đã chấm trong tháng hiện tại. Đây chưa phải xếp loại thi đua chính thức; cần bổ sung điểm rèn luyện, chuyên cần và sao thưởng trước khi xét chính thức.':label==='Trò chơi & Xếp hạng'?'Thống kê kết quả bài tập đã chấm; điểm trò chơi và sao thưởng sẽ được cộng khi các mô-đun đó được kết nối.':'Tổng hợp số bài giao, số học sinh có kết quả và điểm bài tập đã chấm theo lớp.';panel.append(desc);
+    const [classData,assignmentData]=await Promise.all([api('/api/classes'),api('/api/assignments')]);
+    const classes=classData.classes||[], assignments=assignmentData.assignments||[];
+    const filterWrap=document.createElement('div');filterWrap.className='class';const classLabel=document.createElement('label');classLabel.textContent='Lọc theo lớp';const select=document.createElement('select');
+    const all=document.createElement('option');all.value='all';all.textContent='Tất cả lớp';select.append(all);
+    classes.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;select.append(o);});filterWrap.append(classLabel,select);panel.append(filterWrap);
+    const kpis=document.createElement('div');kpis.className='lavi-kpi-grid';panel.append(kpis);const results=document.createElement('div');panel.append(results);
+    async function refresh(){
+      kpis.replaceChildren();results.replaceChildren();const selected=select.value;
+      const scoped=assignments.filter(a=>selected==='all'||String(a.classId)===String(selected));let rows=[];
+      for(const assignment of scoped){try{const result=await api('/api/assignments/'+encodeURIComponent(assignment.id)+'/submissions');for(const student of (result.submissions||[])){rows.push({name:student.displayName||student.name||'Học sinh',code:student.code||'',className:assignment.className||'',classId:assignment.classId,assignment:assignment.title,submitted:!!student.submitted,score:Number(student.score||0),maxScore:Number(student.maxScore||0)});}}catch(e){}}
+      const scored=rows.filter(r=>r.submitted&&r.maxScore>0);const avg=scored.length?scored.reduce((s,r)=>s+r.score/r.maxScore*10,0)/scored.length:0;
+      [['Lớp học',selected==='all'?classes.length:1],['Bài đã giao',scoped.length],['Lượt có kết quả',scored.length],['Điểm trung bình',scored.length?avg.toFixed(1)+'/10':'—']].forEach(([title,value])=>{const card=document.createElement('div');card.className='lavi-kpi';const body=document.createElement('div');const strong=document.createElement('strong');strong.textContent=value;const small=document.createElement('small');small.textContent=title;body.append(strong,small);card.append(body);kpis.append(card);});
+      if(!rows.length){const empty=document.createElement('div');empty.className='class';empty.textContent='Chưa có dữ liệu bài giao/kết quả. Hãy giao bài và chấm bài trước để báo cáo có số liệu.';results.append(empty);return;}
+      const byStudent=new Map();rows.forEach(r=>{const key=(r.classId||'')+'|'+r.code+'|'+r.name;if(!byStudent.has(key))byStudent.set(key,{...r,count:0,completed:0,total:0,possible:0});const st=byStudent.get(key);st.count++;if(r.submitted&&r.maxScore>0){st.completed++;st.total+=r.score;st.possible+=r.maxScore;}});
+      const ranked=[...byStudent.values()].map(st=>({...st,average:st.possible?Math.round(st.total/st.possible*1000)/100:0})).sort((a,b)=>b.average-a.average||b.completed-a.completed||a.name.localeCompare(b.name,'vi'));
+      const table=document.createElement('table');table.className='data-table';const thead=document.createElement('thead');thead.innerHTML='<tr><th>Hạng tạm tính</th><th>Học sinh</th><th>Lớp</th><th>Bài có kết quả</th><th>Điểm TB (%)</th></tr>';table.append(thead);const tbody=document.createElement('tbody');
+      ranked.forEach((st,i)=>{const tr=document.createElement('tr');[String(i+1),st.name,st.className||'—',st.completed+'/'+st.count,st.possible?st.average.toFixed(1)+'%':'—'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});tbody.append(tr);});table.append(tbody);results.append(table);
+      const note=document.createElement('p');note.className='muted';note.textContent='Bảng tạm tính dựa trên kết quả các bài đã giao; chưa tính chuyên cần, rèn luyện, điểm thưởng hoặc vi phạm. Không dùng làm quyết định thi đua chính thức.';results.append(note);
+    }
+    select.addEventListener('change',()=>refresh().catch(e=>{results.textContent=e.message;}));await refresh();
+  }
+  async function renderSubmissions() {
+    const panel=$('futureModuleContent'); panel.replaceChildren();
+    const heading=document.createElement('h3'); heading.textContent='Bài nộp & chấm điểm';
+    const description=document.createElement('p'); description.className='muted';
+    description.textContent='Chọn bài đã giao để xem kết quả đã lưu theo từng học sinh. Câu hỏi tự luận hoặc câu chưa có đáp án chuẩn cần giáo viên chấm lại.';
+    panel.append(heading,description);
+    const data=await api('/api/assignments');
+    if(!data.assignments.length){const empty=document.createElement('div');empty.className='class';empty.textContent='Chưa có bài giao. Hãy tạo bài ở mục “Bài đang giao” trước.';panel.append(empty);return;}
+    const label=document.createElement('label');label.textContent='Chọn bài giao';
+    const select=document.createElement('select');select.id='submissionAssignment';
+    data.assignments.forEach(a=>{const option=document.createElement('option');option.value=a.id;option.textContent=a.title+' · '+a.className;select.append(option);});
+    label.htmlFor=select.id;panel.append(label,select);
+    const results=document.createElement('div');results.id='submissionResults';panel.append(results);
+    async function refresh(){
+      results.replaceChildren();
+      const result=await api('/api/assignments/'+encodeURIComponent(select.value)+'/submissions');
+      const summary=document.createElement('p');summary.className='muted';
+      const submitted=result.submissions.filter(x=>x.submitted).length;
+      summary.textContent='Sĩ số: '+result.submissions.length+' · Đã có kết quả: '+submitted+' · Chưa có kết quả: '+(result.submissions.length-submitted);
+      results.append(summary);
+      if(!result.submissions.length){const empty=document.createElement('p');empty.textContent='Lớp chưa có danh sách học sinh.';results.append(empty);return;}
+      result.submissions.forEach(student=>{
+        const card=document.createElement('div');card.className='class';
+        const name=document.createElement('h4');name.textContent=(student.code?student.code+' · ':'')+student.displayName;
+        const score=document.createElement('p');score.className='muted';
+        score.textContent=student.submitted?'Điểm: '+student.score+' / '+student.maxScore+' ('+(student.maxScore?Math.round(student.score/student.maxScore*1000)/10:0)+'%)':'Chưa có kết quả chấm';
+        card.append(name,score);
+        if(student.submitted && student.details){
+          const detail=document.createElement('div');detail.className='small-note';
+          const entries=Object.entries(student.details);
+          detail.textContent=entries.map(([id,d],i)=>'Câu '+(i+1)+': '+(d.autoGraded?(d.correct?'Đúng':'Chưa đúng'):'Chờ giáo viên xem')+' · '+d.earned+'/'+d.maxPoints+' điểm').join(' | ');
+          card.append(detail);
+          const manualEntries=entries.filter(([,d])=>!d.autoGraded || !d.teacherReviewed);
+          if(manualEntries.length){
+            const review=document.createElement('p');review.className='muted';review.textContent='Chấm thủ công các câu cần xem lại. Điểm phải nằm trong giới hạn của từng câu.';card.append(review);
+            const fields={};
+            manualEntries.forEach(([questionId,d],index)=>{
+              const field=document.createElement('div');field.className='class';
+              const label=document.createElement('label');label.textContent='Câu '+(entries.findIndex(([id])=>id===questionId)+1)+' · Điểm (tối đa '+d.maxPoints+')';
+              const input=document.createElement('input');input.type='number';input.min='0';input.max=String(d.maxPoints);input.step='0.25';input.value=String(d.earned??0);input.inputMode='decimal';
+              const note=document.createElement('input');note.type='text';note.maxLength=500;note.placeholder='Nhận xét của giáo viên (không bắt buộc)';note.value=d.teacherNote||'';
+              label.append(input);field.append(label,note);card.append(field);fields[questionId]={input,note,maxPoints:d.maxPoints};
+            });
+            const save=document.createElement('button');save.type='button';save.textContent='Lưu điểm chấm thủ công';
+            save.addEventListener('click',async()=>{
+              save.disabled=true;save.textContent='Đang lưu điểm...';
+              try{
+                const details={};
+                for(const [questionId,f] of Object.entries(fields)){
+                  const earned=Number(f.input.value);
+                  if(!Number.isFinite(earned)||earned<0||earned>Number(f.maxPoints))throw new Error('Điểm nhập phải từ 0 đến '+f.maxPoints+'.');
+                  details[questionId]={earned,note:f.note.value};
+                }
+                await api('/api/assignments/'+encodeURIComponent(select.value)+'/submissions/'+encodeURIComponent(student.studentId)+'/manual-grade',{method:'POST',body:JSON.stringify({details})});
+                await refresh();
+              }catch(e){const error=document.createElement('p');error.className='status';error.textContent='Chưa lưu được: '+e.message;card.append(error);}
+              finally{save.disabled=false;save.textContent='Lưu điểm chấm thủ công';}
+            });
+            card.append(save);
+          }
+        }
+        results.append(card);
+      });
+    }
+    select.addEventListener('change',()=>refresh().catch(e=>{results.textContent=e.message;}));
+    await refresh();
+    const reload=document.createElement('button');reload.type='button';reload.className='secondary';reload.textContent='↻ Làm mới kết quả';reload.addEventListener('click',()=>refresh().catch(e=>{results.textContent=e.message;}));panel.append(reload);
+  }
+
+
+  $('backupBtn').addEventListener('click', async () => {
+    $('backupStatus').textContent = 'Đang tạo bản sao lưu...';
+    try {
+      const response = await fetch('/api/backup', { headers: { Authorization: 'Bearer ' + token } });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Không thể tạo bản sao lưu.');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lavi2-backup-' + new Date().toISOString().slice(0,10) + '.json';
+      document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      $('backupStatus').textContent = 'Đã tải bản sao lưu xuống thiết bị.';
+    } catch (e) { $('backupStatus').textContent = e.message; }
+  });
+
+  $('restoreBtn').addEventListener('click', async () => {
+    const file = $('restoreFile').files[0];
+    if (!file) { $('backupStatus').textContent = 'Vui lòng chọn tệp sao lưu JSON trước.'; return; }
+    if (file.size > 15 * 1024 * 1024) { $('backupStatus').textContent = 'Tệp quá lớn (giới hạn 15 MB).'; return; }
+    if (!confirm('Khôi phục sẽ thêm dữ liệu từ tệp vào tài khoản hiện tại, không xóa dữ liệu đang có. Tiếp tục?')) return;
+    $('restoreBtn').disabled = true;
+    $('backupStatus').textContent = 'Đang kiểm tra và khôi phục dữ liệu...';
+    try {
+      const backup = JSON.parse(await file.text());
+      const response = await fetch('/api/backup/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify(backup)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Không thể khôi phục tệp.');
+      $('backupStatus').textContent = result.message || 'Khôi phục hoàn tất.';
+      await loadClasses();
+      await loadBanks();
+      await loadTestSets();
+    } catch (e) { $('backupStatus').textContent = e instanceof SyntaxError ? 'Tệp JSON không hợp lệ.' : e.message; }
+    finally { $('restoreBtn').disabled = false; }
+  });
+
+  $('logoutBtn').addEventListener('click', logoutLavi);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "lavi-2-sandbox",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LAVI 2.0 isolated sandbox with synthetic data only",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "xlsx": "^0.18.5",
+    "mammoth": "^1.9.0"
+  }
+}
