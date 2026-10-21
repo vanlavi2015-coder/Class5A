@@ -129,6 +129,22 @@ body.menu-collapsed .menuToggle{left:14px}
    <div class="field"><label>🎞️ GIF minh họa từ Gifhut</label><input id="cGifUrl" type="url" placeholder="Dán liên kết GIF/ảnh từ Gifhut (https://...) " oninput="previewGif(this.value)"><div id="gifPreview" class="gif-preview"></div><div class="sub">GIF là tùy chọn. Nếu Gifhut cung cấp liên kết trực tiếp tới ảnh/GIF, LAVI sẽ hiển thị ngay trong bài.</div></div>
    <div class="row"><button class="btn primary" onclick="generate()">✨ Tạo bài</button><button class="btn" onclick="clearDraft()">Xóa nháp</button></div>
   </div>
+  <details id="fileQuestionImportDetails" class="card" style="margin-top:14px">
+   <summary style="cursor:pointer;font-weight:900;color:#166534;font-size:17px">📥 Tạo câu hỏi từ file Excel / Word</summary>
+   <p class="sub" style="margin-top:10px">Tải file câu hỏi có sẵn lên để LAVI đọc nội dung và đáp án. Cô xem trước rồi mới tạo bản nháp; không cần nhập lại từng câu.</p>
+   <div class="grid2">
+    <div class="field"><label>File câu hỏi (.xlsx, .xls, .csv, .docx)</label><input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv,.docx"></div>
+    <div class="field"><label>Môn học (nếu file không có)</label><input id="questionImportSubject" placeholder="Ví dụ: Tiếng Việt"></div>
+   </div>
+   <div class="grid2">
+    <div class="field"><label>Tên bài / chủ đề (nếu file không có)</label><input id="questionImportLesson" placeholder="Ví dụ: Từ đa nghĩa"></div>
+    <div class="field"><label>Đối tượng giao bài</label><select id="questionImportGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option selected>Tất cả</option></select></div>
+   </div>
+   <div class="row"><button type="button" class="btn" onclick="parseQuestionImportFile()">🔍 Đọc file và xem trước</button><button type="button" class="btn" onclick="downloadQuestionImportTemplate()">⬇️ Tải file mẫu CSV</button></div>
+   <div id="questionImportStatus" class="sub" role="status" aria-live="polite" style="margin-top:10px"></div>
+   <div id="questionImportPreview" style="margin-top:10px"></div>
+   <div class="row" style="margin-top:10px"><button type="button" class="btn primary" id="questionImportCreateDraft" onclick="createQuestionImportDraft()" disabled>➕ Tạo bản nháp từ các câu đã đọc</button></div>
+  </details>
   <details id="manualQuestionDetails" class="card" style="margin-top:14px">
    <summary style="cursor:pointer;font-weight:900;color:#3730a3;font-size:17px">＋ Thêm mới / tạo câu hỏi thủ công</summary>
    <p class="sub" style="margin-top:10px">Mở phần này khi muốn tự nhập câu hỏi. Có thể lưu thành nháp hoặc giao bài sau khi xem lại.</p>
@@ -2540,6 +2556,107 @@ function logout(){localStorage.removeItem('lavi_token');localStorage.removeItem(
 document.getElementById('loginPass')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doLogin()}});document.getElementById('loginUser')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('loginPass')?.focus()}});
 if(LAVI.token&&LAVI.user){loadOnlineState().then(()=>{applyRole();document.getElementById('loginOverlay').style.display='none';document.getElementById('onlineUser').textContent=LAVI.user.role==='teacher'?'👩‍🏫 Giáo viên':'👨‍🎓 '+(STUDENTS.find(x=>x.id===LAVI.user.studentId)?.name||'Học sinh');if(LAVI.user.role==='student')studentMode();})}
 
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script>
+let importedQuestionRows=[];
+function normalizeImportHeader(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]/g,"").trim()}
+function findImportField(row,aliases){
+ const entries=Object.entries(row||{}), want=aliases.map(normalizeImportHeader);
+ for(const [k,v] of entries){const n=normalizeImportHeader(k);if(want.includes(n))return String(v??"").trim();}
+ return "";
+}
+function parseQuestionTextBlock(text){
+ const lines=String(text||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean), out=[];
+ let q=null;
+ const flush=()=>{if(q?.text)out.push(q);q=null};
+ for(const line of lines){
+  const qm=line.match(/^(?:câu\s*)?(\d{1,3})[.)\-:]\s*(.+)$/i);
+  const opt=line.match(/^([A-D])\s*[.)\-:]\s*(.+)$/i);
+  const ans=line.match(/^(?:đáp án|dap an|answer|đáp án đúng)\s*[:\-]\s*(.+)$/i);
+  const exp=line.match(/^(?:giải thích|loi giai|lời giải|explanation)\s*[:\-]\s*(.+)$/i);
+  if(qm){flush();q={text:qm[2],options:[],answer:"",explanation:""}}
+  else if(!q && line.length>0){q={text:line,options:[],answer:"",explanation:""}}
+  else if(q&&opt)q.options.push(opt[1].toUpperCase()+". "+opt[2]);
+  else if(q&&ans)q.answer=ans[1].trim();
+  else if(q&&exp)q.explanation=exp[1].trim();
+  else if(q)q.text+="\n"+line;
+ }
+ flush();
+ return out;
+}
+function mapQuestionImportRows(rows){
+ const out=[];
+ for(const row of rows){
+  if(!row||typeof row!=="object")continue;
+  const text=findImportField(row,["câu hỏi","noi dung cau hoi","nội dung","question","cau hoi","câu"]);
+  if(!text)continue;
+  const options=[];
+  const combined=findImportField(row,["phương án","các phương án","đáp án lựa chọn","options","lua chon"]);
+  if(combined)combined.split(/\r?\n|\s*\|\s*/).map(x=>x.trim()).filter(Boolean).forEach((v,i)=>options.push(/^[A-D][.)\-:]/i.test(v)?v:String.fromCharCode(65+i)+". "+v));
+  [["A",["A","phương án A","đáp án A","option A"]],["B",["B","phương án B","đáp án B","option B"]],["C",["C","phương án C","đáp án C","option C"]],["D",["D","phương án D","đáp án D","option D"]]].forEach(([letter,aliases])=>{const v=findImportField(row,aliases);if(v&&!options.some(x=>x.toUpperCase().startsWith(letter+".")))options.push(letter+". "+v)});
+  let answer=findImportField(row,["đáp án đúng","đáp án","answer","đáp án chuẩn","key","correct answer"]);
+  const explanation=findImportField(row,["giải thích","lời giải","hướng dẫn giải","explanation"]);
+  const subject=findImportField(row,["môn","môn học","subject"]), lesson=findImportField(row,["bài","bài học","chủ đề","lesson","topic"]);
+  if(options.length&&/^[A-D]$/i.test(answer))answer=answer.toUpperCase();
+  if(options.length&&answer&&!/^[A-D]$/i.test(answer)){
+    const idx=options.findIndex(x=>normalizeImportHeader(x.replace(/^[A-D][.)\-:]\s*/i,""))===normalizeImportHeader(answer));
+    if(idx>=0)answer=String.fromCharCode(65+idx);
+  }
+  out.push({text,options,answer,explanation,subject,lesson,manual:!answer,type:options.length?"Trắc nghiệm 4 đáp án":(answer?"Trả lời ngắn":"Tự luận – cô chấm"),acceptedAnswers:answer?[answer]:[]});
+ }
+ return out;
+}
+async function parseQuestionImportFile(){
+ const file=document.getElementById("questionImportFile")?.files?.[0], status=document.getElementById("questionImportStatus"), preview=document.getElementById("questionImportPreview"), btn=document.getElementById("questionImportCreateDraft");
+ importedQuestionRows=[];btn.disabled=true;preview.innerHTML="";
+ if(!file){status.textContent="Cô hãy chọn file Excel, CSV hoặc Word trước.";return;}
+ status.textContent="Đang đọc file…";
+ try{
+  const ext=file.name.split(".").pop().toLowerCase();let rows=[];
+  if(["xlsx","xls","csv"].includes(ext)){
+   if(!window.XLSX)throw new Error("Thư viện đọc Excel chưa tải được. Cô thử tải lại trang hoặc dùng file CSV.");
+   const data=await file.arrayBuffer(), wb=XLSX.read(data,{type:"array"});
+   const ws=wb.Sheets[wb.SheetNames[0]];
+   rows=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+   if(!rows.length){
+    const matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+    if(matrix.length>1){const headers=matrix[0];rows=matrix.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[String(h||""),r[i]??""])));}
+   }
+  }else if(ext==="docx"){
+   if(!window.mammoth)throw new Error("Thư viện đọc Word chưa tải được. Cô thử tải lại trang.");
+   const result=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
+   importedQuestionRows=parseQuestionTextBlock(result.value);
+  }else throw new Error("Định dạng chưa hỗ trợ. Hãy dùng .xlsx, .xls, .csv hoặc .docx.");
+  if(ext!=="docx") importedQuestionRows=mapQuestionImportRows(rows);
+  if(!importedQuestionRows.length)throw new Error("Chưa nhận diện được câu hỏi. File Excel cần có cột “Câu hỏi/Nội dung câu hỏi”; file Word nên đánh số câu và ghi đáp án rõ ràng.");
+  renderQuestionImportPreview();
+  status.textContent="Đã đọc "+importedQuestionRows.length+" câu. Kiểm tra bản xem trước rồi bấm tạo bản nháp.";
+  btn.disabled=false;
+ }catch(e){status.textContent="Không đọc được file: "+(e.message||"Lỗi không xác định");}
+}
+function renderQuestionImportPreview(){
+ const el=document.getElementById("questionImportPreview");
+ el.innerHTML='<div class="sub" style="font-weight:800;margin-bottom:8px">Bản xem trước ('+importedQuestionRows.length+' câu)</div>'+importedQuestionRows.slice(0,12).map((q,i)=>'<div class="question" style="margin:7px 0"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<div class="sub">'+(q.options.length?esc(q.options.join(" · ")):"Trả lời ngắn / tự luận")+'</div><div class="sub">Đáp án: '+esc(q.answer||"Chưa có — cần kiểm tra")+'</div></div>').join("")+(importedQuestionRows.length>12?'<div class="sub">Còn '+(importedQuestionRows.length-12)+' câu nữa trong file.</div>':"");
+}
+function createQuestionImportDraft(){
+ if(!importedQuestionRows.length)return;
+ const subject=document.getElementById("questionImportSubject").value.trim()||importedQuestionRows.find(q=>q.subject)?.subject||"Câu hỏi từ file";
+ const lesson=document.getElementById("questionImportLesson").value.trim()||importedQuestionRows.find(q=>q.lesson)?.lesson||"Ngân hàng nhập từ file";
+ const group=document.getElementById("questionImportGroup").value;
+ const questions=importedQuestionRows.map((q,i)=>({...q,id:i+1,text:String(q.text||"").trim(),answer:String(q.answer||"").trim(),acceptedAnswers:Array.isArray(q.acceptedAnswers)?q.acceptedAnswers:[],options:q.options?.length?q.options:undefined,manual:!String(q.answer||"").trim()}));
+ draft={id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),subject,week:"Nhập từ file",topic:lesson,lesson,group,count:questions.length,lessonIds:[lesson],due:"",note:"Nhập từ file "+(document.getElementById("questionImportFile").files[0]?.name||""),gifUrl:"",sets:[{group,questions}],status:"Nháp",createdAt:new Date().toISOString()};
+ document.getElementById("draft").innerHTML=renderDraft();
+ document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});
+ document.getElementById("questionImportStatus").textContent="Đã tạo bản nháp từ "+questions.length+" câu. Kiểm tra đáp án rồi chọn Lưu nháp hoặc Giao bài.";
+}
+function downloadQuestionImportTemplate(){
+ const csv="Câu hỏi,Phương án A,Phương án B,Phương án C,Phương án D,Đáp án đúng,Giải thích,Môn học,Bài học\r\nVí dụ: 2 + 3 bằng bao nhiêu?,4,5,6,7,B,2 + 3 = 5,Toán,Cộng số tự nhiên";
+ const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="mau-nhap-cau-hoi-LAVI.csv";a.click();URL.revokeObjectURL(url);
+}
 </script>
 
 <script>
