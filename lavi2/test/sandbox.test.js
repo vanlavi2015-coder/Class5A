@@ -148,6 +148,48 @@ test('demo teachers remain isolated and registration/login works for email and p
     const testSet = (await testSetResponse.json()).testSet;
     assert.equal((await post('/api/test-sets/' + testSet.id + '/questions', { questionId: question.id, points: 2 }, teacherCToken)).status, 201);
 
+    const studentCreate = await post('/api/classes/' + createdClass.id + '/students', {
+      code: 'C01', displayName: 'Học sinh thử nghiệm C'
+    }, teacherCToken);
+    assert.equal(studentCreate.status, 201);
+    const student = (await studentCreate.json()).student;
+    assert.equal(student.code, 'C01');
+    assert.equal(student.level, 'Chưa đánh giá');
+    const duplicateStudent = await post('/api/classes/' + createdClass.id + '/students', {
+      code: 'C01', displayName: 'Học sinh trùng mã'
+    }, teacherCToken);
+    assert.equal(duplicateStudent.status, 409);
+    const rosterAfterCreate = await (await fetch(base + '/api/classes/' + createdClass.id + '/students', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    })).json();
+    assert.equal(rosterAfterCreate.students.length, 1);
+    const otherTeacherRoster = await fetch(base + '/api/classes/' + createdClass.id + '/students', {
+      headers: { Authorization: 'Bearer ' + tokenA }
+    });
+    assert.equal(otherTeacherRoster.status, 404);
+
+    const assignmentResponse = await post('/api/assignments', {
+      title: 'Bài ôn tập thử nghiệm', classId: createdClass.id, testSetId: testSet.id,
+      dueAt: '2026-10-25T10:00:00.000Z'
+    }, teacherCToken);
+    assert.equal(assignmentResponse.status, 201);
+    const assignment = (await assignmentResponse.json()).assignment;
+    assert.equal(assignment.classId, createdClass.id);
+    assert.equal(assignment.testSetId, testSet.id);
+    const assignmentList = await (await fetch(base + '/api/assignments', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    })).json();
+    assert.equal(assignmentList.assignments.length, 1);
+    assert.equal(assignmentList.assignments[0].title, 'Bài ôn tập thử nghiệm');
+    const otherTeacherAssignments = await (await fetch(base + '/api/assignments', {
+      headers: { Authorization: 'Bearer ' + tokenA }
+    })).json();
+    assert.equal(otherTeacherAssignments.assignments.length, 0);
+    const invalidAssignment = await post('/api/assignments', {
+      title: 'Bài không hợp lệ', classId: 'demo-class-b'
+    }, teacherCToken);
+    assert.equal(invalidAssignment.status, 404);
+
     const backupResponse = await fetch(base + '/api/backup', {
       headers: { Authorization: 'Bearer ' + teacherCToken }
     });
