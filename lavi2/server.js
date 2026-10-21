@@ -21,6 +21,15 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, 'public'), { etag: false, maxAge: 0 }));
 
+// Lightweight request diagnostics for sandbox API calls. Never log tokens or request bodies.
+app.use('/api', (req, res, next) => {
+  const startedAt = Date.now();
+  res.on('finish', () => {
+    console.log(`API ${req.method} ${req.path} -> ${res.statusCode} (${Date.now() - startedAt}ms)`);
+  });
+  next();
+});
+
 const PORT = Number(process.env.PORT || 3100);
 const DEMO_MODE = process.env.LAVI_DEMO_MODE === 'true';
 const SECRET = process.env.LAVI_JWT_SECRET;
