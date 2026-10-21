@@ -68,6 +68,67 @@ db.exec(`
     demo_level TEXT NOT NULL DEFAULT 'Chưa đánh giá',
     UNIQUE(class_id, student_code)
   );
+  CREATE TABLE IF NOT EXISTS question_banks (
+    id TEXT PRIMARY KEY,
+    owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    subject TEXT NOT NULL DEFAULT '',
+    grade TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS questions (
+    id TEXT PRIMARY KEY,
+    bank_id TEXT NOT NULL REFERENCES question_banks(id) ON DELETE CASCADE,
+    question_type TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    options_json TEXT NOT NULL DEFAULT '[]',
+    answer_json TEXT NOT NULL DEFAULT 'null',
+    explanation TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS test_sets (
+    id TEXT PRIMARY KEY,
+    owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    subject TEXT NOT NULL DEFAULT '',
+    grade TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS test_set_questions (
+    test_set_id TEXT NOT NULL REFERENCES test_sets(id) ON DELETE CASCADE,
+    question_id TEXT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 0,
+    points REAL NOT NULL DEFAULT 1,
+    PRIMARY KEY(test_set_id, question_id)
+  );
+  CREATE TABLE IF NOT EXISTS assignments (
+    id TEXT PRIMARY KEY,
+    owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    class_id TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+    test_set_id TEXT REFERENCES test_sets(id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
+    due_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS scores (
+    id TEXT PRIMARY KEY,
+    assignment_id TEXT NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+    student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    score REAL NOT NULL DEFAULT 0,
+    max_score REAL NOT NULL DEFAULT 0,
+    detail_json TEXT NOT NULL DEFAULT '{}',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(assignment_id, student_id)
+  );
+  CREATE TABLE IF NOT EXISTS point_transactions (
+    id TEXT PRIMARY KEY,
+    owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    class_id TEXT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+    student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    points INTEGER NOT NULL,
+    reason TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
   CREATE TABLE IF NOT EXISTS audit_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     actor_user_id INTEGER REFERENCES users(id),
@@ -174,6 +235,124 @@ app.get('/api/health', (_req, res) => res.json({
   database: 'sqlite',
   schemaVersion: 1
 }));
+
+function ownedClassIds(userId) {
+  return db.prepare('SELECT id FROM classes WHERE owner_user_id=?').all(userId).map(row => row.id);
+}
+
+app.get('/api/backup', authenticate, requireTeacher, (req, res) => {
+  const classIds = ownedClassIds(req.user.id);
+  const banks = db.prepare('SELECT * FROM question_banks WHERE owner_user_id=?').all(req.user.id);
+  const tests = db.prepare('SELECT * FROM test_sets WHERE owner_user_id=?').all(req.user.id);
+  const bankIds = banks.map(row => row.id);
+  const testIds = tests.map(row => row.id);
+  const inRows = (table, column, ids) => {
+    if (!ids.length) return [];
+    const marks = ids.map(() => '?').join(',');
+    return db.prepare('SELECT * FROM ' + table + ' WHERE ' + column + ' IN (' + marks + ')').all(...ids);
+  };
+  const students = inRows('students', 'class_id', classIds);
+  const studentIds = students.map(row => row.id);
+  const questions = inRows('questions', 'bank_id', bankIds);
+  const questionIds = questions.map(row => row.id);
+  const testQuestionRows = inRows('test_set_questions', 'test_set_id', testIds);
+  const assignments = db.prepare('SELECT * FROM assignments WHERE owner_user_id=?').all(req.user.id);
+  const assignmentIds = assignments.map(row => row.id);
+  const backup = {
+    format: 'LAVI2_BACKUP', version: 1, exportedAt: new Date().toISOString(),
+    account: { username: req.user.username, displayName: req.user.display_name },
+    data: {
+      classes: inRows('classes', 'id', classIds),
+      students,
+      question_banks: banks,
+      questions,
+      test_sets: tests,
+      test_set_questions: testQuestionRows,
+      assignments,
+      scores: inRows('scores', 'assignment_id', assignmentIds),
+      point_transactions: inRows('point_transactions', 'class_id', classIds)
+    }
+  };
+  audit(req.user.id, 'export_backup', 'backup');
+  res.set('Content-Type', 'application/json; charset=utf-8');
+  res.set('Content-Disposition', 'attachment; filename="lavi2-backup-' + new Date().toISOString().slice(0,10) + '.json"');
+  res.json(backup);
+});
+
+app.post('/api/backup/restore', authenticate, requireTeacher, (req, res) => {
+  const backup = req.body;
+  if (!backup || backup.format !== 'LAVI2_BACKUP' || backup.version !== 1 || !backup.data || typeof backup.data !== 'object') {
+    return res.status(400).json({ error: 'Tệp sao lưu không đúng định dạng LAVI 2.0.' });
+  }
+  const allowed = ['classes','students','question_banks','questions','test_sets','test_set_questions','assignments','scores','point_transactions'];
+  for (const key of allowed) {
+    if (!Array.isArray(backup.data[key])) return res.status(400).json({ error: 'Tệp sao lưu thiếu dữ liệu hợp lệ: ' + key });
+    if (backup.data[key].length > 50000) return res.status(413).json({ error: 'Tệp sao lưu quá lớn.' });
+  }
+  // Restore is intentionally additive and remaps all ownership to the currently signed-in teacher.
+  // It never deletes existing data or restores credentials/other users.
+  const classMap = new Map(), bankMap = new Map(), questionMap = new Map(), testMap = new Map(), assignmentMap = new Map(), studentMap = new Map();
+  const remapId = old => randomUUID();
+  const tx = db.prepare('SELECT 1');
+  try {
+    db.exec('BEGIN IMMEDIATE');
+    for (const row of backup.data.classes) {
+      const id = remapId(row.id); classMap.set(row.id, id);
+      db.prepare('INSERT INTO classes(id,owner_user_id,name,school_name) VALUES(?,?,?,?)')
+        .run(id, req.user.id, String(row.name || 'Lớp khôi phục').slice(0,80) + ' (khôi phục)', String(row.school_name || 'Trường').slice(0,120));
+    }
+    for (const row of backup.data.students) {
+      if (!classMap.has(row.class_id)) continue;
+      const id = remapId(row.id); studentMap.set(row.id, id);
+      db.prepare('INSERT INTO students(id,class_id,student_code,display_name,demo_level) VALUES(?,?,?,?,?)')
+        .run(id, classMap.get(row.class_id), String(row.student_code || id.slice(0,8)).slice(0,50), String(row.display_name || 'Học sinh').slice(0,100), String(row.demo_level || 'Chưa đánh giá').slice(0,50));
+    }
+    for (const row of backup.data.question_banks) {
+      const id = remapId(row.id); bankMap.set(row.id, id);
+      db.prepare('INSERT INTO question_banks(id,owner_user_id,name,subject,grade) VALUES(?,?,?,?,?)')
+        .run(id, req.user.id, String(row.name || 'Ngân hàng khôi phục').slice(0,120) + ' (khôi phục)', String(row.subject || '').slice(0,80), String(row.grade || '').slice(0,40));
+    }
+    for (const row of backup.data.questions) {
+      if (!bankMap.has(row.bank_id)) continue;
+      const id = remapId(row.id); questionMap.set(row.id, id);
+      db.prepare('INSERT INTO questions(id,bank_id,question_type,prompt,options_json,answer_json,explanation) VALUES(?,?,?,?,?,?,?)')
+        .run(id, bankMap.get(row.bank_id), String(row.question_type || 'short').slice(0,40), String(row.prompt || '').slice(0,5000), String(row.options_json || '[]').slice(0,20000), String(row.answer_json || 'null').slice(0,10000), String(row.explanation || '').slice(0,3000));
+    }
+    for (const row of backup.data.test_sets) {
+      const id = remapId(row.id); testMap.set(row.id, id);
+      db.prepare('INSERT INTO test_sets(id,owner_user_id,name,subject,grade) VALUES(?,?,?,?,?)')
+        .run(id, req.user.id, String(row.name || 'Bộ đề khôi phục').slice(0,120) + ' (khôi phục)', String(row.subject || '').slice(0,80), String(row.grade || '').slice(0,40));
+    }
+    for (const row of backup.data.test_set_questions) {
+      if (!testMap.has(row.test_set_id) || !questionMap.has(row.question_id)) continue;
+      db.prepare('INSERT OR IGNORE INTO test_set_questions(test_set_id,question_id,position,points) VALUES(?,?,?,?)')
+        .run(testMap.get(row.test_set_id), questionMap.get(row.question_id), Number(row.position) || 0, Math.max(0, Math.min(100, Number(row.points) || 1)));
+    }
+    for (const row of backup.data.assignments) {
+      if (!classMap.has(row.class_id)) continue;
+      const id = remapId(row.id); assignmentMap.set(row.id, id);
+      db.prepare('INSERT INTO assignments(id,owner_user_id,class_id,test_set_id,title,due_at) VALUES(?,?,?,?,?,?)')
+        .run(id, req.user.id, classMap.get(row.class_id), testMap.get(row.test_set_id) || null, String(row.title || 'Bài tập khôi phục').slice(0,160) + ' (khôi phục)', row.due_at || null);
+    }
+    for (const row of backup.data.scores) {
+      if (!assignmentMap.has(row.assignment_id) || !studentMap.has(row.student_id)) continue;
+      db.prepare('INSERT OR IGNORE INTO scores(id,assignment_id,student_id,score,max_score,detail_json) VALUES(?,?,?,?,?,?)')
+        .run(remapId(row.id), assignmentMap.get(row.assignment_id), studentMap.get(row.student_id), Number(row.score) || 0, Number(row.max_score) || 0, String(row.detail_json || '{}').slice(0,20000));
+    }
+    for (const row of backup.data.point_transactions) {
+      if (!classMap.has(row.class_id) || !studentMap.has(row.student_id)) continue;
+      db.prepare('INSERT INTO point_transactions(id,owner_user_id,class_id,student_id,points,reason,created_at) VALUES(?,?,?,?,?,?,?)')
+        .run(remapId(row.id), req.user.id, classMap.get(row.class_id), studentMap.get(row.student_id), Number(row.points) || 0, String(row.reason || '').slice(0,500), row.created_at || new Date().toISOString());
+    }
+    audit(req.user.id, 'restore_backup', 'backup');
+    db.exec('COMMIT');
+    res.json({ ok: true, message: 'Đã khôi phục dữ liệu bổ sung. Dữ liệu hiện có không bị xóa.', restored: Object.fromEntries(allowed.map(key => [key, backup.data[key].length])) });
+  } catch (err) {
+    try { db.exec('ROLLBACK'); } catch {}
+    console.error('LAVI2 restore error:', err.message);
+    res.status(400).json({ error: 'Không thể khôi phục tệp. Hãy kiểm tra tệp sao lưu và thử lại.' });
+  }
+});
 
 app.post('/api/register', (req, res) => {
   if (!rateLimit('register:' + clientKey(req), 5, 15 * 60 * 1000)) {
