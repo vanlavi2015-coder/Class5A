@@ -470,6 +470,13 @@ app.post('/api/question-banks', authenticate, requireTeacher, (req, res) => {
   res.status(201).json({ questionBank: { id, name } });
 });
 
+app.get('/api/question-banks/:bankId/questions', authenticate, requireTeacher, (req, res) => {
+  const bank = db.prepare('SELECT id FROM question_banks WHERE id=? AND owner_user_id=?').get(String(req.params.bankId), req.user.id);
+  if (!bank) return res.status(404).json({ error: 'Không tìm thấy ngân hàng câu hỏi.' });
+  const questions = db.prepare('SELECT id,bank_id AS bankId,question_type AS type,prompt,options_json AS optionsJson,answer_json AS answerJson,explanation,created_at AS createdAt FROM questions WHERE bank_id=? ORDER BY created_at DESC').all(bank.id);
+  res.json({ questions: questions.map(q => ({ ...q, options: JSON.parse(q.optionsJson || '[]'), answer: JSON.parse(q.answerJson || 'null') })) });
+});
+
 app.post('/api/question-banks/:bankId/questions', authenticate, requireTeacher, (req, res) => {
   const bank = db.prepare('SELECT id FROM question_banks WHERE id=? AND owner_user_id=?').get(String(req.params.bankId), req.user.id);
   if (!bank) return res.status(404).json({ error: 'Không tìm thấy ngân hàng câu hỏi.' });
