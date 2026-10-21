@@ -236,18 +236,24 @@ function requireTeacher(req, res, next) {
   next();
 }
 
-app.get('/api/question-template.xlsx', (_req, res) => {
-  const sheet = XLSX.utils.aoa_to_sheet([
-    ['ID','Câu hỏi','Đáp án A','Đáp án B','Đáp án C','Đáp án D','Đáp án đúng'],
-    ['1','Ví dụ: 3 m² 5 dm² bằng bao nhiêu dm²?','35 dm²','305 dm²','3005 dm²','350 dm²','B']
-  ]);
-  sheet['!cols'] = [{wch:8},{wch:55},{wch:28},{wch:28},{wch:28},{wch:28},{wch:16}];
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, sheet, 'Câu hỏi');
-  const buffer = XLSX.write(workbook, {type:'buffer',bookType:'xlsx'});
+app.get('/api/question-template.xlsx', (req, res) => {
+  const type=String(req.query.type||'abcd');
+  const examples={
+    abcd:[['ID','Loại câu hỏi','Câu hỏi','Đáp án A','Đáp án B','Đáp án C','Đáp án D','Đáp án đúng','Giải thích'],['1','abcd','3 m² 5 dm² bằng bao nhiêu dm²?','305 dm²','35 dm²','3005 dm²','350 dm²','A','1 m² = 100 dm².']],
+    true_false:[['ID','Loại câu hỏi','Câu hỏi','Đáp án đúng','Giải thích'],['1','true_false','3 m² bằng 300 dm².','Đúng','1 m² = 100 dm².']],
+    fill_blank:[['ID','Loại câu hỏi','Câu hỏi','Đáp án đúng','Giải thích'],['1','fill_blank','3 m² = ___ dm²','300','1 m² = 100 dm².']],
+    short:[['ID','Loại câu hỏi','Câu hỏi','Đáp án đúng','Giải thích'],['1','short','3 m² bằng bao nhiêu dm²?','300','1 m² = 100 dm².']],
+    multiple:[['ID','Loại câu hỏi','Câu hỏi','Đáp án A','Đáp án B','Đáp án C','Đáp án D','Đáp án đúng','Giải thích'],['1','multiple','Chọn tất cả đơn vị diện tích:','m²','kg','dm²','lít','A,C','m² và dm² là đơn vị diện tích.']],
+    matching:[['ID','Loại câu hỏi','Câu hỏi','Các mục','Đáp án đúng','Giải thích'],['1','matching','Nối đơn vị với giá trị tương ứng','1 m² | 100 dm²; 1 dm² | 100 cm²','1 m² | 100 dm²; 1 dm² | 100 cm²','Nối các đơn vị tương ứng.']],
+    ordering:[['ID','Loại câu hỏi','Câu hỏi','Các mục','Đáp án đúng','Giải thích'],['1','ordering','Sắp xếp các bước đổi đơn vị','Bước 1; Bước 2; Bước 3','Bước 1; Bước 2; Bước 3','Sắp xếp theo trình tự.']]
+  };
+  const data=examples[type]||examples.abcd;
+  const sheet=XLSX.utils.aoa_to_sheet(data);
+  sheet['!cols']=data[0].map((v,i)=>({wch:i===2?48:String(v).length>18?28:18}));
+  const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,sheet,'Câu hỏi');
+  const buffer=XLSX.write(workbook,{type:'buffer',bookType:'xlsx'});
   res.set('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.set('Content-Disposition','attachment; filename="mau-cau-hoi-LAVI2.xlsx"');
-  res.send(buffer);
+  res.set('Content-Disposition','attachment; filename="mau-cau-hoi-LAVI2-'+type+'.xlsx"');res.send(buffer);
 });
 
 app.get('/api/health', (_req, res) => res.json({
@@ -510,27 +516,39 @@ function firstValue(row, aliases) {
   }
   return '';
 }
-function parseQuestionRows(rows) {
-  const parsed = [];
-  for (const row of rows) {
-    const prompt = firstValue(row, ['cauhoi','question','noidungcauhoi','prompt','content']);
-    if (!prompt) continue;
-    const a = firstValue(row, ['dapana','phuonga','a']);
-    const b = firstValue(row, ['dapanb','phuongb','b']);
-    const c = firstValue(row, ['dapanc','phuongc','c']);
-    const d = firstValue(row, ['dapand','phuongd','d']);
-    const options = [a,b,c,d].filter(Boolean);
-    const answerRaw = firstValue(row, ['dapandung','dapan','correctanswer','answer','key']);
-    const explanation = firstValue(row, ['giaithich','explanation','loigiai']);
-    if (!answerRaw) continue;
-    // The official template stores A/B/C/D. Convert that key to the zero-based option index
-    // used by the question editor and scoring API; preserve free-text answers unchanged.
-    const answerLetter = answerRaw.trim().toUpperCase();
-    const answer = options.length >= 2 && /^[ABCD]$/.test(answerLetter)
-      ? ['A','B','C','D'].indexOf(answerLetter)
-      : answerRaw;
-    if (options.length >= 2 && typeof answer === 'number' && answer >= options.length) continue;
-    parsed.push({ prompt: prompt.slice(0,5000), type: options.length >= 2 ? 'abcd' : 'short', options, answer, explanation: explanation.slice(0,3000) });
+function parseQuestionRows(rows, defaultType='abcd') {
+  const parsed=[];
+  for(const row of rows){
+    const prompt=firstValue(row,['cauhoi','question','noidungcauhoi','prompt','content']);
+    if(!prompt) continue;
+    const rawType=normalizeHeader(firstValue(row,['loaicauhoi','dangcauhoi','questiontype','type']));
+    const map={abcd:'abcd',tracnghiem:'abcd',truefalse:'true_false',dungsai:'true_false',fillblank:'fill_blank',dienkhuyet:'fill_blank',short:'short',traloingan:'short',multiple:'multiple',chonnhieudapan:'multiple',matching:'matching',noicap:'matching',ordering:'ordering',sapxep:'ordering'};
+    const type=map[rawType]||defaultType;
+    const a=firstValue(row,['dapana','phuonga','a']),b=firstValue(row,['dapanb','phuongb','b']),c=firstValue(row,['dapanc','phuongc','c']),d=firstValue(row,['dapand','phuongd','d']);
+    let options=[a,b,c,d].filter(Boolean);
+    let answer=firstValue(row,['dapandung','dapan','correctanswer','answer','key']);
+    const explanation=firstValue(row,['giaithich','explanation','loigiai']);
+    if(type==='matching'||type==='ordering'){
+      const rawItems=firstValue(row,['cacmuc','caccap','phuongan','options','items','matchingpairs','orderingitems']);
+      if(rawItems) options=rawItems.split(/[;\n]/).map(v=>v.trim()).filter(Boolean);
+      if(!answer) answer=rawItems;
+    }
+    if(!answer) continue;
+    if(type==='true_false'){
+      const normalized=normalizeHeader(answer);
+      if(!['dung','sai','true','false'].includes(normalized)) continue;
+      answer=['dung','true'].includes(normalized)?'Đúng':'Sai';options=['Đúng','Sai'];
+    }else if(type==='multiple'){
+      answer=answer.toUpperCase().split(/[,;\s]+/).map(key=>({A:a,B:b,C:c,D:d}[key]||key)).filter(Boolean);
+      if(answer.length<2) continue;
+    }else if(type==='abcd'){
+      const letter=answer.trim().toUpperCase();
+      if(options.length<2||! /^[ABCD]$/.test(letter)) continue;
+      const index=['A','B','C','D'].indexOf(letter);if(index>=options.length)continue;answer=index;
+    }else if(type==='matching'||type==='ordering'){
+      options=options.map(v=>v.trim()).filter(Boolean);answer=options;
+    }
+    parsed.push({prompt:prompt.slice(0,5000),type,options,answer,explanation:explanation.slice(0,3000)});
   }
   return parsed;
 }
@@ -574,7 +592,7 @@ app.post('/api/question-banks/:bankId/import', authenticate, requireTeacher, asy
   try {
     const extracted = await extractUploadedFile(req.body?.fileName, req.body?.dataBase64);
     if (!extracted.rows.length) return res.status(400).json({ error:'Tệp đã đọc được nhưng chưa có bảng câu hỏi. Với Word, hãy dùng chức năng AI tạo câu hỏi từ tài liệu.' });
-    const questions = parseQuestionRows(extracted.rows);
+    const questions = parseQuestionRows(extracted.rows, String(req.query.type || 'abcd'));
     if (!questions.length) return res.status(400).json({ error:'Không nhận diện được câu hỏi có đáp án. Hãy dùng mẫu Excel: ID, Câu hỏi, Đáp án A, Đáp án B, Đáp án C, Đáp án D, Đáp án đúng.' });
     const insert = db.prepare('INSERT INTO questions(id,bank_id,question_type,prompt,options_json,answer_json,explanation) VALUES(?,?,?,?,?,?,?)');
     db.exec('BEGIN IMMEDIATE');
