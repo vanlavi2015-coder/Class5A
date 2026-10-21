@@ -8,7 +8,7 @@ const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
 app.disable('x-powered-by');
-app.use(express.json({ limit: '256kb' }));
+app.use(express.json({ limit: '15mb' }));
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('Referrer-Policy', 'no-referrer');
