@@ -520,9 +520,16 @@ function parseQuestionRows(rows) {
     const c = firstValue(row, ['dapanc','phuongc','c']);
     const d = firstValue(row, ['dapand','phuongd','d']);
     const options = [a,b,c,d].filter(Boolean);
-    const answer = firstValue(row, ['dapandung','dapan','correctanswer','answer','key']);
+    const answerRaw = firstValue(row, ['dapandung','dapan','correctanswer','answer','key']);
     const explanation = firstValue(row, ['giaithich','explanation','loigiai']);
-    if (!answer) continue;
+    if (!answerRaw) continue;
+    // The official template stores A/B/C/D. Convert that key to the zero-based option index
+    // used by the question editor and scoring API; preserve free-text answers unchanged.
+    const answerLetter = answerRaw.trim().toUpperCase();
+    const answer = options.length >= 2 && /^[ABCD]$/.test(answerLetter)
+      ? ['A','B','C','D'].indexOf(answerLetter)
+      : answerRaw;
+    if (options.length >= 2 && typeof answer === 'number' && answer >= options.length) continue;
     parsed.push({ prompt: prompt.slice(0,5000), type: options.length >= 2 ? 'abcd' : 'short', options, answer, explanation: explanation.slice(0,3000) });
   }
   return parsed;
@@ -828,6 +835,51 @@ app.post('/api/assignments/:assignmentId/submissions/:studentId', authenticate, 
     ON CONFLICT(assignment_id,student_id) DO UPDATE SET score=excluded.score,max_score=excluded.max_score,detail_json=excluded.detail_json,updated_at=CURRENT_TIMESTAMP`)
     .run(id, assignment.id, student.id, score, maxScore, JSON.stringify(details));
   audit(req.user.id, 'grade_submission', 'assignment', assignment.id);
+  res.json({ ok: true, score, maxScore, percent: maxScore ? Math.round(score / maxScore * 1000) / 10 : 0, needsTeacherReview: needsReview, details });
+});
+
+app.post('/api/assignments/:assignmentId/submissions/:studentId/manual-grade', authenticate, requireTeacher, (req, res) => {
+  const assignment = db.prepare('SELECT id,class_id AS classId,test_set_id AS testSetId FROM assignments WHERE id=? AND owner_user_id=?')
+    .get(String(req.params.assignmentId), req.user.id);
+  if (!assignment) return res.status(404).json({ error: 'Không tìm thấy bài giao thuộc tài khoản của thầy cô.' });
+  const student = db.prepare('SELECT id FROM students WHERE id=? AND class_id=?').get(String(req.params.studentId), assignment.classId);
+  if (!student) return res.status(404).json({ error: 'Học sinh không thuộc lớp được giao bài.' });
+  if (!assignment.testSetId) return res.status(400).json({ error: 'Bài giao chưa gắn bộ đề.' });
+  const existing = db.prepare('SELECT id,detail_json AS detailJson FROM scores WHERE assignment_id=? AND student_id=?').get(assignment.id, student.id);
+  if (!existing) return res.status(404).json({ error: 'Chưa có kết quả để chấm. Hãy lưu bài làm trước.' });
+  const incoming = req.body?.details;
+  if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) return res.status(400).json({ error: 'Cần gửi điểm từng câu dưới dạng đối tượng details.' });
+  const rows = db.prepare('SELECT q.id,tq.points FROM test_set_questions tq JOIN questions q ON q.id=tq.question_id WHERE tq.test_set_id=?').all(assignment.testSetId);
+  const maxById = new Map(rows.map(row => [row.id, Math.max(0, Number(row.points) || 0)]));
+  const details = JSON.parse(existing.detailJson || '{}');
+  for (const [questionId, value] of Object.entries(incoming)) {
+    if (!maxById.has(questionId)) return res.status(400).json({ error: 'Có câu hỏi không thuộc bộ đề được giao.' });
+    if (!value || typeof value !== 'object') return res.status(400).json({ error: 'Dữ liệu chấm từng câu không hợp lệ.' });
+    const earned = Number(value.earned);
+    if (!Number.isFinite(earned) || earned < 0 || earned > maxById.get(questionId)) {
+      return res.status(400).json({ error: 'Điểm câu hỏi phải nằm trong khoảng 0 đến ' + maxById.get(questionId) + '.' });
+    }
+    details[questionId] = {
+      ...(details[questionId] || {}),
+      earned,
+      maxPoints: maxById.get(questionId),
+      autoGraded: false,
+      correct: earned === maxById.get(questionId),
+      teacherReviewed: true,
+      teacherNote: String(value.note || '').slice(0,500)
+    };
+  }
+  let score = 0, maxScore = 0, needsReview = false;
+  for (const row of rows) {
+    const item = details[row.id] || {};
+    const maxPoints = Math.max(0, Number(row.points) || 0);
+    maxScore += maxPoints;
+    score += Math.max(0, Math.min(maxPoints, Number(item.earned) || 0));
+    if (item.autoGraded === false && !item.teacherReviewed) needsReview = true;
+  }
+  db.prepare('UPDATE scores SET score=?,max_score=?,detail_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?')
+    .run(score, maxScore, JSON.stringify(details), existing.id);
+  audit(req.user.id, 'manual_grade_submission', 'assignment', assignment.id);
   res.json({ ok: true, score, maxScore, percent: maxScore ? Math.round(score / maxScore * 1000) / 10 : 0, needsTeacherReview: needsReview, details });
 });
 
