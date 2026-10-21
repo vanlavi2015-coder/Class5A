@@ -657,7 +657,34 @@
           const entries=Object.entries(student.details);
           detail.textContent=entries.map(([id,d],i)=>'Câu '+(i+1)+': '+(d.autoGraded?(d.correct?'Đúng':'Chưa đúng'):'Chờ giáo viên xem')+' · '+d.earned+'/'+d.maxPoints+' điểm').join(' | ');
           card.append(detail);
-          if(entries.some(([,d])=>!d.autoGraded)){const review=document.createElement('p');review.className='muted';review.textContent='Lưu ý: có câu cần giáo viên chấm thủ công. Chức năng chỉnh sửa điểm thủ công sẽ được bổ sung tiếp.';card.append(review);}
+          const manualEntries=entries.filter(([,d])=>!d.autoGraded || !d.teacherReviewed);
+          if(manualEntries.length){
+            const review=document.createElement('p');review.className='muted';review.textContent='Chấm thủ công các câu cần xem lại. Điểm phải nằm trong giới hạn của từng câu.';card.append(review);
+            const fields={};
+            manualEntries.forEach(([questionId,d],index)=>{
+              const field=document.createElement('div');field.className='class';
+              const label=document.createElement('label');label.textContent='Câu '+(entries.findIndex(([id])=>id===questionId)+1)+' · Điểm (tối đa '+d.maxPoints+')';
+              const input=document.createElement('input');input.type='number';input.min='0';input.max=String(d.maxPoints);input.step='0.25';input.value=String(d.earned??0);input.inputMode='decimal';
+              const note=document.createElement('input');note.type='text';note.maxLength=500;note.placeholder='Nhận xét của giáo viên (không bắt buộc)';note.value=d.teacherNote||'';
+              label.append(input);field.append(label,note);card.append(field);fields[questionId]={input,note,maxPoints:d.maxPoints};
+            });
+            const save=document.createElement('button');save.type='button';save.textContent='Lưu điểm chấm thủ công';
+            save.addEventListener('click',async()=>{
+              save.disabled=true;save.textContent='Đang lưu điểm...';
+              try{
+                const details={};
+                for(const [questionId,f] of Object.entries(fields)){
+                  const earned=Number(f.input.value);
+                  if(!Number.isFinite(earned)||earned<0||earned>Number(f.maxPoints))throw new Error('Điểm nhập phải từ 0 đến '+f.maxPoints+'.');
+                  details[questionId]={earned,note:f.note.value};
+                }
+                await api('/api/assignments/'+encodeURIComponent(select.value)+'/submissions/'+encodeURIComponent(student.studentId)+'/manual-grade',{method:'POST',body:JSON.stringify({details})});
+                await refresh();
+              }catch(e){const error=document.createElement('p');error.className='status';error.textContent='Chưa lưu được: '+e.message;card.append(error);}
+              finally{save.disabled=false;save.textContent='Lưu điểm chấm thủ công';}
+            });
+            card.append(save);
+          }
         }
         results.append(card);
       });
