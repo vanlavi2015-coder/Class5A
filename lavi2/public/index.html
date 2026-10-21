@@ -514,13 +514,16 @@
     button.disabled = true;
     $('classStatus').textContent = 'Đang tạo lớp...';
     try {
+      const createdName=$('newClassName').value.trim();
+      const createdSchool=$('newSchoolName').value.trim();
       await api('/api/classes', {method:'POST', body:JSON.stringify({
-        name:$('newClassName').value.trim(),
-        schoolName:$('newSchoolName').value.trim()
+        name:createdName,
+        schoolName:createdSchool
       })});
       $('newClassName').value = '';
-      $('classStatus').textContent = 'Đã tạo lớp mới.';
-      await loadClasses();
+      $('newSchoolName').value = '';
+      $('classStatus').textContent = 'Đã tạo lớp mới. Đang mở không gian làm việc của lớp...';
+      await loadClasses({openClassName:createdName,openSchoolName:createdSchool});
     } catch (e) {
       $('classStatus').textContent = e.message;
     } finally {
@@ -534,7 +537,7 @@
     $('toggleClassFormBtn').textContent=opening?'× Đóng biểu mẫu':'＋ Tạo lớp mới';
     if(opening)$('newClassName').focus();
   });
-  async function loadClasses(){
+  async function loadClasses(options={}){
     const data=await api('/api/classes');
     $('classList').replaceChildren();
     $('studentsArea').replaceChildren();
@@ -564,6 +567,12 @@
       card.addEventListener('click',openClass);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openClass();}});
       $('classList').append(card);
     });
+    const requestedClass=(data.classes||[]).find(c=>
+      options.openClassName &&
+      c.name===options.openClassName &&
+      (c.schoolName||'')===(options.openSchoolName||'')
+    );
+    if(requestedClass) await openClassWorkspace(requestedClass);
   }
   async function openClassWorkspace(cls){
     selectedClass=cls;
