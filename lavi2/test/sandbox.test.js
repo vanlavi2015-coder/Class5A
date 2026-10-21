@@ -208,6 +208,18 @@ test('demo teachers remain isolated and registration/login works for email and p
     assert.equal(graded.maxScore, 2);
     assert.equal(graded.percent, 100);
     assert.equal(graded.needsTeacherReview, false);
+    const manualGradeResponse = await post('/api/assignments/' + assignment.id + '/submissions/' + student.id + '/manual-grade', {
+      details: { [question.id]: { earned: 1.5, note: 'Chấm thử nghiệm' } }
+    }, teacherCToken);
+    assert.equal(manualGradeResponse.status, 200);
+    const manuallyGraded = await manualGradeResponse.json();
+    assert.equal(manuallyGraded.score, 1.5);
+    assert.equal(manuallyGraded.maxScore, 2);
+    assert.equal(manuallyGraded.details[question.id].teacherReviewed, true);
+    const invalidManualGrade = await post('/api/assignments/' + assignment.id + '/submissions/' + student.id + '/manual-grade', {
+      details: { [question.id]: { earned: 3, note: 'Điểm vượt mức' } }
+    }, teacherCToken);
+    assert.equal(invalidManualGrade.status, 400);
     const submissionList = await fetch(base + '/api/assignments/' + assignment.id + '/submissions', {
       headers: { Authorization: 'Bearer ' + teacherCToken }
     });
