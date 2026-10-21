@@ -759,6 +759,78 @@ app.post('/api/assignments', authenticate, requireTeacher, (req, res) => {
   res.status(201).json({ assignment: { id, classId: klass.id, className: klass.name, testSetId: testSet?.id || null, testSetName: testSet?.name || null, title, dueAt } });
 });
 
+
+function canonicalAnswer(value) {
+  if (Array.isArray(value)) return JSON.stringify(value.map(v => String(v).trim().toLowerCase()).sort());
+  if (value && typeof value === 'object') return JSON.stringify(value);
+  return String(value ?? '').trim().toLowerCase().replace(/^đáp án\\s*/i, '');
+}
+function gradeAnswer(question, submitted) {
+  const expected = JSON.parse(question.answer_json || 'null');
+  const type = question.question_type;
+  // Objective grading only when a reliable answer key exists; open responses are teacher-graded.
+  if (['short','fill_blank'].includes(type)) {
+    if (expected === null || expected === '') return { autoGraded: false, correct: null, points: 0 };
+    const normalize = v => String(v ?? '').trim().toLocaleLowerCase('vi').replace(/\\s+/g, ' ');
+    const accepted = Array.isArray(expected) ? expected : [expected];
+    const correct = accepted.some(v => normalize(v) === normalize(submitted));
+    return { autoGraded: true, correct, points: correct ? 1 : 0 };
+  }
+  if (expected === null || expected === undefined) return { autoGraded: false, correct: null, points: 0 };
+  const correct = canonicalAnswer(expected) === canonicalAnswer(submitted);
+  return { autoGraded: true, correct, points: correct ? 1 : 0 };
+}
+
+app.get('/api/assignments/:assignmentId/submissions', authenticate, requireTeacher, (req, res) => {
+  const assignment = db.prepare('SELECT id,class_id AS classId,title,test_set_id AS testSetId FROM assignments WHERE id=? AND owner_user_id=?')
+    .get(String(req.params.assignmentId), req.user.id);
+  if (!assignment) return res.status(404).json({ error: 'Không tìm thấy bài giao thuộc tài khoản của thầy cô.' });
+  const students = db.prepare('SELECT id,student_code AS code,display_name AS displayName FROM students WHERE class_id=? ORDER BY student_code').all(assignment.classId);
+  const scores = db.prepare('SELECT student_id AS studentId,score,max_score AS maxScore,detail_json AS detailJson,updated_at AS updatedAt FROM scores WHERE assignment_id=?').all(assignment.id);
+  const scoreByStudent = new Map(scores.map(s => [s.studentId, s]));
+  res.json({ assignment, submissions: students.map(s => {
+    const score = scoreByStudent.get(s.id);
+    return { studentId: s.id, code: s.code, displayName: s.displayName, submitted: Boolean(score), score: score ? score.score : null, maxScore: score ? score.maxScore : null, details: score ? JSON.parse(score.detailJson || '{}') : null, updatedAt: score?.updatedAt || null };
+  })});
+});
+
+app.post('/api/assignments/:assignmentId/submissions/:studentId', authenticate, requireTeacher, (req, res) => {
+  const assignment = db.prepare('SELECT id,class_id AS classId,test_set_id AS testSetId FROM assignments WHERE id=? AND owner_user_id=?')
+    .get(String(req.params.assignmentId), req.user.id);
+  if (!assignment) return res.status(404).json({ error: 'Không tìm thấy bài giao thuộc tài khoản của thầy cô.' });
+  const student = db.prepare('SELECT id FROM students WHERE id=? AND class_id=?').get(String(req.params.studentId), assignment.classId);
+  if (!student) return res.status(404).json({ error: 'Học sinh không thuộc lớp được giao bài.' });
+  const answers = req.body?.answers;
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return res.status(400).json({ error: 'Cần gửi câu trả lời dưới dạng đối tượng.' });
+  if (!assignment.testSetId) return res.status(400).json({ error: 'Bài giao chưa gắn bộ đề nên chưa thể chấm tự động.' });
+  const questions = db.prepare(`
+    SELECT q.id,q.question_type,q.answer_json,tq.points
+    FROM test_set_questions tq JOIN questions q ON q.id=tq.question_id
+    JOIN test_sets ts ON ts.id=tq.test_set_id AND ts.owner_user_id=?
+    JOIN question_banks b ON b.id=q.bank_id AND b.owner_user_id=?
+    WHERE tq.test_set_id=? ORDER BY tq.position,q.created_at
+  `).all(req.user.id, req.user.id, assignment.testSetId);
+  if (!questions.length) return res.status(400).json({ error: 'Bộ đề chưa có câu hỏi hợp lệ.' });
+  const details = {};
+  let score = 0, maxScore = 0, needsReview = false;
+  for (const q of questions) {
+    const points = Math.max(0, Number(q.points) || 0);
+    maxScore += points;
+    const result = gradeAnswer(q, Object.prototype.hasOwnProperty.call(answers, q.id) ? answers[q.id] : null);
+    const earned = result.autoGraded && result.correct ? points : 0;
+    score += earned;
+    if (!result.autoGraded) needsReview = true;
+    details[q.id] = { autoGraded: result.autoGraded, correct: result.correct, earned, maxPoints: points, submitted: Object.prototype.hasOwnProperty.call(answers, q.id) };
+  }
+  const id = randomUUID();
+  db.prepare(`INSERT INTO scores(id,assignment_id,student_id,score,max_score,detail_json,updated_at)
+    VALUES(?,?,?,?,?,?,CURRENT_TIMESTAMP)
+    ON CONFLICT(assignment_id,student_id) DO UPDATE SET score=excluded.score,max_score=excluded.max_score,detail_json=excluded.detail_json,updated_at=CURRENT_TIMESTAMP`)
+    .run(id, assignment.id, student.id, score, maxScore, JSON.stringify(details));
+  audit(req.user.id, 'grade_submission', 'assignment', assignment.id);
+  res.json({ ok: true, score, maxScore, percent: maxScore ? Math.round(score / maxScore * 1000) / 10 : 0, needsTeacherReview: needsReview, details });
+});
+
 app.use('/api', (_req, res) => res.status(404).json({ error: 'API không tồn tại trong bản thử nghiệm.' }));
 app.use((err, _req, res, _next) => {
   console.error('LAVI2 request error:', err.message);
