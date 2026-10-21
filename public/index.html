@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#4f46e5">
-<title>LAVI 5A – Online V4.1 | Giao bài • Nộp bài • Sao thưởng</title>
+<title>LAVI – Nền tảng học tập thông minh</title>
 <style>
 .game-card{padding:16px;text-align:center}
 .game-card h3{margin:0 0 6px}
@@ -70,7 +70,7 @@ body.menu-collapsed .menuToggle{left:14px}
 <body>
 <button class="menuToggle" id="menuToggle" onclick="toggleMenu()" aria-label="Ẩn hoặc hiện thanh menu"><span class="menuIcon">☰</span></button><div class="menuBackdrop" id="menuBackdrop" onclick="closeMenu()"></div><div class="app">
 <aside class="side">
- <div class="brand">LAVI <span>5A</span></div>
+ <div class="brand">LAVI</div>
  <div class="nav">
   <button class="active" onclick="show('home',this)">📊 Tổng quan</button>
   <button onclick="show('create',this)">🤖 Tạo bài</button>
@@ -93,7 +93,7 @@ body.menu-collapsed .menuToggle{left:14px}
 </aside>
 <main class="main">
  <div class="top">
-  <div><h1>LAVI – Trợ lý giao bài 5A</h1><div class="sub">Trường Tiểu học Nước Hai · Năm học 2026–2027 · GVCN: Hoàng Thị Vân · 32 học sinh</div></div>
+  <div><h1>LAVI – Nền tảng học tập thông minh</h1><div class="sub">Trường Tiểu học Nước Hai · Năm học 2026–2027 · GVCN: Hoàng Thị Vân · 32 học sinh</div></div>
   <div><span id="onlineUser" class="onlineBadge">● Chưa đăng nhập</span><button class="btn logoutBtn" onclick="logout()">Đăng xuất</button><button class="btn" onclick="exportData()">⬇ Xuất dữ liệu</button></div>
  </div>
 
@@ -352,7 +352,7 @@ body.menu-collapsed .menuToggle{left:14px}
 <div id="loginOverlay">
   <div class="loginBox">
     <div style="font-size:42px">🤖</div>
-    <h1>LAVI 5A Online</h1>
+    <h1>LAVI</h1>
     <div class="sub">Giao bài · Nộp bài · ⭐ Sao thưởng · Dữ liệu dùng chung</div>
     <label><b>Tài khoản</b></label>
     <input id="loginUser" autocomplete="username" placeholder="teacher hoặc hs01...hs32">
@@ -366,7 +366,7 @@ body.menu-collapsed .menuToggle{left:14px}
 <div id="studentApp" class="student-app">
  <div class="student-shell">
   <div class="student-top">
-   <div class="student-brand"><button class="student-avatar-btn" onclick="openAvatarPicker()" title="Đổi ảnh đại diện"><div class="student-logo" id="studentAvatar">🎓</div></button><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI 5A · Góc học tập của em</div></div></div>
+   <div class="student-brand"><button class="student-avatar-btn" onclick="openAvatarPicker()" title="Đổi ảnh đại diện"><div class="student-logo" id="studentAvatar">🎓</div></button><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI · Góc học tập của em</div></div></div>
    <div class="student-actions"><button class="student-btn" onclick="studentMode()">📚 Bài của em</button><button class="student-btn" onclick="studentLeaderboard()">🏁 Xếp hạng</button><button class="student-btn logout" onclick="logout()">Đăng xuất</button></div>
   </div>
   <div class="student-nav">
@@ -377,7 +377,7 @@ body.menu-collapsed .menuToggle{left:14px}
    <button class="student-nav-btn" onclick="studentShowNotice()">🔔 Thông báo</button>
   </div>
   <div id="studentContent"></div>
-  <div class="student-footer">🌟 Học chăm – Làm thật – Tiến bộ mỗi ngày · LAVI 5A</div>
+  <div class="student-footer">🌟 Học chăm – Làm thật – Tiến bộ mỗi ngày · LAVI</div>
  </div>
 </div>
 <div class="modal" id="modal"><div class="modalbox" id="modalBox"></div></div>
