@@ -77,6 +77,39 @@
       #welcome{padding:22px}
     }
 
+
+    #questionsView .lavi-panel{padding:22px}
+    #questionsView #learningTools{display:flex;flex-direction:column;gap:18px}
+    #questionsView #learningTools>h3{font-size:21px;margin:0}
+    #questionsView #learningTools>p.muted{margin:-13px 0 0}
+    #questionsView .workflow-label{display:flex;align-items:flex-start;gap:11px;margin:0 0 12px}
+    #questionsView .workflow-label .step-number{flex:0 0 32px;width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:#eef2ff;color:#4338ca;font-weight:900}
+    #questionsView .workflow-label h4{font-size:16px;margin:0 0 4px;color:#20284a}
+    #questionsView .workflow-label p{font-size:12px;line-height:1.5;color:#667085;margin:0}
+    #questionsView #bankForm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;padding:16px;border:1px dashed #c7cbea;border-radius:14px;background:#fafaff}
+    #questionsView #bankForm label{margin-top:0}
+    #questionsView #bankForm input{width:100%;min-width:0}
+    #questionsView #bankForm button,#questionsView #bankForm .status{grid-column:1/-1;justify-self:start}
+    #questionsView #bankList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    #questionsView #bankList .class{margin:0;padding:14px;border:1px solid #dfe3f5;border-radius:13px;background:#fff;cursor:default;min-width:0}
+    #questionsView #bankList .class h3{overflow-wrap:anywhere;font-size:14px}
+    #questionsView #bankList button{width:100%;margin-top:10px;background:#eef2ff;color:#3730a3}
+    #questionsView #importQuestionPanel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;padding:18px;border:1px solid #e0e7ff;border-radius:15px;background:#fff}
+    #questionsView #importQuestionPanel>h4,#questionsView #importQuestionPanel>p,#questionsView #importQuestionPanel>hr,#questionsView #importQuestionPanel>#aiDraftList,#questionsView #importQuestionPanel>#saveAIDraftsBtn{grid-column:1/-1}
+    #questionsView #importQuestionPanel>h4{margin:0;color:#312e81;font-size:16px}
+    #questionsView #importQuestionPanel>p{margin:0}
+    #questionsView #importQuestionPanel label{margin-top:4px}
+    #questionsView #importQuestionPanel select,#questionsView #importQuestionPanel input[type=file],#questionsView #importQuestionPanel input[type=number]{width:100%;min-width:0;max-width:100%}
+    #questionsView #importQuestionPanel>a{align-self:center}
+    #questionsView #importQuestionPanel hr{width:100%;border:0;border-top:1px solid #e4e7ec;margin:12px 0}
+    #questionsView #questionEditor{padding:18px;border:1px solid #c7d2fe;border-radius:15px;background:#fbfbff}
+    #questionsView #questionForm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
+    #questionsView #questionForm>label,#questionsView #questionForm>textarea,#questionsView #questionForm>#questionOptionsField,#questionsView #questionForm>#questionAnswer,#questionsView #questionForm>button,#questionsView #questionForm>.status{grid-column:1/-1}
+    #questionsView #questionForm>label{margin-bottom:0}
+    #questionsView #questionForm input,#questionsView #questionForm select,#questionsView #questionForm textarea{width:100%;min-width:0;max-width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;background:white}
+    #questionsView #questionOptionsField{display:grid;gap:5px}
+    @media(max-width:760px){#questionsView .lavi-panel{padding:14px}#questionsView #bankForm{grid-template-columns:1fr}#questionsView #bankList{grid-template-columns:1fr}#questionsView #importQuestionPanel{grid-template-columns:1fr;padding:14px}#questionsView #importQuestionPanel>*{grid-column:1!important}#questionsView #questionForm{grid-template-columns:1fr}#questionsView #questionForm>*{grid-column:1!important}}
+
   </style>
 </head>
 <body>
@@ -271,6 +304,19 @@
   let token = '';
   let mode = 'login';
   const $ = id => document.getElementById(id);
+  const arrangeQuestionWorkspace = () => {
+    const tools=$('learningTools'), bankForm=$('bankForm'), bankList=$('bankList'), importPanel=$('importQuestionPanel'), editor=$('questionEditor');
+    if(!tools||!bankForm||!bankList||!importPanel||!editor||tools.querySelector('[data-workflow-step="banks"]'))return;
+    const makeStep=(number,title,detail)=>{const node=document.createElement('div');node.className='workflow-label';const badge=document.createElement('span');badge.className='step-number';badge.textContent=number;const copy=document.createElement('div');const heading=document.createElement('h4');heading.textContent=title;const desc=document.createElement('p');desc.textContent=detail;copy.append(heading,desc);node.append(badge,copy);return node;};
+    tools.querySelector('h3')?.remove();tools.querySelector(':scope > p.muted')?.remove();
+    const bankHeading=makeStep('1','Chọn ngân hàng câu hỏi','Chọn ngân hàng đã có hoặc tạo ngân hàng mới. Mọi câu hỏi sẽ được lưu vào ngân hàng đang mở.');bankHeading.dataset.workflowStep='banks';
+    tools.insertBefore(bankHeading,bankForm);tools.insertBefore(bankList,bankForm);
+    const details=document.createElement('details');details.className='create-bank-details';const summary=document.createElement('summary');summary.textContent='＋ Tạo ngân hàng câu hỏi mới';details.append(summary,bankForm);tools.insertBefore(details,bankList.nextSibling);
+    const importHeading=makeStep('2','Thêm câu hỏi','Nhập câu hỏi từ Excel/CSV hoặc tạo bản nháp bằng AI từ tài liệu.');importHeading.dataset.workflowStep='import';importPanel.parentNode.insertBefore(importHeading,importPanel);
+    const editorHeading=makeStep('3','Soạn và kiểm tra câu hỏi','Chọn dạng câu hỏi, nhập nội dung và đáp án, sau đó lưu.');editorHeading.dataset.workflowStep='editor';editor.insertBefore(editorHeading,editor.firstChild);
+  };
+  arrangeQuestionWorkspace();
+
   async function api(url, options={}) {
     let response;
     try {
