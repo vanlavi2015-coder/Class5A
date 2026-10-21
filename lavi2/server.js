@@ -465,6 +465,8 @@ app.post('/api/classes', authenticate, requireTeacher, (req, res) => {
   if (schoolName.length < 2 || schoolName.length > 120) {
     return res.status(400).json({ error: 'Tên trường cần từ 2 đến 120 ký tự.' });
   }
+  const duplicate = db.prepare('SELECT id FROM classes WHERE owner_user_id=? AND name=?').get(req.user.id, name);
+  if (duplicate) return res.status(409).json({ error: 'Thầy cô đã có lớp cùng tên trong tài khoản này.' });
   const id = randomUUID();
   try {
     db.prepare('INSERT INTO classes(id,owner_user_id,name,school_name) VALUES(?,?,?,?)')
@@ -472,7 +474,7 @@ app.post('/api/classes', authenticate, requireTeacher, (req, res) => {
     audit(req.user.id, 'create', 'class', id);
     res.status(201).json({ class: { id, name, schoolName, studentCount: 0 } });
   } catch (err) {
-    if (err && err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    if (err && (err.code === 'SQLITE_CONSTRAINT_UNIQUE' || /UNIQUE constraint failed: classes\.owner_user_id, classes\.name/i.test(String(err.message || '')))) {
       return res.status(409).json({ error: 'Thầy cô đã có lớp cùng tên trong tài khoản này.' });
     }
     throw err;
