@@ -111,6 +111,33 @@
     @media(max-width:760px){#questionsView .lavi-panel{padding:14px}#questionsView #bankForm{grid-template-columns:1fr}#questionsView #bankList{grid-template-columns:1fr}#questionsView #importQuestionPanel{grid-template-columns:1fr;padding:14px}#questionsView #importQuestionPanel>*{grid-column:1!important}#questionsView #questionForm{grid-template-columns:1fr}#questionsView #questionForm>*{grid-column:1!important}}
 
 
+
+    /* Dashboard refresh: lively but teacher-focused */
+    .lavi-topbar{background:linear-gradient(115deg,#fff 0%,#f2f0ff 55%,#f4f8ff 100%)}
+    .lavi-content{padding-top:22px}
+    #classesView .view-heading{padding:20px 22px;border-radius:18px;background:linear-gradient(115deg,#5546d8 0%,#7c3aed 58%,#a855f7 100%);color:#fff;margin-bottom:17px;box-shadow:0 10px 24px #6d28d91c}
+    #classesView .view-heading h2{font-size:25px;letter-spacing:-.4px}
+    #classesView .view-heading p{color:#ede9fe}
+    #classesView .view-chip{background:#ffffff20;border-color:#ffffff45;color:#fff}
+    #classesView .lavi-kpi{transition:transform .18s,box-shadow .18s;border-radius:16px}
+    #classesView .lavi-kpi:hover{transform:translateY(-2px);box-shadow:0 9px 22px #4338ca12}
+    #classRegistrationPanel{overflow:hidden}
+    #classRegistrationPanel .class-panel-heading{padding-bottom:12px;border-bottom:1px solid #edf0f7}
+    #classRegistrationPanel .class-panel-heading h3{font-size:19px}
+    #createClassForm.class-create-form{display:none!important}
+    #createClassForm.class-create-form.is-open{display:block!important}
+    #classList .class{position:relative;border-radius:14px;cursor:pointer}
+    #classList .class:focus-visible{outline:3px solid #a5b4fc;outline-offset:2px}
+    #selectedClassWorkspace .class-home-hero{background:linear-gradient(115deg,#5145cd,#7c3aed 65%,#a855f7);color:white;border:0;box-shadow:0 10px 24px #6d28d91c}
+    #selectedClassWorkspace .class-home-hero p{color:#ede9fe}
+    #selectedClassWorkspace .class-home-hero .secondary{background:#fff;color:#4338ca}
+    #selectedClassWorkspace .class-home-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+    #selectedClassWorkspace .class-home-action{transition:transform .16s,box-shadow .16s;border-radius:15px}
+    #selectedClassWorkspace .class-home-action:hover{transform:translateY(-2px);box-shadow:0 8px 22px #4338ca12;border-color:#c4b5fd}
+    #selectedClassWorkspace .class-home-action span{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:13px;background:#eef2ff}
+    #studentsArea{margin-top:16px}
+    @media(max-width:650px){#classesView .view-heading{padding:16px;border-radius:14px}#classesView .view-heading h2{font-size:21px}#selectedClassWorkspace .class-home-actions{grid-template-columns:1fr}}
+
     .class-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}.class-panel-heading h3{margin:0}.compact-toggle{margin:0!important;white-space:nowrap;padding:9px 12px!important}.class-create-form{display:none;padding:12px 14px;margin:10px 0 16px;background:#f8faff;border:1px solid #e4e7ec;border-radius:12px}.class-create-form.is-open{display:block}.class-create-form label:first-child{margin-top:0}#classList .class{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px;margin:10px 0;border-color:#dbe4f4;transition:background .15s,border-color .15s}#classList .class:hover{background:#f5f7ff;border-color:#a5b4fc}#classList .class h3{margin:0 0 5px}#classList .class p{margin:0}#classList .class:after{content:"Vào lớp →";flex:0 0 auto;color:#4338ca;font-size:12px;font-weight:800}#selectedClassWorkspace{margin-top:16px}#selectedClassWorkspace .class-home-hero{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px;background:linear-gradient(120deg,#eef2ff,#faf5ff);border:1px solid #ddd6fe;border-radius:15px;margin-bottom:16px}#selectedClassWorkspace .class-home-hero h3{font-size:22px;margin:0 0 5px}#selectedClassWorkspace .class-home-hero p{margin:0;color:#667085;font-size:13px}#selectedClassWorkspace .class-home-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}#selectedClassWorkspace .class-home-action{border:1px solid #e4e7ec;background:#fff;border-radius:13px;padding:16px;cursor:pointer;text-align:left;color:#172033}#selectedClassWorkspace .class-home-action strong{display:block;margin:6px 0;font-size:14px}#selectedClassWorkspace .class-home-action small{display:block;color:#667085;line-height:1.5}#selectedClassWorkspace .class-home-action span{font-size:22px}@media(max-width:650px){.class-panel-heading{align-items:flex-start}.class-create-form{padding:10px}#selectedClassWorkspace .class-home-hero{align-items:flex-start;flex-direction:column}#selectedClassWorkspace .class-home-actions{grid-template-columns:1fr}}
     .data-table{width:100%;border-collapse:collapse;margin:14px 0;background:#fff;font-size:13px}
     .data-table th,.data-table td{padding:10px 12px;border-bottom:1px solid #e6eaf2;text-align:left;vertical-align:top}
@@ -503,7 +530,7 @@
 
   let selectedClass = null;
   $('toggleClassFormBtn').addEventListener('click',()=>{
-    const form=$('createClassForm');const opening=!form.classList.contains('is-open');form.classList.toggle('is-open',opening);
+    const form=$('createClassForm');const opening=!form.classList.contains('is-open');form.classList.toggle('is-open',opening);form.style.display=opening?'block':'none';
     $('toggleClassFormBtn').textContent=opening?'× Đóng biểu mẫu':'＋ Tạo lớp mới';
     if(opening)$('newClassName').focus();
   });
@@ -514,9 +541,11 @@
     $('selectedClassWorkspace').replaceChildren();
     $('selectedClassWorkspace').classList.add('hidden');
     $('classList').classList.remove('hidden');
-    $('createClassForm').classList.toggle('is-open',!(data.classes||[]).length);
-    $('toggleClassFormBtn').classList.toggle('hidden',!(data.classes||[]).length);
+    const hasClasses=(data.classes||[]).length>0;
+    $('createClassForm').classList.toggle('is-open',!hasClasses);
+    $('toggleClassFormBtn').classList.remove('hidden');
     $('toggleClassFormBtn').textContent='＋ Tạo lớp mới';
+    $('createClassForm').style.display=hasClasses?'none':'block';
     if(!data.classes.length){
       const message=document.createElement('p');
       message.textContent='Tài khoản đã sẵn sàng. Chưa có lớp nào được tạo cho tài khoản này.';
@@ -538,13 +567,13 @@
   }
   async function openClassWorkspace(cls){
     selectedClass=cls;
-    $('classList').classList.add('hidden');$('createClassForm').classList.remove('is-open');$('toggleClassFormBtn').textContent='＋ Tạo lớp mới';
+    $('classList').classList.add('hidden');$('createClassForm').classList.remove('is-open');$('createClassForm').style.display='none';$('toggleClassFormBtn').textContent='＋ Tạo lớp mới';$('toggleClassFormBtn').classList.remove('hidden');
     $('selectedClassWorkspace').classList.remove('hidden');$('studentsArea').replaceChildren();
     const host=$('selectedClassWorkspace');host.replaceChildren();
     const hero=document.createElement('div');hero.className='class-home-hero';
     const intro=document.createElement('div');const title=document.createElement('h3');title.textContent=cls.name;
     const subtitle=document.createElement('p');subtitle.textContent=(cls.schoolName||'Chưa khai báo trường')+' · '+(cls.studentCount||0)+' học sinh';intro.append(title,subtitle);
-    const back=document.createElement('button');back.type='button';back.className='secondary';back.style.margin='0';back.textContent='← Danh sách lớp';back.addEventListener('click',()=>{host.classList.add('hidden');$('classList').classList.remove('hidden');$('toggleClassFormBtn').classList.toggle('hidden',!!document.querySelector('#classList .class'));});hero.append(intro,back);host.append(hero);
+    const back=document.createElement('button');back.type='button';back.className='secondary';back.style.margin='0';back.textContent='← Danh sách lớp';back.addEventListener('click',()=>{host.classList.add('hidden');$('classList').classList.remove('hidden');$('toggleClassFormBtn').classList.remove('hidden');$('createClassForm').style.display='none';});hero.append(intro,back);host.append(hero);
     const desc=document.createElement('p');desc.className='muted';desc.textContent='Không gian làm việc riêng của lớp. Chọn một chức năng để bắt đầu.';host.append(desc);
     const actions=[['👩‍🎓','Danh sách học sinh','Xem, thêm và quản lý học sinh trong lớp.',()=>loadStudents(cls.id,cls.name)],['📝','Bài tập & đánh giá','Tạo bài, giao nhiệm vụ và theo dõi kết quả.',()=>activateView('futureView','Bài đang giao')],['📊','Thống kê lớp','Xem kết quả học tập và tiến độ của lớp.',()=>activateView('futureView','Thống kê học tập')]];
     const grid=document.createElement('div');grid.className='class-home-actions';actions.forEach(([icon,label,detail,fn])=>{const b=document.createElement('button');b.type='button';b.className='class-home-action';const i=document.createElement('span');i.textContent=icon;const t=document.createElement('strong');t.textContent=label;const d=document.createElement('small');d.textContent=detail;b.append(i,t,d);b.addEventListener('click',fn);grid.append(b);});host.append(grid);
