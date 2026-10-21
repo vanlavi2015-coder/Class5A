@@ -87,6 +87,36 @@ test('demo teachers remain isolated and registration/login works for email and p
     assert.equal(roster.students.length, 3);
     assert.ok(roster.students.every(s => s.displayName.includes('giả lập')));
 
+    const teacherCRegister = await post('/api/register', {
+      displayName: 'Giáo viên Demo Lớp',
+      contact: 'teacher.class@gmail.com',
+      password: 'StrongDemo123!'
+    });
+    assert.equal(teacherCRegister.status, 201);
+    const teacherCToken = (await teacherCRegister.json()).token;
+    const createClass = await fetch(base + '/api/classes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + teacherCToken },
+      body: JSON.stringify({ name: 'Lớp thử nghiệm C', schoolName: 'Trường giả lập C' })
+    });
+    assert.equal(createClass.status, 201);
+    const createdClass = (await createClass.json()).class;
+    assert.equal(createdClass.studentCount, 0);
+    const ownNewClass = await (await fetch(base + '/api/classes', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    })).json();
+    assert.deepEqual(ownNewClass.classes.map(c => c.id), [createdClass.id]);
+    const teacherACannotSeeNewClass = await fetch(base + '/api/classes/' + createdClass.id + '/students', {
+      headers: { Authorization: 'Bearer ' + tokenA }
+    });
+    assert.equal(teacherACannotSeeNewClass.status, 404);
+    const duplicateClass = await fetch(base + '/api/classes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + teacherCToken },
+      body: JSON.stringify({ name: 'Lớp thử nghiệm C', schoolName: 'Trường giả lập C' })
+    });
+    assert.equal(duplicateClass.status, 409);
+
     const emailRegister = await post('/api/register', {
       displayName: 'Giáo viên Demo Email',
       contact: 'Teacher.Demo@Gmail.com',
