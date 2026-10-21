@@ -190,6 +190,35 @@ test('demo teachers remain isolated and registration/login works for email and p
     }, teacherCToken);
     assert.equal(invalidAssignment.status, 404);
 
+
+    const submissionResponse = await post('/api/assignments/' + assignment.id + '/submissions/' + student.id, {
+      answers: { [question.id]: 0 }
+    }, teacherCToken);
+    assert.equal(submissionResponse.status, 200);
+    const graded = await submissionResponse.json();
+    assert.equal(graded.score, 2);
+    assert.equal(graded.maxScore, 2);
+    assert.equal(graded.percent, 100);
+    assert.equal(graded.needsTeacherReview, false);
+    const submissionList = await fetch(base + '/api/assignments/' + assignment.id + '/submissions', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    });
+    assert.equal(submissionList.status, 200);
+    const submissionData = await submissionList.json();
+    assert.equal(submissionData.submissions.length, 1);
+    assert.equal(submissionData.submissions[0].submitted, true);
+    assert.equal(submissionData.submissions[0].score, 2);
+    const foreignSubmission = await fetch(base + '/api/assignments/' + assignment.id + '/submissions/demo-a-01', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + teacherCToken },
+      body: JSON.stringify({ answers: { [question.id]: 0 } })
+    });
+    assert.equal(foreignSubmission.status, 404);
+    const otherTeacherCannotReadSubmission = await fetch(base + '/api/assignments/' + assignment.id + '/submissions', {
+      headers: { Authorization: 'Bearer ' + tokenA }
+    });
+    assert.equal(otherTeacherCannotReadSubmission.status, 404);
+
     const backupResponse = await fetch(base + '/api/backup', {
       headers: { Authorization: 'Bearer ' + teacherCToken }
     });
