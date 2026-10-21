@@ -117,6 +117,46 @@ test('demo teachers remain isolated and registration/login works for email and p
     });
     assert.equal(duplicateClass.status, 409);
 
+    const bankResponse = await post('/api/question-banks', {
+      name: 'Ngân hàng Toán demo', subject: 'Toán', grade: '5'
+    });
+    assert.equal(bankResponse.status, 201);
+    const bank = (await bankResponse.json()).questionBank;
+    const questionResponse = await post('/api/question-banks/' + bank.id + '/questions', {
+      type: 'abcd', prompt: 'Diện tích hình chữ nhật được tính thế nào?',
+      options: ['Dài × rộng', 'Dài + rộng'], answer: 0, explanation: 'Lấy chiều dài nhân chiều rộng.'
+    });
+    assert.equal(questionResponse.status, 201);
+    const question = (await questionResponse.json()).question;
+    const testSetResponse = await post('/api/test-sets', { name: 'Đề Toán demo', subject: 'Toán', grade: '5' });
+    assert.equal(testSetResponse.status, 201);
+    const testSet = (await testSetResponse.json()).testSet;
+    assert.equal((await post('/api/test-sets/' + testSet.id + '/questions', { questionId: question.id, points: 2 })).status, 201);
+
+    const backupResponse = await fetch(base + '/api/backup', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    });
+    assert.equal(backupResponse.status, 200);
+    const backup = await backupResponse.json();
+    assert.equal(backup.format, 'LAVI2_BACKUP');
+    assert.equal(backup.data.question_banks.length, 1);
+    assert.equal(backup.data.questions.length, 1);
+    assert.equal(backup.data.test_sets.length, 1);
+    assert.equal(backup.data.test_set_questions.length, 1);
+    const restoreResponse = await fetch(base + '/api/backup/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + teacherCToken },
+      body: JSON.stringify(backup)
+    });
+    assert.equal(restoreResponse.status, 200);
+    const restored = await restoreResponse.json();
+    assert.equal(restored.ok, true);
+    assert.equal(restored.restored.questions, 1);
+    const banksAfterRestore = await (await fetch(base + '/api/question-banks', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    })).json();
+    assert.equal(banksAfterRestore.questionBanks.length, 2);
+
     const emailRegister = await post('/api/register', {
       displayName: 'Giáo viên Demo Email',
       contact: 'Teacher.Demo@Gmail.com',
