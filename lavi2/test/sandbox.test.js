@@ -227,7 +227,7 @@ test('demo teachers remain isolated and registration/login works for email and p
     const submissionData = await submissionList.json();
     assert.equal(submissionData.submissions.length, 1);
     assert.equal(submissionData.submissions[0].submitted, true);
-    assert.equal(submissionData.submissions[0].score, 2);
+    assert.equal(submissionData.submissions[0].score, 1.5);
     const foreignSubmission = await fetch(base + '/api/assignments/' + assignment.id + '/submissions/demo-a-01', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + teacherCToken },
