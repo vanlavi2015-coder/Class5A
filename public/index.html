@@ -1978,10 +1978,10 @@ function playSelectedBankGames(){
  const qs=[];
  ids.forEach(id=>{const item=questionBankItems().find(a=>a.id===id);if(!item)return;
   (item.sets||[]).forEach(set=>(set.questions||[]).forEach(q=>{
-   let options=Array.isArray(q.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\\-:]\\s*/i,"").trim()):[];
+   let options=Array.isArray(q.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\-:]\s*/i,"").trim()):[];
    let text=String(q.text||"");
-   if(!options.length){const lines=text.split(/\\r?\\n/);options=lines.slice(1).filter(x=>/^[A-D][.)\\-:]/i.test(x)).map(x=>x.replace(/^[A-D][.)\\-:]\\s*/i,"").trim());}
-   if(options.length>=2){let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;qs.push({text:text.split(/\\r?\\n/)[0],options,answer});}
+   if(!options.length){const lines=text.split(/\r?\n/);options=lines.slice(1).filter(x=>/^[A-D][.)\-:]/i.test(x)).map(x=>x.replace(/^[A-D][.)\-:]\s*/i,"").trim());}
+   if(options.length>=2){let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;qs.push({text:text.split(/\r?\n/)[0],options,answer});}
   }));
  });
  if(!qs.length)return alert("Các bộ đã chọn chưa có đủ câu hỏi trắc nghiệm để chơi.");
@@ -2008,13 +2008,13 @@ async function previewGameQuestionFile(){
   importedGameQuestions=importedGameQuestions.filter(q=>q.text&&Array.isArray(q.options)&&q.options.length>=2&&q.answer);
   if(!importedGameQuestions.length)throw new Error("Không tìm thấy câu trắc nghiệm có phương án và đáp án. Kiểm tra file mẫu.");
   if(status)status.textContent="Đã đọc "+importedGameQuestions.length+" câu trắc nghiệm hợp lệ.";
-  if(preview)preview.innerHTML='<div class="assignment"><b>Xem trước 5 câu đầu</b>'+importedGameQuestions.slice(0,5).map((q,i)=>'<p><b>'+(i+1)+'. '+esc(q.text)+'</b><br>'+q.options.map(x=>esc(String(x).replace(/^[A-D][.)\\-:]\\s*/i,""))).join(" · ")+'<br><span class="sub">Đáp án: '+esc(String(q.answer))+'</span></p>').join("")+'</div>';
+  if(preview)preview.innerHTML='<div class="assignment"><b>Xem trước 5 câu đầu</b>'+importedGameQuestions.slice(0,5).map((q,i)=>'<p><b>'+(i+1)+'. '+esc(q.text)+'</b><br>'+q.options.map(x=>esc(String(x).replace(/^[A-D][.)\-:]\s*/i,""))).join(" · ")+'<br><span class="sub">Đáp án: '+esc(String(q.answer))+'</span></p>').join("")+'</div>';
  }catch(e){importedGameQuestions=[];if(status)status.textContent="Không đọc được file: "+e.message;}
 }
 function playImportedGameQuestions(){
  if(!importedGameQuestions.length)return alert("Cô hãy chọn file và bấm “Đọc file và xem trước” trước.");
  const title=(document.getElementById("gameQuestionTitle")?.value||"").trim()||"Trò chơi từ file";
- const qs=importedGameQuestions.map(q=>{let options=(q.options||[]).map(x=>String(x).replace(/^[A-D][.)\\-:]\\s*/i,"").trim());let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;return {text:q.text,options,answer};});
+ const qs=importedGameQuestions.map(q=>{let options=(q.options||[]).map(x=>String(x).replace(/^[A-D][.)\-:]\s*/i,"").trim());let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;return {text:q.text,options,answer};});
  startGame("🎮 "+title,shuffleGameQuestions(qs),"file-custom");
 }
 function questionBankItems(){return (state.assignments||[]).filter(a=>a.status==="Kho bài");}
