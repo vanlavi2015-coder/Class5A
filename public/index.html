@@ -73,6 +73,7 @@ body.menu-collapsed .menuToggle{left:14px}
  <div class="nav">
   <button class="active" onclick="show('home',this)">📊 Tổng quan</button>
   <button onclick="show('create',this)">🤖 Tạo bài</button>
+  <button onclick="show('library',this);renderQuestionBank()">📚 Kho bài tập</button>
   <button onclick="show('assign',this)">📤 Bài đang giao</button>
   <button onclick="show('students',this)">👩‍🎓 Học sinh</button>
   <button onclick="show('stars',this)">⭐ Sao & Khen</button>
@@ -168,6 +169,18 @@ body.menu-collapsed .menuToggle{left:14px}
   <div id="draft" style="margin-top:14px"></div>
  </section>
 
+ <section id="library" class="section">
+  <div class="card">
+   <h2>📚 Kho bài tập & ngân hàng câu hỏi</h2>
+   <p class="sub">Lưu bài một lần, sau đó dùng lại để tạo bài giao hoặc mở trò chơi luyện tập. Kho hiện dùng dữ liệu của tài khoản/lớp này.</p>
+   <div class="grid3">
+    <div class="field"><label>Tìm bài</label><input id="bankSearch" placeholder="Tên bài, môn, chủ đề..." oninput="renderQuestionBank()"></div>
+    <div class="field"><label>Lọc môn học</label><select id="bankSubjectFilter" onchange="renderQuestionBank()"><option value="">Tất cả môn</option></select></div>
+    <div class="field"><label>Số bài trong kho</label><div class="pill blue" id="bankCount">0 bài</div></div>
+   </div>
+   <div id="questionBankList"></div>
+  </div>
+ </section>
  <section id="assign" class="section"><div class="card"><h2>📤 Bài đang giao</h2><div id="assignList"></div></div></section>
 
  <section id="students" class="section">
@@ -1874,7 +1887,8 @@ async function saveLibrary(){
   await save();
   draft=null;
   document.getElementById("draft").innerHTML="";
-  toast("📚 Đã lưu vào kho bài. Cô có thể xem lại trong danh sách bài.");
+  toast("📚 Đã lưu vào Kho bài tập. Đang mở kho để cô xem lại.");
+  renderQuestionBank();show("library");
  }catch(e){
   state.assignments=state.assignments.filter(a=>a.id!==item.id);
   localStorage.setItem("lavi5a_real",JSON.stringify(state));
@@ -1905,6 +1919,33 @@ function createManualDraft(){
 }
 function clearDraft(){draft=null;document.getElementById("draft").innerHTML=""}
 function findSet(a,g){return a.sets.find(x=>x.group===g)||a.sets.find(x=>x.group==="Tất cả")||a.sets.find(x=>x.group==="Cả 4 nhóm")||a.sets[0]}
+function questionBankItems(){return (state.assignments||[]).filter(a=>a.status==="Kho bài");}
+function renderQuestionBank(){
+ const box=document.getElementById("questionBankList");if(!box)return;
+ const all=questionBankItems(),search=(document.getElementById("bankSearch")?.value||"").trim().toLowerCase(),filter=document.getElementById("bankSubjectFilter")?.value||"";
+ const select=document.getElementById("bankSubjectFilter");
+ if(select){const prev=select.value,subjects=[...new Set(all.map(a=>a.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"vi"));if(select.options.length!==subjects.length+1){select.innerHTML='<option value="">Tất cả môn</option>'+subjects.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join("");select.value=subjects.includes(prev)?prev:"";}}
+ const q=(document.getElementById("bankSearch")?.value||"").trim().toLowerCase(),sub=document.getElementById("bankSubjectFilter")?.value||"";
+ const items=all.filter(a=>(!sub||a.subject===sub)&&(!q||[a.subject,a.lesson,a.topic,a.note].join(" ").toLowerCase().includes(q)));
+ const count=document.getElementById("bankCount");if(count)count.textContent=all.length+" bài";
+ if(!items.length){box.innerHTML='<div class="empty">'+(all.length?'Không tìm thấy bài phù hợp.':'Kho chưa có bài nào. Vào “Tạo bài”, tạo hoặc nhập file Excel/Word, kiểm tra bản nháp rồi bấm “Lưu vào kho”. Bài sẽ xuất hiện tại đây.')+'</div>';return;}
+ box.innerHTML=items.map(a=>{const n=(a.sets||[]).reduce((sum,set)=>sum+(set.questions||[]).length,0);return '<div class="assignment"><h3>'+esc(a.subject||"Chưa phân môn")+' – '+esc(a.lesson||a.topic||"Bài chưa đặt tên")+'</h3><p><span class="pill blue">'+esc(a.week||"Không rõ tuần")+'</span> <span class="pill gray">'+n+' câu hỏi</span> <span class="pill good">Đã lưu trong kho</span></p><div class="sub">'+esc(a.note||"")+'</div><div class="row" style="margin-top:10px"><button class="btn primary" onclick="reuseBankAsAssignment(\''+a.id+'\')">📝 Dùng tạo bài tập</button><button class="btn success" onclick="playBankAsGame(\''+a.id+'\')">🎮 Chơi thử bộ câu hỏi</button></div></div>';}).join("");
+}
+function reuseBankAsAssignment(id){
+ const item=questionBankItems().find(a=>a.id===id);if(!item)return toast("Không tìm thấy bài trong kho.");
+ draft={...JSON.parse(JSON.stringify(item)),id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),status:"Nháp",createdAt:new Date().toISOString(),due:"",note:(item.note||"")+" · Tạo từ kho bài tập"};
+ document.getElementById("draft").innerHTML=renderDraft();show("create");document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});toast("Đã tạo bản nháp mới từ kho. Kiểm tra rồi mới giao bài.");
+}
+function playBankAsGame(id){
+ const item=questionBankItems().find(a=>a.id===id);if(!item)return toast("Không tìm thấy bài trong kho.");
+ const qs=[];(item.sets||[]).forEach(set=>(set.questions||[]).forEach(q=>{
+  let options=Array.isArray(q.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\\-:]\\s*/i,"").trim()):[];
+  if(!options.length){const lines=String(q.text||"").split(/\\r?\\n/);options=lines.slice(1).filter(x=>/^[A-D][.)\\-:]/i.test(x)).map(x=>x.replace(/^[A-D][.)\\-:]\\s*/i,"").trim());}
+  if(options.length>=2){let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;qs.push({text:String(q.text||"").split(/\\r?\\n/)[0],options,answer});}
+ }));
+ if(!qs.length)return alert("Bộ câu hỏi này chưa có đủ phương án trắc nghiệm để mở trò chơi. Cô có thể dùng “Dùng tạo bài tập” để chỉnh sửa trước.");
+ startGame("🎮 "+(item.lesson||item.subject||"Trò chơi từ kho"),shuffleGameQuestions(qs),"knowledge");
+}
 function renderAssignments(id){
  const el=document.getElementById(id), arr=state.assignments.filter(a=>a.status==="Đang giao");
  if(!arr.length){el.innerHTML='<div class="empty">Chưa có bài đang giao.</div>';return}
@@ -2380,7 +2421,7 @@ async function loadMonthlyScores(){
    '</tbody></table></div>';
  }catch(e){box.innerHTML='<div class="empty">⚠️ '+esc(e.message||'Không tải được dữ liệu')+'</div>';if(summary)summary.innerHTML='';}
 }
-function renderAll(){renderHome();renderAssignments("assignList");renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
+function renderAll(){renderHome();renderAssignments("assignList");renderQuestionBank();renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
 document.getElementById("cDue").value=new Date(Date.now()+86400000).toISOString().slice(0,16);
 fillSubjects();fillNotifyTargets();renderAll();
 
