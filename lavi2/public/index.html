@@ -119,6 +119,7 @@
     #futureModuleContent select{max-width:100%;min-width:220px}
     @media(max-width:680px){.data-table{font-size:12px}.data-table th,.data-table td{padding:8px}.lavi-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+.data-table{width:100%;border-collapse:collapse;margin:14px 0;background:#fff;font-size:13px}.data-table th,.data-table td{padding:10px 12px;border-bottom:1px solid #e6eaf2;text-align:left;vertical-align:top}.data-table th{background:#f5f7ff;color:#3730a3;font-weight:750;white-space:nowrap}#futureModuleContent{min-width:0;overflow-x:auto}#futureModuleContent textarea{display:block;max-width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}#futureModuleContent select{max-width:100%;min-width:220px}@media(max-width:680px){.data-table{font-size:12px}.data-table th,.data-table td{padding:8px}.lavi-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   </style>
 </head>
 <body>
@@ -174,6 +175,14 @@
             <button type="button" data-view="futureView" data-module="Xếp loại tháng"><span>🏆</span><b>Xếp loại tháng</b></button>
             <button type="button" data-view="futureView" data-module="Phạm vi kiến thức"><span>🗂️</span><b>Phạm vi kiến thức</b></button>
             <button type="button" data-view="futureView" data-module="Trợ lý VnEdu"><span>🔗</span><b>Trợ lý VnEdu</b></button>
+          </nav>
+          <div class="lavi-menu-label">NĂNG LỰC SỐ</div>
+          <nav class="lavi-nav" aria-label="Phát triển năng lực số">
+            <button type="button" data-view="futureView" data-module="Trung tâm năng lực số"><span>💻</span><b>Trung tâm năng lực số</b></button>
+            <button type="button" data-view="futureView" data-module="Phân nhóm học sinh"><span>👥</span><b>Phân nhóm học sinh</b></button>
+            <button type="button" data-view="futureView" data-module="Nhiệm vụ năng lực số"><span>🧩</span><b>Giao nhiệm vụ số</b></button>
+            <button type="button" data-view="futureView" data-module="Sản phẩm học sinh"><span>📁</span><b>Sản phẩm học sinh</b></button>
+            <button type="button" data-view="futureView" data-module="AI đánh giá năng lực số"><span>✨</span><b>AI gợi ý đánh giá</b></button>
           </nav>
           <div class="lavi-menu-label">HỌC SINH & ĐỘNG LỰC</div>
           <nav class="lavi-nav" aria-label="Học sinh và động lực">
@@ -400,6 +409,8 @@
         renderSubmissions().catch(e => { $('futureModuleContent').textContent = e.message; });
       } else if (label === 'Thống kê học tập' || label === 'Xếp loại tháng' || label === 'Trò chơi & Xếp hạng') {
         renderClassReport(label).catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else if (['Trung tâm năng lực số','Phân nhóm học sinh','Nhiệm vụ năng lực số','Sản phẩm học sinh','AI đánh giá năng lực số'].includes(label)) {
+        renderDigitalCompetence(label).catch(e=>{ $('futureModuleContent').textContent=e.message; });
       } else if (label === 'Danh sách học sinh') {
         renderStudentDirectory().catch(e => { $('futureModuleContent').textContent = e.message; });
       } else {
@@ -785,6 +796,53 @@
 
 
 
+
+  async function renderDigitalCompetence(label){
+    const panel=$('futureModuleContent');panel.replaceChildren();
+    const title=document.createElement('h3');title.textContent=label;panel.append(title);
+    const intro=document.createElement('p');intro.className='muted';intro.textContent='Không gian tổ chức hoạt động phát triển năng lực số: giáo viên giao nhiệm vụ, học sinh thực hiện và nộp sản phẩm, giáo viên xem minh chứng và dùng AI để tham khảo khi đánh giá.';panel.append(intro);
+    const [classData,assignmentData]=await Promise.all([api('/api/classes'),api('/api/assignments')]);
+    const classes=classData.classes||[], assignments=assignmentData.assignments||[];
+    const classSelect=document.createElement('select');classSelect.setAttribute('aria-label','Chọn lớp');
+    const blank=document.createElement('option');blank.value='';blank.textContent='-- Chọn lớp --';classSelect.append(blank);
+    classes.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name+' · '+c.studentCount+' học sinh';classSelect.append(o);});
+    const classLabel=document.createElement('label');classLabel.textContent='Lớp học';classLabel.append(classSelect);panel.append(classLabel);
+    const content=document.createElement('div');panel.append(content);
+    const info=(msg)=>{const p=document.createElement('p');p.className='muted';p.textContent=msg;content.append(p);};
+    if(label==='Trung tâm năng lực số'){
+      const grid=document.createElement('div');grid.className='lavi-kpi-grid';panel.append(grid);
+      [['Lớp học',classes.length],['Nhiệm vụ đã giao',assignments.filter(a=>/năng lực số/i.test(a.title||'')).length],['Sản phẩm đã nộp','Chưa kết nối'],['Đánh giá AI','Cần kiểm thử']].forEach(([t,v])=>{const card=document.createElement('div');card.className='lavi-kpi';const strong=document.createElement('strong');strong.textContent=v;const small=document.createElement('small');small.textContent=t;card.append(strong,small);grid.append(card);});
+      info('Bảng tổng quan sẽ có số liệu thực khi chức năng phân nhóm, nộp sản phẩm và lưu đánh giá được kết nối.');
+      return;
+    }
+    if(label==='Phân nhóm học sinh'){
+      const help=document.createElement('p');help.textContent='Chọn lớp để xem danh sách học sinh. Giáo viên có thể lập nhóm theo kỹ năng, nhiệm vụ hoặc mức độ hỗ trợ; bản hiện tại mới hiển thị danh sách và chưa lưu phân nhóm.';content.append(help);
+      const list=document.createElement('div');content.append(list);
+      async function show(){list.replaceChildren();if(!classSelect.value){const p=document.createElement('p');p.textContent='Hãy chọn lớp.';list.append(p);return;}const data=await api('/api/classes/'+encodeURIComponent(classSelect.value)+'/students');const table=document.createElement('table');table.className='data-table';const thead=document.createElement('thead');thead.innerHTML='<tr><th>Chọn</th><th>Mã HS</th><th>Họ và tên</th><th>Nhóm đề xuất</th></tr>';table.append(thead);const tbody=document.createElement('tbody');data.students.forEach(s=>{const tr=document.createElement('tr');const td=document.createElement('td');const cb=document.createElement('input');cb.type='checkbox';td.append(cb);tr.append(td);[s.code||'—',s.displayName||s.name||'Học sinh'].forEach(v=>{const x=document.createElement('td');x.textContent=v;tr.append(x);});const group=document.createElement('td');const sel=document.createElement('select');['Chưa phân nhóm','Nhóm 1','Nhóm 2','Nhóm 3','Cần hỗ trợ thêm'].forEach(v=>{const o=document.createElement('option');o.textContent=v;sel.append(o);});group.append(sel);tr.append(group);tbody.append(tr);});table.append(tbody);list.append(table);const note=document.createElement('p');note.className='muted';note.textContent='Lưu ý: lựa chọn phân nhóm hiện chỉ là bản xem thử, chưa được lưu vào dữ liệu.';list.append(note);}
+      classSelect.addEventListener('change',()=>show().catch(e=>info(e.message)));await show();return;
+    }
+    if(label==='Nhiệm vụ năng lực số'){
+      const form=document.createElement('form');form.className='class';
+      const add=(text,type,placeholder)=>{const label=document.createElement('label');label.textContent=text;const input=document.createElement(type==='textarea'?'textarea':'input');if(type!=='textarea')input.type=type;input.placeholder=placeholder||'';label.append(input);form.append(label);return input;};
+      const task=add('Tên nhiệm vụ','text','Ví dụ: Thiết kế áp phích tuyên truyền an toàn trên mạng');
+      const skill=add('Năng lực số trọng tâm','text','Tìm kiếm thông tin; sáng tạo nội dung; an toàn số...');
+      const due=add('Hạn nộp','date','');const desc=add('Yêu cầu và tiêu chí sản phẩm','textarea','Mô tả yêu cầu, định dạng nộp, tiêu chí đánh giá...');
+      const submit=document.createElement('button');submit.type='submit';submit.textContent='Lưu bản nháp nhiệm vụ';form.append(submit);
+      form.addEventListener('submit',e=>{e.preventDefault();const preview=document.createElement('div');preview.className='class';preview.textContent='Bản nháp (chưa lưu lên máy chủ): '+task.value+' · '+skill.value+' · Hạn: '+(due.value||'chưa đặt')+' · '+desc.value;content.prepend(preview);});
+      content.append(form);info('Bản thử nghiệm này mới tạo bản xem trước; cần xây dựng API lưu nhiệm vụ và phân phối nhiệm vụ tới tài khoản học sinh.');return;
+    }
+    if(label==='Sản phẩm học sinh'){
+      const taskLabel=document.createElement('label');taskLabel.textContent='Bài giao';const taskSelect=document.createElement('select');const opt=document.createElement('option');opt.value='';opt.textContent='-- Chọn bài giao --';taskSelect.append(opt);assignments.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.title+' · '+a.className;taskSelect.append(o);});taskLabel.append(taskSelect);content.append(taskLabel);
+      const note=document.createElement('p');note.className='muted';note.textContent='Khi học sinh nộp tệp, liên kết hoặc nội dung, sản phẩm cần được lưu theo học sinh và nhiệm vụ. API hiện tại mới hỗ trợ kết quả bài tập, chưa có kho sản phẩm số độc lập.';content.append(note);return;
+    }
+    if(label==='AI đánh giá năng lực số'){
+      const task= document.createElement('textarea');task.rows=3;task.placeholder='Mô tả sản phẩm hoặc dán phần nội dung học sinh nộp (không đưa thông tin nhạy cảm).';task.style.width='100%';
+      const rubric=document.createElement('textarea');rubric.rows=3;rubric.placeholder='Tiêu chí đánh giá: xác định vấn đề, sử dụng công cụ số, sáng tạo, an toàn số, hợp tác...';rubric.style.width='100%';
+      const l1=document.createElement('label');l1.textContent='Minh chứng sản phẩm';l1.append(task);const l2=document.createElement('label');l2.textContent='Tiêu chí đánh giá';l2.append(rubric);
+      const button=document.createElement('button');button.type='button';button.textContent='Tạo gợi ý nhận xét';button.addEventListener('click',()=>{const result=document.createElement('div');result.className='class';result.textContent='Khung gợi ý để giáo viên tự đối chiếu: (1) Mức độ hoàn thành yêu cầu; (2) Kỹ năng tìm kiếm và chọn lọc thông tin; (3) Sử dụng công cụ số phù hợp; (4) Sáng tạo và trình bày; (5) An toàn, bản quyền và hợp tác. Đây là khung tham khảo tĩnh, chưa gọi mô hình AI và không tự động kết luận xếp loại.';content.append(result);});
+      content.append(l1,l2,button);info('Đây là khung đánh giá tham khảo; chưa kết nối dịch vụ AI thực tế. Giáo viên duyệt mọi nhận xét trước khi dùng.');return;
+    }
+  }
   async function renderStudentDirectory(){
     const panel=$('futureModuleContent');panel.replaceChildren();
     const heading=document.createElement('h3');heading.textContent='Quản lý học sinh theo lớp';panel.append(heading);
