@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#4f46e5">
-<title>LAVI 5A – Online V4.1 | Giao bài • Nộp bài • Sao thưởng</title>
+<title>LAVI – Nền tảng học tập thông minh</title>
 <style>
 .game-card{padding:16px;text-align:center}
 .game-card h3{margin:0 0 6px}
@@ -17,6 +17,7 @@
 .game-progress{height:9px;border-radius:99px;background:#eee;overflow:hidden}.game-progress i{display:block;height:100%;background:currentColor}
 @media(max-width:600px){.game-options{grid-template-columns:1fr}.game-q{font-size:20px}}
 
+.question-style-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.question-style-option{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff;cursor:pointer;min-height:0;font-size:12px;font-weight:650;line-height:1.25}.question-style-option:has(input:checked){border-color:#818cf8;background:#eef2ff;color:#3730a3;box-shadow:0 0 0 1px rgba(79,70,229,.08)}.question-style-option input{width:15px;height:15px;flex:none;margin:0;accent-color:#4f46e5}.question-style-option span{flex:1}.question-style-grid + label{margin-top:8px}@media(max-width:700px){.question-style-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.question-style-option{font-size:11px;padding:6px}}
 :root{--p:#4f46e5;--p2:#7c3aed;--bg:#f4f6fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#e4e7ec;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--gold:#f59e0b}
 *{box-sizing:border-box}html,body{margin:0;padding:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink)}
 button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:flex}.side{width:248px;position:fixed;left:0;top:0;bottom:0;background:#111827;color:#fff;padding:16px 13px;z-index:20;overflow:auto}.brand{font-weight:900;font-size:22px;padding:9px 10px 20px}.brand span{color:#a5b4fc}.nav button{width:100%;border:0;background:transparent;color:#d1d5db;text-align:left;padding:11px 12px;border-radius:10px;margin:2px 0}.nav button:hover,.nav button.active{background:#312e81;color:#fff}
@@ -69,10 +70,12 @@ body.menu-collapsed .menuToggle{left:14px}
 <body>
 <button class="menuToggle" id="menuToggle" onclick="toggleMenu()" aria-label="Ẩn hoặc hiện thanh menu"><span class="menuIcon">☰</span></button><div class="menuBackdrop" id="menuBackdrop" onclick="closeMenu()"></div><div class="app">
 <aside class="side">
- <div class="brand">LAVI <span>5A</span></div>
+ <div class="brand">LAVI</div>
  <div class="nav">
   <button class="active" onclick="show('home',this)">📊 Tổng quan</button>
   <button onclick="show('create',this)">🤖 Tạo bài</button>
+  <button onclick="show('digitaltools',this)">🧰 Công cụ số</button>
+  <button onclick="show('library',this);renderQuestionBank()">📚 Kho bài tập</button>
   <button onclick="show('assign',this)">📤 Bài đang giao</button>
   <button onclick="show('students',this)">👩‍🎓 Học sinh</button>
   <button onclick="show('stars',this)">⭐ Sao & Khen</button>
@@ -90,7 +93,7 @@ body.menu-collapsed .menuToggle{left:14px}
 </aside>
 <main class="main">
  <div class="top">
-  <div><h1>LAVI – Trợ lý giao bài 5A</h1><div class="sub">Trường Tiểu học Nước Hai · Năm học 2026–2027 · GVCN: Hoàng Thị Vân · 32 học sinh</div></div>
+  <div><h1>LAVI – Nền tảng học tập thông minh</h1><div class="sub">Trường Tiểu học Nước Hai · Năm học 2026–2027 · GVCN: Hoàng Thị Vân · 32 học sinh</div></div>
   <div><span id="onlineUser" class="onlineBadge">● Chưa đăng nhập</span><button class="btn logoutBtn" onclick="logout()">Đăng xuất</button><button class="btn" onclick="exportData()">⬇ Xuất dữ liệu</button></div>
  </div>
 
@@ -110,28 +113,101 @@ body.menu-collapsed .menuToggle{left:14px}
    <div class="card"><h2>🏆 Thành tích gần đây</h2><div id="recentAwards"></div></div>
   </div>
   <div class="card" style="margin-top:14px"><h2>📤 Bài đang giao</h2><div id="homeAssignments"></div></div>
+  <div class="card" style="margin-top:14px"><h2>🧰 Công cụ số dành cho giáo viên</h2><p class="sub">Mở nhanh các công cụ hỗ trợ dạy học.</p><div class="grid3">
+   <div class="card"><h3>Canva</h3><a class="btn primary" href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Mở Canva ↗</a></div>
+   <div class="card"><h3>GeoGebra</h3><a class="btn primary" href="https://www.geogebra.org/" target="_blank" rel="noopener noreferrer">Mở GeoGebra ↗</a></div>
+   <div class="card"><h3>Wordwall</h3><a class="btn primary" href="https://wordwall.net/" target="_blank" rel="noopener noreferrer">Mở Wordwall ↗</a></div>
+   <div class="card"><h3>Quizizz</h3><a class="btn primary" href="https://quizizz.com/" target="_blank" rel="noopener noreferrer">Mở Quizizz ↗</a></div>
+   <div class="card"><h3>NotebookLM</h3><a class="btn primary" href="https://notebooklm.google.com/" target="_blank" rel="noopener noreferrer">Mở NotebookLM ↗</a></div>
+   <div class="card"><h3>CapCut</h3><a class="btn primary" href="https://www.capcut.com/" target="_blank" rel="noopener noreferrer">Mở CapCut ↗</a></div>
+   </div></div>
  </section>
 
  <section id="create" class="section">
+  <details id="fileQuestionImportDetails" class="card" style="margin-top:14px">
+     <summary style="cursor:pointer;font-weight:900;color:#166534;font-size:17px">📥 Tạo câu hỏi từ file Excel / Word</summary>
+     <p class="sub" style="margin-top:10px">Tải file câu hỏi có sẵn lên để LAVI đọc nội dung và đáp án. Cô xem trước rồi mới tạo bản nháp; không cần nhập lại từng câu.</p>
+     <div class="grid2">
+      <div class="field"><label>File câu hỏi (.xlsx, .xls, .csv, .docx)</label><input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv,.docx"></div>
+      <div class="field"><label>Môn học (nếu file không có)</label><input id="questionImportSubject" placeholder="Ví dụ: Tiếng Việt"></div>
+     </div>
+     <div class="grid2">
+      <div class="field"><label>Tên bài / chủ đề (nếu file không có)</label><input id="questionImportLesson" placeholder="Ví dụ: Từ đa nghĩa"></div>
+      <div class="field"><label>Đối tượng giao bài</label><select id="questionImportGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option selected>Tất cả</option></select></div>
+     </div>
+     <div class="row"><button type="button" class="btn" onclick="parseQuestionImportFile()">🔍 Đọc file và xem trước</button><button type="button" class="btn" onclick="downloadQuestionImportTemplate()">⬇️ Tải file mẫu CSV</button></div>
+     <div id="questionImportStatus" class="sub" role="status" aria-live="polite" style="margin-top:10px"></div>
+     <div id="questionImportPreview" style="margin-top:10px"></div>
+     <div class="row" style="margin-top:10px"><button type="button" class="btn primary" id="questionImportCreateDraft" onclick="createQuestionImportDraft()" disabled>➕ Tạo bản nháp từ các câu đã đọc</button></div>
+    </details>
   <div class="card">
    <h2>🤖 Tạo bài theo chương trình <span style="display:inline-block;font-size:12px;font-weight:700;background:#eef2ff;color:#4338ca;border-radius:999px;padding:4px 9px;vertical-align:middle">V4 • CHỌN NHIỀU BÀI</span></h2>
    <div class="grid3">
     <div class="field"><label>Môn</label><select id="cSubject" onchange="fillWeeks()"></select></div>
     <div class="field"><label>Tuần</label><select id="cWeek" onchange="fillLessons()"></select></div>
-    <div class="field"><label>📚 Bài học / tiết — CHỌN NHIỀU</label><div style="display:flex;gap:8px;margin:6px 0"><button type="button" class="btn" onclick="selectAllLessons()">☑️ Chọn tất cả</button><button type="button" class="btn" onclick="clearLessonSelection()">⬜ Bỏ chọn</button></div><div id="cLessonPicker" style="border:2px solid #4f46e5;border-radius:10px;background:#fff;max-height:260px;overflow-y:auto;padding:6px;min-height:70px"></div><div id="lessonSelectedCount" class="sub" style="margin-top:6px;font-weight:600">Đã chọn: 0 bài/tiết</div></div>
+    <div class="field"><label>📚 Bài học / tiết — CHỌN NHIỀU</label><details id="lessonPickerDetails" style="border:1px solid #c7d2fe;border-radius:12px;padding:10px;background:#f8faff"><summary style="cursor:pointer;font-weight:800;color:#3730a3">Mở danh sách bài học / tiết <span id="lessonSelectedCount" class="sub" style="font-weight:600">— chưa chọn bài</span></summary><div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"><button type="button" class="btn" onclick="selectAllLessons()">☑️ Chọn tất cả</button><button type="button" class="btn" onclick="clearLessonSelection()">⬜ Bỏ chọn</button></div><div id="cLessonPicker" style="border:2px solid #4f46e5;border-radius:10px;background:#fff;max-height:260px;overflow-y:auto;padding:6px;min-height:70px"></div></details></div>
    </div>
    <div class="grid3">
     <div class="field"><label>Đối tượng giao bài</label><select id="cGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option>Tất cả</option></select></div>
     <div class="field"><label>Số câu</label><input id="cCount" type="number" min="3" max="15" value="8"></div>
     <div class="field"><label>Hạn nộp</label><input id="cDue" type="datetime-local"></div>
    </div>
-   <div class="field"><label>Yêu cầu thêm</label><textarea id="cNote" placeholder="Ví dụ: Có số liệu cụ thể, ưu tiên bài toán thực tế; không vượt phạm vi bài đã chọn."></textarea></div>
+   <div class="field">
+    <label>🧩 Dạng bài tập / yêu cầu thêm — có thể chọn nhiều</label>
+    <div class="sub" style="margin:4px 0 9px">Chọn một hoặc nhiều phương án; LAVI sẽ ghép lựa chọn vào yêu cầu tạo bài. Cô vẫn có thể tự nhập mô tả bên dưới.</div>
+    <div id="questionStyleGrid" class="question-style-grid">
+      <label class="question-style-option"><input type="checkbox" value="Ưu tiên câu hỏi trắc nghiệm 4 phương án A, B, C, D." onchange="syncQuestionStyles()"> <span>🔘 Trắc nghiệm 4 phương án</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi đúng / sai." onchange="syncQuestionStyles()"> <span>☑️ Đúng – sai</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi điền từ hoặc điền số vào chỗ trống." onchange="syncQuestionStyles()"> <span>✍️ Điền khuyết</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi trả lời ngắn." onchange="syncQuestionStyles()"> <span>💬 Trả lời ngắn</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi tự luận, yêu cầu trình bày cách làm hoặc giải thích." onchange="syncQuestionStyles()"> <span>📝 Tự luận / giải thích</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Tăng câu hỏi vận dụng vào tình huống thực tế, gần gũi với học sinh." onchange="syncQuestionStyles()"> <span>🌱 Vận dụng thực tế</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi vận dụng cao, cần suy luận nhiều bước nhưng phù hợp lớp 5." onchange="syncQuestionStyles()"> <span>🧠 Vận dụng cao</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Phân hóa câu hỏi theo mức độ nhận biết, thông hiểu và vận dụng." onchange="syncQuestionStyles()"> <span>📊 Phân hóa mức độ</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Tránh lặp lại câu hỏi, thay đổi dữ kiện và cách hỏi; bảo đảm chỉ có một đáp án đúng khi là trắc nghiệm." onchange="syncQuestionStyles()"> <span>🔄 Hạn chế trùng lặp</span></label>
+    </div>
+    <label style="display:block;margin:12px 0 5px">Mô tả thêm của giáo viên</label>
+    <textarea id="cNote" placeholder="Ví dụ: Có số liệu cụ thể, ưu tiên bài toán thực tế; không vượt phạm vi bài đã chọn." oninput="syncQuestionStyleChecksFromNote()"></textarea>
+    <div class="sub" id="questionStyleSummary" style="margin-top:6px">Chưa chọn dạng bổ sung.</div>
+   </div>
    <div class="field"><label>🎞️ GIF minh họa từ Gifhut</label><input id="cGifUrl" type="url" placeholder="Dán liên kết GIF/ảnh từ Gifhut (https://...) " oninput="previewGif(this.value)"><div id="gifPreview" class="gif-preview"></div><div class="sub">GIF là tùy chọn. Nếu Gifhut cung cấp liên kết trực tiếp tới ảnh/GIF, LAVI sẽ hiển thị ngay trong bài.</div></div>
    <div class="row"><button class="btn primary" onclick="generate()">✨ Tạo bài</button><button class="btn" onclick="clearDraft()">Xóa nháp</button></div>
   </div>
+  <details id="manualQuestionDetails" class="card" style="margin-top:14px">
+   <summary style="cursor:pointer;font-weight:900;color:#3730a3;font-size:17px">＋ Thêm mới / tạo câu hỏi thủ công</summary>
+   <p class="sub" style="margin-top:10px">Mở phần này khi muốn tự nhập câu hỏi. Có thể lưu thành nháp hoặc giao bài sau khi xem lại.</p>
+   <div class="grid2">
+    <div class="field"><label>Môn học</label><input id="manualSubject" placeholder="Ví dụ: Toán"></div>
+    <div class="field"><label>Tên bài / chủ đề</label><input id="manualLesson" placeholder="Ví dụ: Diện tích hình thang"></div>
+   </div>
+   <div class="grid2">
+    <div class="field"><label>Đối tượng</label><select id="manualGroup"><option>Tốt</option><option>Khá</option><option>Trung bình</option><option>Yếu</option><option>Cả 4 nhóm</option><option selected>Tất cả</option></select></div>
+    <div class="field"><label>Hạn nộp</label><input id="manualDue" type="datetime-local"></div>
+   </div>
+   <div class="field"><label>Nội dung câu hỏi *</label><textarea id="manualPrompt" rows="3" placeholder="Nhập nội dung câu hỏi..." required></textarea></div>
+   <div class="grid2">
+    <div class="field"><label>Đáp án chuẩn (để trống nếu cần cô chấm)</label><input id="manualAnswer" placeholder="Nhập đáp án đúng"></div>
+    <div class="field"><label>Đáp án khác chấp nhận (;)</label><input id="manualAccepted" placeholder="Ví dụ: 0,25; 25/100"></div>
+   </div>
+   <div class="field"><label>Giải thích (không bắt buộc)</label><textarea id="manualExplanation" rows="2" placeholder="Giải thích hoặc hướng dẫn chấm"></textarea></div>
+   <div class="row"><button type="button" class="btn primary" onclick="createManualDraft()">Tạo bản nháp thủ công</button><button type="button" class="btn" onclick="resetManualQuestionForm()">Làm mới biểu mẫu</button></div>
+   <div id="manualQuestionStatus" class="sub" role="status" aria-live="polite"></div>
+  </details>
   <div id="draft" style="margin-top:14px"></div>
  </section>
 
+ <section id="library" class="section">
+  <div class="card">
+   <h2>📚 Kho bài tập & ngân hàng câu hỏi</h2>
+   <p class="sub">Lưu bài một lần, sau đó dùng lại để tạo bài giao hoặc mở trò chơi luyện tập. Kho hiện dùng dữ liệu của tài khoản/lớp này.</p>
+   <div class="grid3">
+    <div class="field"><label>Tìm bài</label><input id="bankSearch" placeholder="Tên bài, môn, chủ đề..." oninput="renderQuestionBank()"></div>
+    <div class="field"><label>Lọc môn học</label><select id="bankSubjectFilter" onchange="renderQuestionBank()"><option value="">Tất cả môn</option></select></div>
+    <div class="field"><label>Số bài trong kho</label><div class="pill blue" id="bankCount">0 bài</div></div>
+   </div>
+   <div id="questionBankList"></div>
+  </div>
+ </section>
  <section id="assign" class="section"><div class="card"><h2>📤 Bài đang giao</h2><div id="assignList"></div></div></section>
 
  <section id="students" class="section">
@@ -174,6 +250,18 @@ body.menu-collapsed .menuToggle{left:14px}
      <h3>🧠 Thử tài kiến thức</h3><p class="sub">10 câu kiến thức Tiểu học.</p>
      <button class="btn primary" onclick="openKnowledgeGame()">▶️ Chơi ngay</button>
     </div>
+   </div>
+   <div class="card" style="margin-top:14px">
+    <h3>📚 Tạo trò chơi từ ngân hàng câu hỏi</h3>
+    <p class="sub">Chọn nhiều bộ câu hỏi đã lưu trong Kho bài tập hoặc tải file Excel/Word để tạo trò chơi nhanh.</p>
+    <div class="field"><label>Chọn bộ câu hỏi trong kho (có thể chọn nhiều)</label><select id="gameBankSelect" multiple size="5" style="width:100%;min-height:120px"></select><div class="sub">Giữ Ctrl (máy tính) để chọn nhiều bộ. Trên điện thoại, chạm chọn nhiều mục nếu trình duyệt hỗ trợ.</div></div>
+    <div class="row"><button class="btn primary" onclick="playSelectedBankGames()">🎮 Chơi bộ đã chọn</button><button class="btn" onclick="refreshGameBankSelect()">↻ Làm mới danh sách</button></div>
+    <div class="divider" style="margin:14px 0"></div>
+    <div class="field"><label>📥 Tải file câu hỏi (.xlsx, .xls, .csv, .docx)</label><input id="gameQuestionFile" type="file" accept=".xlsx,.xls,.csv,.docx"></div>
+    <div class="grid2"><div class="field"><label>Môn học (nếu file thiếu)</label><input id="gameQuestionSubject" placeholder="Ví dụ: Toán"></div><div class="field"><label>Tên trò chơi</label><input id="gameQuestionTitle" placeholder="Ví dụ: Ôn tập hình thang"></div></div>
+    <div class="row"><button class="btn" onclick="previewGameQuestionFile()">🔍 Đọc file và xem trước</button><button class="btn primary" onclick="playImportedGameQuestions()">▶️ Chơi với câu hỏi từ file</button></div>
+    <div id="gameQuestionFileStatus" class="sub" role="status" aria-live="polite" style="margin-top:8px"></div>
+    <div id="gameQuestionFilePreview" style="margin-top:8px"></div>
    </div>
    <div id="gameArea" style="margin-top:14px"></div>
   </div>
@@ -219,7 +307,19 @@ body.menu-collapsed .menuToggle{left:14px}
   </div>
  </section>
 
- <section id="accounts" class="section">
+ <section id="digitaltools" class="section">
+<div class="card"><h2>🧰 Trung tâm công cụ số</h2><p class="sub">Mở nhanh các công cụ hỗ trợ dạy học số.</p><div class="grid3">
+<div class="card"><h3>Canva</h3><p class="sub">Thiết kế học liệu và trình chiếu.</p><a class="btn primary" href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Mở Canva ↗</a></div>
+<div class="card"><h3>GeoGebra</h3><p class="sub">Mô phỏng Toán học.</p><a class="btn primary" href="https://www.geogebra.org/" target="_blank" rel="noopener noreferrer">Mở GeoGebra ↗</a></div>
+<div class="card"><h3>Wordwall</h3><p class="sub">Trò chơi tương tác.</p><a class="btn primary" href="https://wordwall.net/" target="_blank" rel="noopener noreferrer">Mở Wordwall ↗</a></div>
+<div class="card"><h3>Quizizz</h3><p class="sub">Luyện tập trực tuyến.</p><a class="btn primary" href="https://quizizz.com/" target="_blank" rel="noopener noreferrer">Mở Quizizz ↗</a></div>
+<div class="card"><h3>NotebookLM</h3><p class="sub">Khai thác tài liệu.</p><a class="btn primary" href="https://notebooklm.google.com/" target="_blank" rel="noopener noreferrer">Mở NotebookLM ↗</a></div>
+<div class="card"><h3>CapCut</h3><p class="sub">Biên tập video bài dạy.</p><a class="btn primary" href="https://www.capcut.com/" target="_blank" rel="noopener noreferrer">Mở CapCut ↗</a></div>
+<div class="card"><h3>Google Slides</h3><p class="sub">Tạo bài trình chiếu.</p><a class="btn primary" href="https://slides.google.com/" target="_blank" rel="noopener noreferrer">Mở Google Slides ↗</a></div>
+<div class="card"><h3>Padlet</h3><p class="sub">Chia sẻ sản phẩm học sinh.</p><a class="btn primary" href="https://padlet.com/" target="_blank" rel="noopener noreferrer">Mở Padlet ↗</a></div>
+<div class="card"><h3>Kahoot!</h3><p class="sub">Câu hỏi tương tác.</p><a class="btn primary" href="https://kahoot.com/" target="_blank" rel="noopener noreferrer">Mở Kahoot ↗</a></div>
+</div></div></section>
+<section id="accounts" class="section">
   <div class="grid2">
    <div class="card"><h2>⚙️ Tài khoản của cô</h2><p class="sub">Đổi mật khẩu đăng nhập LAVI.</p>
     <div class="field"><label>Mật khẩu hiện tại</label><input id="pwOld" type="password"></div>
@@ -252,7 +352,7 @@ body.menu-collapsed .menuToggle{left:14px}
 <div id="loginOverlay">
   <div class="loginBox">
     <div style="font-size:42px">🤖</div>
-    <h1>LAVI 5A Online</h1>
+    <h1>LAVI</h1>
     <div class="sub">Giao bài · Nộp bài · ⭐ Sao thưởng · Dữ liệu dùng chung</div>
     <label><b>Tài khoản</b></label>
     <input id="loginUser" autocomplete="username" placeholder="teacher hoặc hs01...hs32">
@@ -266,16 +366,18 @@ body.menu-collapsed .menuToggle{left:14px}
 <div id="studentApp" class="student-app">
  <div class="student-shell">
   <div class="student-top">
-   <div class="student-brand"><button class="student-avatar-btn" onclick="openAvatarPicker()" title="Đổi ảnh đại diện"><div class="student-logo" id="studentAvatar">🎓</div></button><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI 5A · Góc học tập của em</div></div></div>
+   <div class="student-brand"><button class="student-avatar-btn" onclick="openAvatarPicker()" title="Đổi ảnh đại diện"><div class="student-logo" id="studentAvatar">🎓</div></button><div><div class="student-name" id="studentHeaderName">Học sinh 5A</div><div class="student-sub">LAVI · Góc học tập của em</div></div></div>
    <div class="student-actions"><button class="student-btn" onclick="studentMode()">📚 Bài của em</button><button class="student-btn" onclick="studentLeaderboard()">🏁 Xếp hạng</button><button class="student-btn logout" onclick="logout()">Đăng xuất</button></div>
   </div>
   <div class="student-nav">
    <button class="student-nav-btn active" onclick="studentMode()">📚 Bài của em</button>
+   <button class="student-nav-btn" onclick="studentShowGroupTools()">👥 Làm việc nhóm</button>
+   <button class="student-nav-btn" onclick="studentShowTools()">🧰 Công cụ số</button>
    <button class="student-nav-btn" onclick="studentLeaderboard()">🏁 Trò chơi & Xếp hạng</button>
    <button class="student-nav-btn" onclick="studentShowNotice()">🔔 Thông báo</button>
   </div>
   <div id="studentContent"></div>
-  <div class="student-footer">🌟 Học chăm – Làm thật – Tiến bộ mỗi ngày · LAVI 5A</div>
+  <div class="student-footer">🌟 Học chăm – Làm thật – Tiến bộ mỗi ngày · LAVI</div>
  </div>
 </div>
 <div class="modal" id="modal"><div class="modalbox" id="modalBox"></div></div>
@@ -1634,6 +1736,22 @@ function validateQuestionSet(questions){
  if((questions||[]).length<3)errors.push("Bộ đề chưa đủ 3 câu hợp lệ.");
  return [...new Set(errors)];
 }
+const QUESTION_STYLE_PREFIX="[LAVI_DANG_BAI_TAP]";
+function syncQuestionStyles(){
+ const checks=[...document.querySelectorAll("#questionStyleGrid input[type=checkbox]")];
+ const selected=checks.filter(x=>x.checked).map(x=>x.value);
+ const note=document.getElementById("cNote");if(!note)return;
+ const existing=note.value.split("\n").filter(line=>line.trim()&&!line.startsWith(QUESTION_STYLE_PREFIX));
+ note.value=[...selected.length?[QUESTION_STYLE_PREFIX+" "+selected.join(" ")]:[],...existing].join("\n");
+ const summary=document.getElementById("questionStyleSummary");if(summary)summary.textContent=selected.length?"Đã chọn "+selected.length+" dạng/yêu cầu bổ sung.":"Chưa chọn dạng bổ sung.";
+}
+function syncQuestionStyleChecksFromNote(){
+ const note=document.getElementById("cNote")?.value||"";
+ const line=note.split("\n").find(x=>x.startsWith(QUESTION_STYLE_PREFIX))||"";
+ document.querySelectorAll("#questionStyleGrid input[type=checkbox]").forEach(x=>{x.checked=!!line.includes(x.value)});
+ const summary=document.getElementById("questionStyleSummary"),n=[...document.querySelectorAll("#questionStyleGrid input[type=checkbox]:checked")].length;
+ if(summary)summary.textContent=n?"Đã chọn "+n+" dạng/yêu cầu bổ sung.":"Chưa chọn dạng bổ sung.";
+}
 function generate(){
  try{
   const lessons=selectedLessons();
@@ -1788,28 +1906,167 @@ function renderDraft(){
  <button class="btn success" style="margin-top:8px" onclick="saveDraftAnswer(${si},${qi})">💾 Lưu đáp án Câu ${qi+1}</button>
  <div id="draftAnswerMsg_${si}_${qi}" class="sub" style="margin-top:5px">✏️ Cô nhập đáp án; LAVI lưu ngay vào bản nháp. Khi bấm <b>📤 Giao bài</b>, đáp án này mới được áp dụng cho học sinh.</div>
  </div>`).join("")}</div>`).join("")}
- <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">💾 Lưu nháp</button></div></div>`
+ <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">📚 Lưu vào ngân hàng / kho câu hỏi</button></div></div>`
+}
+function validateDraftForPublish(item){
+ const errors=[];
+ if(!item||!Array.isArray(item.sets)||!item.sets.length)errors.push("Chưa có bộ câu hỏi.");
+ const sets=Array.isArray(item?.sets)?item.sets:[];
+ const questions=sets.flatMap(s=>Array.isArray(s.questions)?s.questions:[]);
+ if(!questions.length)errors.push("Bài chưa có câu hỏi nào.");
+ if(questions.some(q=>!String(q?.text||"").trim()))errors.push("Có câu hỏi đang để trống nội dung.");
+ if(questions.length>100)errors.push("Mỗi bài chỉ được giao tối đa 100 câu trong một lần.");
+ if(item?.due){
+  const dueMs=new Date(item.due).getTime();
+  if(!Number.isFinite(dueMs))errors.push("Hạn nộp không hợp lệ.");
+  else if(dueMs<Date.now())errors.push("Hạn nộp đã qua. Hãy chọn thời điểm trong tương lai hoặc bỏ trống hạn nộp.");
+ }
+ return [...new Set(errors)];
 }
 async function publish(){
  if(!draft)return;
- const item={...draft,status:"Đang giao"};
+ const errors=validateDraftForPublish(draft);
+ if(errors.length){alert("Chưa thể giao bài:\n- "+errors.join("\n- "));toast("⚠️ Cần kiểm tra lại bản nháp.");return;}
+ if(state.assignments.some(a=>a.id===draft.id)){alert("Bài này đã được lưu trước đó. Hãy tạo bản nháp mới nếu muốn giao thêm lần nữa.");return;}
+ const item={...draft,status:"Đang giao",publishedAt:new Date().toISOString()};
  state.assignments.unshift(item);
  try{
   await save();
   draft=null;
   document.getElementById("draft").innerHTML="";
   toast(item.group==="Tất cả"?"✅ Đã giao bài chung cho cả lớp":"✅ Đã giao bài theo nhóm trình độ");
+  const target=document.getElementById("publishStatus");
+  if(target)target.textContent="Đã giao bài thành công.";
  }catch(e){
   state.assignments=state.assignments.filter(a=>a.id!==item.id);
   localStorage.setItem("lavi5a_real",JSON.stringify(state));
   renderAll();
   toast("❌ Chưa giao được bài: "+e.message);
-  alert("Chưa giao được bài. "+e.message);
+  alert("Chưa giao được bài. "+e.message+"\nBản nháp vẫn được giữ để cô thử lại.");
  }
 }
-function saveLibrary(){if(!draft)return;draft.status="Kho bài";state.assignments.unshift({...draft});draft=null;document.getElementById("draft").innerHTML="";save();toast("Đã lưu vào kho")}
+async function saveLibrary(){
+ if(!draft)return;
+ const errors=validateDraftForPublish({...draft,due:""});
+ if(errors.length){alert("Chưa thể lưu vào kho:\n- "+errors.join("\n- "));return;}
+ if(state.assignments.some(a=>a.id===draft.id)){alert("Bản nháp này đã có trong kho.");return;}
+ const item={...draft,status:"Kho bài",savedToLibraryAt:new Date().toISOString()};
+ state.assignments.unshift(item);
+ try{
+  await save();
+  draft=null;
+  document.getElementById("draft").innerHTML="";
+  toast("📚 Đã lưu vào Kho bài tập. Đang mở kho để cô xem lại.");
+  renderQuestionBank();show("library");
+ }catch(e){
+  state.assignments=state.assignments.filter(a=>a.id!==item.id);
+  localStorage.setItem("lavi5a_real",JSON.stringify(state));
+  renderAll();
+  toast("❌ Chưa lưu được vào kho: "+e.message);
+  alert("Chưa lưu được vào kho. "+e.message+"\nBản nháp vẫn được giữ để cô thử lại.");
+ }
+}
+function resetManualQuestionForm(){
+ ["manualPrompt","manualAnswer","manualAccepted","manualExplanation"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+ const status=document.getElementById("manualQuestionStatus");if(status)status.textContent="";
+}
+function createManualDraft(){
+ const prompt=document.getElementById("manualPrompt").value.trim();
+ if(!prompt){document.getElementById("manualQuestionStatus").textContent="Cô hãy nhập nội dung câu hỏi trước.";document.getElementById("manualPrompt").focus();return;}
+ const subject=document.getElementById("manualSubject").value.trim()||"Câu hỏi thủ công";
+ const lesson=document.getElementById("manualLesson").value.trim()||"Bộ câu hỏi thủ công";
+ const answer=document.getElementById("manualAnswer").value.trim();
+ const accepted=document.getElementById("manualAccepted").value.split(";").map(x=>x.trim()).filter(Boolean);
+ const explanation=document.getElementById("manualExplanation").value.trim();
+ const group=document.getElementById("manualGroup").value;
+ const due=document.getElementById("manualDue").value||"";
+ const question={id:1,text:prompt,answer,acceptedAnswers:[...new Set([answer,...accepted].filter(Boolean))],explanation,type:answer?"Trả lời ngắn":"Tự luận – cô chấm",manual:!answer};
+ draft={id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),subject,week:"Thủ công",topic:lesson,lesson,group,count:1,lessonIds:[lesson],due,note:"Được tạo thủ công bởi giáo viên",gifUrl:"",sets:[{group,questions:[question]}],status:"Nháp",createdAt:new Date().toISOString()};
+ document.getElementById("draft").innerHTML=renderDraft();
+ document.getElementById("manualQuestionStatus").textContent="Đã tạo bản nháp. Cô kiểm tra nội dung rồi chọn Lưu nháp hoặc Giao bài.";
+ document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});
+}
 function clearDraft(){draft=null;document.getElementById("draft").innerHTML=""}
 function findSet(a,g){return a.sets.find(x=>x.group===g)||a.sets.find(x=>x.group==="Tất cả")||a.sets.find(x=>x.group==="Cả 4 nhóm")||a.sets[0]}
+let importedGameQuestions=[];
+function refreshGameBankSelect(){
+ const el=document.getElementById("gameBankSelect");if(!el)return;
+ const previous=[...el.selectedOptions].map(x=>x.value),items=questionBankItems();
+ el.innerHTML=items.length?items.map(a=>'<option value="'+esc(a.id)+'">'+esc((a.subject||"")+' — '+(a.lesson||a.topic||"Bài chưa đặt tên"))+'</option>').join(""):'<option disabled>Kho chưa có bộ câu hỏi</option>';
+ [...el.options].forEach(o=>o.selected=previous.includes(o.value));
+}
+function playSelectedBankGames(){
+ const ids=[...(document.getElementById("gameBankSelect")?.selectedOptions||[])].map(o=>o.value);
+ if(!ids.length)return alert("Cô hãy chọn ít nhất một bộ câu hỏi trong kho.");
+ const qs=[];
+ ids.forEach(id=>{const item=questionBankItems().find(a=>a.id===id);if(!item)return;
+  (item.sets||[]).forEach(set=>(set.questions||[]).forEach(q=>{
+   let options=Array.isArray(q.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\-:]\s*/i,"").trim()):[];
+   let text=String(q.text||"");
+   if(!options.length){const lines=text.split(/\r?\n/);options=lines.slice(1).filter(x=>/^[A-D][.)\-:]/i.test(x)).map(x=>x.replace(/^[A-D][.)\-:]\s*/i,"").trim());}
+   if(options.length>=2){let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;qs.push({text:text.split(/\r?\n/)[0],options,answer});}
+  }));
+ });
+ if(!qs.length)return alert("Các bộ đã chọn chưa có đủ câu hỏi trắc nghiệm để chơi.");
+ startGame("🎮 Trò chơi từ ngân hàng câu hỏi",shuffleGameQuestions(qs),"bank-custom");
+}
+async function previewGameQuestionFile(){
+ const file=document.getElementById("gameQuestionFile")?.files?.[0],status=document.getElementById("gameQuestionFileStatus"),preview=document.getElementById("gameQuestionFilePreview");
+ importedGameQuestions=[];if(preview)preview.innerHTML="";
+ if(!file){if(status)status.textContent="Cô hãy chọn file trước.";return;}
+ if(status)status.textContent="Đang đọc file…";
+ try{
+  const ext=file.name.split(".").pop().toLowerCase();let rows=[];
+  if(["xlsx","xls","csv"].includes(ext)){
+   if(!window.XLSX)throw new Error("Thư viện đọc Excel chưa tải được.");
+   const wb=XLSX.read(await file.arrayBuffer(),{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];
+   rows=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+   if(!rows.length){const m=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});if(m.length>1)rows=m.slice(1).map(r=>Object.fromEntries(m[0].map((h,i)=>[String(h||""),r[i]??""])));}
+   importedGameQuestions=mapQuestionImportRows(rows);
+  }else if(ext==="docx"){
+   if(!window.mammoth)throw new Error("Thư viện đọc Word chưa tải được.");
+   const result=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
+   importedGameQuestions=parseQuestionTextBlock(result.value);
+  }else throw new Error("Chỉ hỗ trợ .xlsx, .xls, .csv, .docx.");
+  importedGameQuestions=importedGameQuestions.filter(q=>q.text&&Array.isArray(q.options)&&q.options.length>=2&&q.answer);
+  if(!importedGameQuestions.length)throw new Error("Không tìm thấy câu trắc nghiệm có phương án và đáp án. Kiểm tra file mẫu.");
+  if(status)status.textContent="Đã đọc "+importedGameQuestions.length+" câu trắc nghiệm hợp lệ.";
+  if(preview)preview.innerHTML='<div class="assignment"><b>Xem trước 5 câu đầu</b>'+importedGameQuestions.slice(0,5).map((q,i)=>'<p><b>'+(i+1)+'. '+esc(q.text)+'</b><br>'+q.options.map(x=>esc(String(x).replace(/^[A-D][.)\-:]\s*/i,""))).join(" · ")+'<br><span class="sub">Đáp án: '+esc(String(q.answer))+'</span></p>').join("")+'</div>';
+ }catch(e){importedGameQuestions=[];if(status)status.textContent="Không đọc được file: "+e.message;}
+}
+function playImportedGameQuestions(){
+ if(!importedGameQuestions.length)return alert("Cô hãy chọn file và bấm “Đọc file và xem trước” trước.");
+ const title=(document.getElementById("gameQuestionTitle")?.value||"").trim()||"Trò chơi từ file";
+ const qs=importedGameQuestions.map(q=>{let options=(q.options||[]).map(x=>String(x).replace(/^[A-D][.)\-:]\s*/i,"").trim());let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;return {text:q.text,options,answer};});
+ startGame("🎮 "+title,shuffleGameQuestions(qs),"file-custom");
+}
+function questionBankItems(){return (state.assignments||[]).filter(a=>a.status==="Kho bài");}
+function renderQuestionBank(){
+ const box=document.getElementById("questionBankList");if(!box)return;
+ const all=questionBankItems(),search=(document.getElementById("bankSearch")?.value||"").trim().toLowerCase(),filter=document.getElementById("bankSubjectFilter")?.value||"";
+ const select=document.getElementById("bankSubjectFilter");
+ if(select){const prev=select.value,subjects=[...new Set(all.map(a=>a.subject).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"vi"));if(select.options.length!==subjects.length+1){select.innerHTML='<option value="">Tất cả môn</option>'+subjects.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join("");select.value=subjects.includes(prev)?prev:"";}}
+ const q=(document.getElementById("bankSearch")?.value||"").trim().toLowerCase(),sub=document.getElementById("bankSubjectFilter")?.value||"";
+ const items=all.filter(a=>(!sub||a.subject===sub)&&(!q||[a.subject,a.lesson,a.topic,a.note].join(" ").toLowerCase().includes(q)));
+ const count=document.getElementById("bankCount");if(count)count.textContent=all.length+" bài";
+ if(!items.length){box.innerHTML='<div class="empty">'+(all.length?'Không tìm thấy bài phù hợp.':'Kho chưa có bài nào. Vào “Tạo bài”, tạo hoặc nhập file Excel/Word, kiểm tra bản nháp rồi bấm “Lưu vào kho”. Bài sẽ xuất hiện tại đây.')+'</div>';return;}
+ box.innerHTML=items.map(a=>{const n=(a.sets||[]).reduce((sum,set)=>sum+(set.questions||[]).length,0);return '<div class="assignment"><h3>'+esc(a.subject||"Chưa phân môn")+' – '+esc(a.lesson||a.topic||"Bài chưa đặt tên")+'</h3><p><span class="pill blue">'+esc(a.week||"Không rõ tuần")+'</span> <span class="pill gray">'+n+' câu hỏi</span> <span class="pill good">Đã lưu trong kho</span></p><div class="sub">'+esc(a.note||"")+'</div><div class="row" style="margin-top:10px"><button class="btn primary" onclick="reuseBankAsAssignment(\''+a.id+'\')">📝 Dùng tạo bài tập</button><button class="btn success" onclick="playBankAsGame(\''+a.id+'\')">🎮 Chơi thử bộ câu hỏi</button></div></div>';}).join("");
+}
+function reuseBankAsAssignment(id){
+ const item=questionBankItems().find(a=>a.id===id);if(!item)return toast("Không tìm thấy bài trong kho.");
+ draft={...JSON.parse(JSON.stringify(item)),id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),status:"Nháp",createdAt:new Date().toISOString(),due:"",note:(item.note||"")+" · Tạo từ kho bài tập"};
+ document.getElementById("draft").innerHTML=renderDraft();show("create");document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});toast("Đã tạo bản nháp mới từ kho. Kiểm tra rồi mới giao bài.");
+}
+function playBankAsGame(id){
+ const item=questionBankItems().find(a=>a.id===id);if(!item)return toast("Không tìm thấy bài trong kho.");
+ const qs=[];(item.sets||[]).forEach(set=>(set.questions||[]).forEach(q=>{
+  let options=Array.isArray(q.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\-:]\s*/i,"").trim()):[];
+  if(!options.length){const lines=String(q.text||"").split(/\r?\n/);options=lines.slice(1).filter(x=>/^[A-D][.)\-:]/i.test(x)).map(x=>x.replace(/^[A-D][.)\-:]\s*/i,"").trim());}
+  if(options.length>=2){let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;qs.push({text:String(q.text||"").split(/\r?\n/)[0],options,answer});}
+ }));
+ if(!qs.length)return alert("Bộ câu hỏi này chưa có đủ phương án trắc nghiệm để mở trò chơi. Cô có thể dùng “Dùng tạo bài tập” để chỉnh sửa trước.");
+ startGame("🎮 "+(item.lesson||item.subject||"Trò chơi từ kho"),shuffleGameQuestions(qs),"knowledge");
+}
 function renderAssignments(id){
  const el=document.getElementById(id), arr=state.assignments.filter(a=>a.status==="Đang giao");
  if(!arr.length){el.innerHTML='<div class="empty">Chưa có bài đang giao.</div>';return}
@@ -2083,6 +2340,23 @@ function renderStudentHome(){
   '<div class="student-tabs"><button class="student-tab active">📚 Bài của em</button><button class="student-tab" onclick="studentShowNotice()">🔔 Thông báo'+(unread.length?' ('+unread.length+')':'')+'</button></div>'+
   '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3>'+gifBlock(a.gifUrl)+'<div class="student-meta">Tuần '+esc(a.week)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?(sub.score==null?'📝 Đã nộp · Chờ cô chấm':'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐'):'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
 }
+function studentShowTools(){
+ const tools=[
+  ['Canva','Thiết kế poster, thiệp và sản phẩm nhóm','https://www.canva.com/'],
+  ['Padlet','Cùng đăng ý tưởng, ảnh và sản phẩm của nhóm','https://padlet.com/'],
+  ['Google Slides','Cùng làm bài trình chiếu','https://slides.google.com/'],
+  ['Wordwall','Trò chơi học tập','https://wordwall.net/'],
+  ['Quizizz','Luyện tập và kiểm tra','https://quizizz.com/'],
+  ['GeoGebra','Mô phỏng Toán học','https://www.geogebra.org/'],
+  ['Kahoot!','Câu hỏi tương tác','https://kahoot.com/'],
+  ['NotebookLM','Đọc và tìm hiểu tài liệu','https://notebooklm.google.com/']
+ ];
+ document.getElementById('studentContent').innerHTML='<div class="student-assignment"><h2>🧰 Bộ công cụ số của em</h2><p class="student-meta">Chọn công cụ theo nhiệm vụ cô giao. Khi làm việc nhóm, hãy dùng cùng một liên kết do cô hoặc nhóm trưởng chia sẻ.</p><div class="grid2">'+tools.map(t=>'<div class="student-q"><b>'+esc(t[0])+'</b><p>'+esc(t[1])+'</p><a class="student-btn primary" style="display:inline-block;text-decoration:none" href="'+t[2]+'" target="_blank" rel="noopener noreferrer">Mở công cụ ↗</a></div>').join('')+'</div><button class="student-btn student-back" style="margin-top:12px" onclick="studentMode()">← Quay lại bài của em</button></div>';
+}
+function studentShowGroupTools(){
+ const sid=LAVI.user.studentId,s=STUDENTS.find(x=>x.id===sid);
+ document.getElementById('studentContent').innerHTML='<div class="student-assignment"><h2>👥 Góc làm việc nhóm</h2><div class="student-meta">Nhóm hiện tại: <b>'+esc(s?.group||'Chưa phân nhóm')+'</b></div><p>Cùng thống nhất nhiệm vụ, phân công người ghi chép, người tìm thông tin, người thiết kế và người trình bày. Nhóm trưởng chia sẻ một liên kết Padlet hoặc Google Slides để các bạn cùng làm.</p><div class="grid2"><div class="student-q"><b>🗒️ Bảng ý tưởng chung</b><p>Đăng câu trả lời, hình ảnh và ý kiến của từng thành viên.</p><a class="student-btn primary" style="display:inline-block;text-decoration:none" href="https://padlet.com/" target="_blank" rel="noopener noreferrer">Mở Padlet ↗</a></div><div class="student-q"><b>🖥️ Sản phẩm nhóm</b><p>Cùng xây dựng bài trình chiếu và chuẩn bị thuyết trình.</p><a class="student-btn primary" style="display:inline-block;text-decoration:none" href="https://slides.google.com/" target="_blank" rel="noopener noreferrer">Mở Google Slides ↗</a></div></div><p class="student-meta">Lưu ý: đây là các công cụ liên kết ngoài; cô/nhóm cần tạo và chia sẻ liên kết cộng tác. Bảng nhóm dùng chung ngay trong LAVI cần bổ sung API riêng ở bước tiếp theo.</p><button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button></div>';
+}
 function studentShowNotice(){
  document.body.classList.add('student-mode');
  document.getElementById('studentApp').style.display='block';
@@ -2126,6 +2400,7 @@ function openStudentAssignment(aid){
    document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">'+title+'</h2><div class="student-meta">'+esc(a.subject)+' · '+esc(a.lesson)+' · '+esc(s.name)+'</div>'+
    (redo?'<div style="margin:10px 0;padding:10px;background:#fff7ed;border-radius:10px">🔀 Lần làm lại sẽ được <b>đảo thứ tự câu hỏi</b>. Nếu bài có cấu hình biến thể số liệu, LAVI sẽ dùng bộ số liệu khác.</div>':'')+
    qsHtml+
+   '<div class="student-q" style="margin-top:12px"><label style="display:block;font-weight:800;margin-bottom:7px">📎 Tệp đính kèm (không bắt buộc)</label><input id="studentSubmissionFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" style="width:100%"><div class="student-meta">Có thể đính kèm ảnh bài làm hoặc tài liệu; tối đa 2 MB mỗi tệp.</div></div>'+
    '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="submitOnline(\''+a.id+'\','+sid+')">📤 Nộp bài</button></div>';
    return;
  }
@@ -2197,6 +2472,13 @@ async function submitOnline(aid,sid){
    const manual=!!q.manual||/cô chấm|tự luận|tự\s*luận|essay/i.test(String(q.type||""));
    if(!manual&&v){const accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];if(accepted.some(x=>answersEqual(v,x)))correct++;}
   });
+  const fileEl=document.getElementById('studentSubmissionFile');
+  if(fileEl?.files?.[0]){
+   const file=fileEl.files[0];
+   if(file.size>2*1024*1024)throw new Error('Tệp đính kèm vượt quá 2 MB. Hãy chọn tệp nhỏ hơn.');
+   const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(new Error('Không đọc được tệp đính kèm'));reader.readAsDataURL(file);});
+   answers._attachment={name:file.name,type:file.type||'application/octet-stream',size:file.size,dataUrl};
+  }
   const score=correct*30;
   const oldScore=state.submissions[aid+'_'+sid]?.score||0;
   const improved=score-oldScore>=10;
@@ -2285,7 +2567,7 @@ async function loadMonthlyScores(){
    '</tbody></table></div>';
  }catch(e){box.innerHTML='<div class="empty">⚠️ '+esc(e.message||'Không tải được dữ liệu')+'</div>';if(summary)summary.innerHTML='';}
 }
-function renderAll(){renderHome();renderAssignments("assignList");renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
+function renderAll(){renderHome();renderAssignments("assignList");renderQuestionBank();refreshGameBankSelect();renderStudents();renderStars();renderSubmissions();renderSchedules();renderCurriculum();renderStats();fillRaceAssignments()}
 document.getElementById("cDue").value=new Date(Date.now()+86400000).toISOString().slice(0,16);
 fillSubjects();fillNotifyTargets();renderAll();
 
@@ -2500,6 +2782,121 @@ function logout(){localStorage.removeItem('lavi_token');localStorage.removeItem(
 document.getElementById('loginPass')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doLogin()}});document.getElementById('loginUser')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('loginPass')?.focus()}});
 if(LAVI.token&&LAVI.user){loadOnlineState().then(()=>{applyRole();document.getElementById('loginOverlay').style.display='none';document.getElementById('onlineUser').textContent=LAVI.user.role==='teacher'?'👩‍🏫 Giáo viên':'👨‍🎓 '+(STUDENTS.find(x=>x.id===LAVI.user.studentId)?.name||'Học sinh');if(LAVI.user.role==='student')studentMode();})}
 
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script>
+let importedQuestionRows=[];
+function normalizeImportHeader(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]/g,"").trim()}
+function findImportField(row,aliases){
+ const entries=Object.entries(row||{}), want=aliases.map(normalizeImportHeader);
+ for(const [k,v] of entries){const n=normalizeImportHeader(k);if(want.includes(n))return String(v??"").trim();}
+ return "";
+}
+function parseQuestionTextBlock(text){
+ const lines=String(text||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean), out=[];
+ let q=null;
+ const flush=()=>{if(q?.text)out.push(q);q=null};
+ for(const line of lines){
+  const qm=line.match(/^(?:câu\s*)?(\d{1,3})[.)\-:]\s*(.+)$/i);
+  const opt=line.match(/^([A-D])\s*[.)\-:]\s*(.+)$/i);
+  const ans=line.match(/^(?:đáp án|dap an|answer|đáp án đúng)\s*[:\-]\s*(.+)$/i);
+  const exp=line.match(/^(?:giải thích|loi giai|lời giải|explanation)\s*[:\-]\s*(.+)$/i);
+  if(qm){flush();q={text:qm[2],options:[],answer:"",explanation:""}}
+  else if(!q && line.length>0){q={text:line,options:[],answer:"",explanation:""}}
+  else if(q&&opt)q.options.push(opt[1].toUpperCase()+". "+opt[2]);
+  else if(q&&ans)q.answer=ans[1].trim();
+  else if(q&&exp)q.explanation=exp[1].trim();
+  else if(q)q.text+="\n"+line;
+ }
+ flush();
+ return out;
+}
+function mapQuestionImportRows(rows){
+ const out=[];
+ for(const row of rows){
+  if(!row||typeof row!=="object")continue;
+  const text=findImportField(row,["câu hỏi","noi dung cau hoi","nội dung","question","cau hoi","câu"]);
+  if(!text)continue;
+  const options=[];
+  const combined=findImportField(row,["phương án","các phương án","đáp án lựa chọn","options","lua chon"]);
+  if(combined)combined.split(/\r?\n|\s*\|\s*/).map(x=>x.trim()).filter(Boolean).forEach((v,i)=>options.push(/^[A-D][.)\-:]/i.test(v)?v:String.fromCharCode(65+i)+". "+v));
+  [["A",["A","phương án A","đáp án A","option A"]],["B",["B","phương án B","đáp án B","option B"]],["C",["C","phương án C","đáp án C","option C"]],["D",["D","phương án D","đáp án D","option D"]]].forEach(([letter,aliases])=>{const v=findImportField(row,aliases);if(v&&!options.some(x=>x.toUpperCase().startsWith(letter+".")))options.push(letter+". "+v)});
+  let answer=findImportField(row,["đáp án đúng","đáp án","answer","đáp án chuẩn","key","correct answer"]);
+  const explanation=findImportField(row,["giải thích","lời giải","hướng dẫn giải","explanation"]);
+  const subject=findImportField(row,["môn","môn học","subject"]), lesson=findImportField(row,["bài","bài học","chủ đề","lesson","topic"]);
+  if(options.length&&/^[A-D]$/i.test(answer))answer=answer.toUpperCase();
+  if(options.length&&answer&&!/^[A-D]$/i.test(answer)){
+    const idx=options.findIndex(x=>normalizeImportHeader(x.replace(/^[A-D][.)\-:]\s*/i,""))===normalizeImportHeader(answer));
+    if(idx>=0)answer=String.fromCharCode(65+idx);
+  }
+  out.push({text,options,answer,explanation,subject,lesson,manual:!answer,type:options.length?"Trắc nghiệm 4 đáp án":(answer?"Trả lời ngắn":"Tự luận – cô chấm"),acceptedAnswers:answer?[answer]:[]});
+ }
+ return out;
+}
+async function parseQuestionImportFile(){
+ const file=document.getElementById("questionImportFile")?.files?.[0], status=document.getElementById("questionImportStatus"), preview=document.getElementById("questionImportPreview"), btn=document.getElementById("questionImportCreateDraft");
+ importedQuestionRows=[];btn.disabled=true;preview.innerHTML="";
+ if(!file){status.textContent="Cô hãy chọn file Excel, CSV hoặc Word trước.";return;}
+ status.textContent="Đang đọc file…";
+ try{
+  const ext=file.name.split(".").pop().toLowerCase();let rows=[];
+  if(["xlsx","xls","csv"].includes(ext)){
+   if(!window.XLSX)throw new Error("Thư viện đọc Excel chưa tải được. Cô thử tải lại trang hoặc dùng file CSV.");
+   const data=await file.arrayBuffer(), wb=XLSX.read(data,{type:"array"});
+   const ws=wb.Sheets[wb.SheetNames[0]];
+   rows=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+   if(!rows.length){
+    const matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+    if(matrix.length>1){const headers=matrix[0];rows=matrix.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[String(h||""),r[i]??""])));}
+   }
+  }else if(ext==="docx"){
+   if(!window.mammoth)throw new Error("Thư viện đọc Word chưa tải được. Cô thử tải lại trang.");
+   const result=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
+   importedQuestionRows=parseQuestionTextBlock(result.value);
+  }else throw new Error("Định dạng chưa hỗ trợ. Hãy dùng .xlsx, .xls, .csv hoặc .docx.");
+  if(ext!=="docx") importedQuestionRows=mapQuestionImportRows(rows);
+  if(!importedQuestionRows.length)throw new Error("Chưa nhận diện được câu hỏi. File Excel cần có cột “Câu hỏi/Nội dung câu hỏi”; file Word nên đánh số câu và ghi đáp án rõ ràng.");
+  renderQuestionImportPreview();
+  status.textContent="Đã đọc "+importedQuestionRows.length+" câu. Kiểm tra bản xem trước rồi bấm tạo bản nháp.";
+  btn.disabled=false;
+ }catch(e){status.textContent="Không đọc được file: "+(e.message||"Lỗi không xác định");}
+}
+function renderQuestionImportPreview(){
+ const el=document.getElementById("questionImportPreview");
+ el.innerHTML='<div class="sub" style="font-weight:800;margin-bottom:8px">Bản xem trước ('+importedQuestionRows.length+' câu)</div>'+importedQuestionRows.slice(0,12).map((q,i)=>'<div class="question" style="margin:7px 0"><b>Câu '+(i+1)+'.</b> '+esc(q.text)+'<div class="sub">'+(q.options.length?esc(q.options.join(" · ")):"Trả lời ngắn / tự luận")+'</div><div class="sub">Đáp án: '+esc(q.answer||"Chưa có — cần kiểm tra")+'</div></div>').join("")+(importedQuestionRows.length>12?'<div class="sub">Còn '+(importedQuestionRows.length-12)+' câu nữa trong file.</div>':"");
+}
+function createQuestionImportDraft(){
+ if(!importedQuestionRows.length)return;
+ const subject=document.getElementById("questionImportSubject").value.trim()||importedQuestionRows.find(q=>q.subject)?.subject||"Câu hỏi từ file";
+ const lesson=document.getElementById("questionImportLesson").value.trim()||importedQuestionRows.find(q=>q.lesson)?.lesson||"Ngân hàng nhập từ file";
+ const group=document.getElementById("questionImportGroup").value;
+ const questions=importedQuestionRows.map((q,i)=>{
+  const options=Array.isArray(q.options)?q.options:[];
+  let answer=String(q.answer||"").trim();
+  const letter=answer.match(/^([A-D])(?:[.)\-:]|$)/i);
+  if(options.length&&letter){
+   const idx=letter[1].toUpperCase().charCodeAt(0)-65;
+   if(options[idx])answer=String(options[idx]).replace(/^[A-D][.)\-:]\s*/i,"").trim();
+  }
+  const prompt=String(q.text||"").trim();
+  const text=options.length?prompt+"\n"+options.join("\n"):prompt;
+  const accepted=[...(Array.isArray(q.acceptedAnswers)?q.acceptedAnswers:[])];
+  if(letter)accepted.push(letter[1].toUpperCase());
+  if(answer)accepted.push(answer);
+  return {...q,id:i+1,text,answer,acceptedAnswers:[...new Set(accepted.filter(Boolean))],options:options.length?options:undefined,manual:!answer};
+ });
+ draft={id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),subject,week:"Nhập từ file",topic:lesson,lesson,group,count:questions.length,lessonIds:[lesson],due:"",note:"Nhập từ file "+(document.getElementById("questionImportFile").files[0]?.name||""),gifUrl:"",sets:[{group,questions}],status:"Nháp",createdAt:new Date().toISOString()};
+ document.getElementById("draft").innerHTML=renderDraft();
+ document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});
+ document.getElementById("questionImportStatus").textContent="Đã tạo bản nháp từ "+questions.length+" câu. Kiểm tra đáp án rồi chọn Lưu nháp hoặc Giao bài.";
+}
+function downloadQuestionImportTemplate(){
+ const csv="Câu hỏi,Phương án A,Phương án B,Phương án C,Phương án D,Đáp án đúng,Giải thích,Môn học,Bài học\r\nVí dụ: 2 + 3 bằng bao nhiêu?,4,5,6,7,B,2 + 3 = 5,Toán,Cộng số tự nhiên";
+ const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="mau-nhap-cau-hoi-LAVI.csv";a.click();URL.revokeObjectURL(url);
+}
 </script>
 
 <script>
