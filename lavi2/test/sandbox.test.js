@@ -17,6 +17,13 @@ test('sandbox UI and API support teacher registration with email or phone', () =
   assert.match(html, /Đăng ký/);
   assert.match(html, /Gmail hoặc số điện thoại/);
   assert.match(html, /Chưa xác minh email\/số điện thoại bằng OTP/);
+  assert.match(html, /class="lavi-sidebar"/);
+  assert.match(html, /data-view="classesView"/);
+  assert.match(html, /data-view="questionsView"/);
+  assert.match(html, /data-view="testsView"/);
+  assert.match(html, /data-view="backupView"/);
+  assert.match(html, /mobileMenuBtn/);
+  assert.match(html, /@media\(max-width:650px\)/);
   assert.doesNotMatch(server, /Hoàng Tuệ An|Tô Nguyễn Tâm An/);
 });
 
