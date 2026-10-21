@@ -1939,9 +1939,9 @@ function reuseBankAsAssignment(id){
 function playBankAsGame(id){
  const item=questionBankItems().find(a=>a.id===id);if(!item)return toast("Không tìm thấy bài trong kho.");
  const qs=[];(item.sets||[]).forEach(set=>(set.questions||[]).forEach(q=>{
-  let options=Array.isArray(q.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\\-:]\\s*/i,"").trim()):[];
-  if(!options.length){const lines=String(q.text||"").split(/\\r?\\n/);options=lines.slice(1).filter(x=>/^[A-D][.)\\-:]/i.test(x)).map(x=>x.replace(/^[A-D][.)\\-:]\\s*/i,"").trim());}
-  if(options.length>=2){let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;qs.push({text:String(q.text||"").split(/\\r?\\n/)[0],options,answer});}
+  let options=Array.isArray(q.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\-:]\s*/i,"").trim()):[];
+  if(!options.length){const lines=String(q.text||"").split(/\r?\n/);options=lines.slice(1).filter(x=>/^[A-D][.)\-:]/i.test(x)).map(x=>x.replace(/^[A-D][.)\-:]\s*/i,"").trim());}
+  if(options.length>=2){let answer=String(q.answer||"").trim();const m=answer.match(/^([A-D])(?:[.)\-:]|$)/i);if(m)answer=options[m[1].toUpperCase().charCodeAt(0)-65]||answer;qs.push({text:String(q.text||"").split(/\r?\n/)[0],options,answer});}
  }));
  if(!qs.length)return alert("Bộ câu hỏi này chưa có đủ phương án trắc nghiệm để mở trò chơi. Cô có thể dùng “Dùng tạo bài tập” để chỉnh sửa trước.");
  startGame("🎮 "+(item.lesson||item.subject||"Trò chơi từ kho"),shuffleGameQuestions(qs),"knowledge");
