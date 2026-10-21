@@ -153,6 +153,13 @@ test('demo teachers remain isolated and registration/login works for email and p
     const restored = await restoreResponse.json();
     assert.equal(restored.ok, true);
     assert.equal(restored.restored.questions, 1);
+    const duplicateRestoreResponse = await fetch(base + '/api/backup/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + teacherCToken },
+      body: JSON.stringify(backup)
+    });
+    assert.equal(duplicateRestoreResponse.status, 409);
+    assert.match((await duplicateRestoreResponse.json()).error, /đã được khôi phục trước đó/i);
     const banksAfterRestore = await (await fetch(base + '/api/question-banks', {
       headers: { Authorization: 'Bearer ' + teacherCToken }
     })).json();
