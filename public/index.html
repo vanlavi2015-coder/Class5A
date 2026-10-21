@@ -17,6 +17,7 @@
 .game-progress{height:9px;border-radius:99px;background:#eee;overflow:hidden}.game-progress i{display:block;height:100%;background:currentColor}
 @media(max-width:600px){.game-options{grid-template-columns:1fr}.game-q{font-size:20px}}
 
+.question-style-option{display:flex;align-items:flex-start;gap:8px;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff;cursor:pointer;min-height:58px;font-size:13px;font-weight:700;line-height:1.35}.question-style-option:has(input:checked){border-color:#818cf8;background:#eef2ff;color:#3730a3;box-shadow:0 0 0 1px rgba(79,70,229,.08)}.question-style-option input{width:17px;height:17px;flex:none;margin:1px 0 0;accent-color:#4f46e5}.question-style-option span{flex:1}
 :root{--p:#4f46e5;--p2:#7c3aed;--bg:#f4f6fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#e4e7ec;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--gold:#f59e0b}
 *{box-sizing:border-box}html,body{margin:0;padding:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink)}
 button,input,select,textarea{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:flex}.side{width:248px;position:fixed;left:0;top:0;bottom:0;background:#111827;color:#fff;padding:16px 13px;z-index:20;overflow:auto}.brand{font-weight:900;font-size:22px;padding:9px 10px 20px}.brand span{color:#a5b4fc}.nav button{width:100%;border:0;background:transparent;color:#d1d5db;text-align:left;padding:11px 12px;border-radius:10px;margin:2px 0}.nav button:hover,.nav button.active{background:#312e81;color:#fff}
@@ -126,7 +127,24 @@ body.menu-collapsed .menuToggle{left:14px}
     <div class="field"><label>Số câu</label><input id="cCount" type="number" min="3" max="15" value="8"></div>
     <div class="field"><label>Hạn nộp</label><input id="cDue" type="datetime-local"></div>
    </div>
-   <div class="field"><label>Yêu cầu thêm</label><textarea id="cNote" placeholder="Ví dụ: Có số liệu cụ thể, ưu tiên bài toán thực tế; không vượt phạm vi bài đã chọn."></textarea></div>
+   <div class="field">
+    <label>🧩 Dạng bài tập / yêu cầu thêm — có thể chọn nhiều</label>
+    <div class="sub" style="margin:4px 0 9px">Chọn một hoặc nhiều phương án; LAVI sẽ ghép lựa chọn vào yêu cầu tạo bài. Cô vẫn có thể tự nhập mô tả bên dưới.</div>
+    <div id="questionStyleGrid" class="grid3">
+      <label class="question-style-option"><input type="checkbox" value="Ưu tiên câu hỏi trắc nghiệm 4 phương án A, B, C, D." onchange="syncQuestionStyles()"> <span>🔘 Trắc nghiệm 4 phương án</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi đúng / sai." onchange="syncQuestionStyles()"> <span>☑️ Đúng – sai</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi điền từ hoặc điền số vào chỗ trống." onchange="syncQuestionStyles()"> <span>✍️ Điền khuyết</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi trả lời ngắn." onchange="syncQuestionStyles()"> <span>💬 Trả lời ngắn</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi tự luận, yêu cầu trình bày cách làm hoặc giải thích." onchange="syncQuestionStyles()"> <span>📝 Tự luận / giải thích</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Tăng câu hỏi vận dụng vào tình huống thực tế, gần gũi với học sinh." onchange="syncQuestionStyles()"> <span>🌱 Vận dụng thực tế</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Có câu hỏi vận dụng cao, cần suy luận nhiều bước nhưng phù hợp lớp 5." onchange="syncQuestionStyles()"> <span>🧠 Vận dụng cao</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Phân hóa câu hỏi theo mức độ nhận biết, thông hiểu và vận dụng." onchange="syncQuestionStyles()"> <span>📊 Phân hóa mức độ</span></label>
+      <label class="question-style-option"><input type="checkbox" value="Tránh lặp lại câu hỏi, thay đổi dữ kiện và cách hỏi; bảo đảm chỉ có một đáp án đúng khi là trắc nghiệm." onchange="syncQuestionStyles()"> <span>🔄 Hạn chế trùng lặp</span></label>
+    </div>
+    <label style="display:block;margin:12px 0 5px">Mô tả thêm của giáo viên</label>
+    <textarea id="cNote" placeholder="Ví dụ: Có số liệu cụ thể, ưu tiên bài toán thực tế; không vượt phạm vi bài đã chọn." oninput="syncQuestionStyleChecksFromNote()"></textarea>
+    <div class="sub" id="questionStyleSummary" style="margin-top:6px">Chưa chọn dạng bổ sung.</div>
+   </div>
    <div class="field"><label>🎞️ GIF minh họa từ Gifhut</label><input id="cGifUrl" type="url" placeholder="Dán liên kết GIF/ảnh từ Gifhut (https://...) " oninput="previewGif(this.value)"><div id="gifPreview" class="gif-preview"></div><div class="sub">GIF là tùy chọn. Nếu Gifhut cung cấp liên kết trực tiếp tới ảnh/GIF, LAVI sẽ hiển thị ngay trong bài.</div></div>
    <div class="row"><button class="btn primary" onclick="generate()">✨ Tạo bài</button><button class="btn" onclick="clearDraft()">Xóa nháp</button></div>
   </div>
@@ -1682,6 +1700,22 @@ function validateQuestionSet(questions){
  });
  if((questions||[]).length<3)errors.push("Bộ đề chưa đủ 3 câu hợp lệ.");
  return [...new Set(errors)];
+}
+const QUESTION_STYLE_PREFIX="[LAVI_DANG_BAI_TAP]";
+function syncQuestionStyles(){
+ const checks=[...document.querySelectorAll("#questionStyleGrid input[type=checkbox]")];
+ const selected=checks.filter(x=>x.checked).map(x=>x.value);
+ const note=document.getElementById("cNote");if(!note)return;
+ const existing=note.value.split("\\n").filter(line=>line.trim()&&!line.startsWith(QUESTION_STYLE_PREFIX));
+ note.value=[...selected.length?[QUESTION_STYLE_PREFIX+" "+selected.join(" ")]:[],...existing].join("\\n");
+ const summary=document.getElementById("questionStyleSummary");if(summary)summary.textContent=selected.length?"Đã chọn "+selected.length+" dạng/yêu cầu bổ sung.":"Chưa chọn dạng bổ sung.";
+}
+function syncQuestionStyleChecksFromNote(){
+ const note=document.getElementById("cNote")?.value||"";
+ const line=note.split("\\n").find(x=>x.startsWith(QUESTION_STYLE_PREFIX))||"";
+ document.querySelectorAll("#questionStyleGrid input[type=checkbox]").forEach(x=>{x.checked=!!line.includes(x.value)});
+ const summary=document.getElementById("questionStyleSummary"),n=[...document.querySelectorAll("#questionStyleGrid input[type=checkbox]:checked")].length;
+ if(summary)summary.textContent=n?"Đã chọn "+n+" dạng/yêu cầu bổ sung.":"Chưa chọn dạng bổ sung.";
 }
 function generate(){
  try{
