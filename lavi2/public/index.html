@@ -110,6 +110,15 @@
     #questionsView #questionOptionsField{display:grid;gap:5px}
     @media(max-width:760px){#questionsView .lavi-panel{padding:14px}#questionsView #bankForm{grid-template-columns:1fr}#questionsView #bankList{grid-template-columns:1fr}#questionsView #importQuestionPanel{grid-template-columns:1fr;padding:14px}#questionsView #importQuestionPanel>*{grid-column:1!important}#questionsView #questionForm{grid-template-columns:1fr}#questionsView #questionForm>*{grid-column:1!important}}
 
+
+    .data-table{width:100%;border-collapse:collapse;margin:14px 0;background:#fff;font-size:13px}
+    .data-table th,.data-table td{padding:10px 12px;border-bottom:1px solid #e6eaf2;text-align:left;vertical-align:top}
+    .data-table th{background:#f5f7ff;color:#3730a3;font-weight:750;white-space:nowrap}
+    .data-table tr:hover td{background:#fafbff}
+    #futureModuleContent{min-width:0;overflow-x:auto}
+    #futureModuleContent select{max-width:100%;min-width:220px}
+    @media(max-width:680px){.data-table{font-size:12px}.data-table th,.data-table td{padding:8px}.lavi-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
   </style>
 </head>
 <body>
@@ -161,6 +170,8 @@
             <button type="button" data-view="testsView"><span>📝</span><b>Bộ đề kiểm tra</b></button>
             <button type="button" data-view="futureView" data-module="Bài đang giao"><span>📤</span><b>Bài đang giao</b></button>
             <button type="button" data-view="futureView" data-module="Bài nộp & chấm điểm"><span>📥</span><b>Bài nộp & chấm điểm</b></button>
+            <button type="button" data-view="futureView" data-module="Thống kê học tập"><span>📈</span><b>Thống kê học tập</b></button>
+            <button type="button" data-view="futureView" data-module="Xếp loại tháng"><span>🏆</span><b>Xếp loại tháng</b></button>
             <button type="button" data-view="futureView" data-module="Phạm vi kiến thức"><span>🗂️</span><b>Phạm vi kiến thức</b></button>
             <button type="button" data-view="futureView" data-module="Trợ lý VnEdu"><span>🔗</span><b>Trợ lý VnEdu</b></button>
           </nav>
@@ -387,6 +398,10 @@
         renderAssignments().catch(e => { $('futureModuleContent').textContent = e.message; });
       } else if (label === 'Bài nộp & chấm điểm') {
         renderSubmissions().catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else if (label === 'Thống kê học tập' || label === 'Xếp loại tháng' || label === 'Trò chơi & Xếp hạng') {
+        renderClassReport(label).catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else if (label === 'Danh sách học sinh') {
+        renderStudentDirectory().catch(e => { $('futureModuleContent').textContent = e.message; });
       } else {
         $('futureModuleContent').replaceChildren();
         const heading=document.createElement('h3');heading.textContent=label;
@@ -769,6 +784,48 @@
   }
 
 
+
+  async function renderStudentDirectory(){
+    const panel=$('futureModuleContent');panel.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent='Quản lý học sinh theo lớp';panel.append(heading);
+    const desc=document.createElement('p');desc.className='muted';desc.textContent='Chọn lớp để xem danh sách, mã học sinh và sĩ số. Thêm hoặc xóa học sinh trong mục Lớp học của tôi.';panel.append(desc);
+    const data=await api('/api/classes');
+    const label=document.createElement('label');label.textContent='Lớp học';const select=document.createElement('select');
+    (data.classes||[]).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name+' · '+c.studentCount+' học sinh';select.append(o);});
+    panel.append(label,select);const list=document.createElement('div');panel.append(list);
+    async function load(){list.replaceChildren();if(!select.value){list.textContent='Chưa có lớp. Hãy tạo lớp trong mục Lớp học của tôi.';return;}
+      const d=await api('/api/classes/'+encodeURIComponent(select.value)+'/students');
+      const summary=document.createElement('p');summary.className='muted';summary.textContent='Tổng số học sinh: '+d.students.length;list.append(summary);
+      const table=document.createElement('table');table.className='data-table';const thead=document.createElement('thead');thead.innerHTML='<tr><th>STT</th><th>Mã học sinh</th><th>Họ và tên</th></tr>';table.append(thead);const tbody=document.createElement('tbody');
+      d.students.forEach((s,i)=>{const tr=document.createElement('tr');[String(i+1),s.code||'—',s.displayName||s.name||'Chưa có tên'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});tbody.append(tr);});table.append(tbody);list.append(table);
+    }
+    select.addEventListener('change',()=>load().catch(e=>{list.textContent=e.message;}));await load();
+  }
+  async function renderClassReport(label){
+    const panel=$('futureModuleContent');panel.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent=label;panel.append(heading);
+    const desc=document.createElement('p');desc.className='muted';desc.textContent=label==='Xếp loại tháng'?'Bảng xếp hạng tạm tính từ kết quả bài đã chấm trong tháng hiện tại. Đây chưa phải xếp loại thi đua chính thức; cần bổ sung điểm rèn luyện, chuyên cần và sao thưởng trước khi xét chính thức.':label==='Trò chơi & Xếp hạng'?'Thống kê kết quả bài tập đã chấm; điểm trò chơi và sao thưởng sẽ được cộng khi các mô-đun đó được kết nối.':'Tổng hợp số bài giao, số học sinh có kết quả và điểm bài tập đã chấm theo lớp.';panel.append(desc);
+    const [classData,assignmentData]=await Promise.all([api('/api/classes'),api('/api/assignments')]);
+    const classes=classData.classes||[], assignments=assignmentData.assignments||[];
+    const filterWrap=document.createElement('div');filterWrap.className='class';const classLabel=document.createElement('label');classLabel.textContent='Lọc theo lớp';const select=document.createElement('select');
+    const all=document.createElement('option');all.value='all';all.textContent='Tất cả lớp';select.append(all);
+    classes.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;select.append(o);});filterWrap.append(classLabel,select);panel.append(filterWrap);
+    const kpis=document.createElement('div');kpis.className='lavi-kpi-grid';panel.append(kpis);const results=document.createElement('div');panel.append(results);
+    async function refresh(){
+      kpis.replaceChildren();results.replaceChildren();const selected=select.value;
+      const scoped=assignments.filter(a=>selected==='all'||String(a.classId)===String(selected));let rows=[];
+      for(const assignment of scoped){try{const result=await api('/api/assignments/'+encodeURIComponent(assignment.id)+'/submissions');for(const student of (result.submissions||[])){rows.push({name:student.displayName||student.name||'Học sinh',code:student.code||'',className:assignment.className||'',classId:assignment.classId,assignment:assignment.title,submitted:!!student.submitted,score:Number(student.score||0),maxScore:Number(student.maxScore||0)});}}catch(e){}}
+      const scored=rows.filter(r=>r.submitted&&r.maxScore>0);const avg=scored.length?scored.reduce((s,r)=>s+r.score/r.maxScore*10,0)/scored.length:0;
+      [['Lớp học',selected==='all'?classes.length:1],['Bài đã giao',scoped.length],['Lượt có kết quả',scored.length],['Điểm trung bình',scored.length?avg.toFixed(1)+'/10':'—']].forEach(([title,value])=>{const card=document.createElement('div');card.className='lavi-kpi';const body=document.createElement('div');const strong=document.createElement('strong');strong.textContent=value;const small=document.createElement('small');small.textContent=title;body.append(strong,small);card.append(body);kpis.append(card);});
+      if(!rows.length){const empty=document.createElement('div');empty.className='class';empty.textContent='Chưa có dữ liệu bài giao/kết quả. Hãy giao bài và chấm bài trước để báo cáo có số liệu.';results.append(empty);return;}
+      const byStudent=new Map();rows.forEach(r=>{const key=(r.classId||'')+'|'+r.code+'|'+r.name;if(!byStudent.has(key))byStudent.set(key,{...r,count:0,completed:0,total:0,possible:0});const st=byStudent.get(key);st.count++;if(r.submitted&&r.maxScore>0){st.completed++;st.total+=r.score;st.possible+=r.maxScore;}});
+      const ranked=[...byStudent.values()].map(st=>({...st,average:st.possible?Math.round(st.total/st.possible*1000)/100:0})).sort((a,b)=>b.average-a.average||b.completed-a.completed||a.name.localeCompare(b.name,'vi'));
+      const table=document.createElement('table');table.className='data-table';const thead=document.createElement('thead');thead.innerHTML='<tr><th>Hạng tạm tính</th><th>Học sinh</th><th>Lớp</th><th>Bài có kết quả</th><th>Điểm TB (%)</th></tr>';table.append(thead);const tbody=document.createElement('tbody');
+      ranked.forEach((st,i)=>{const tr=document.createElement('tr');[String(i+1),st.name,st.className||'—',st.completed+'/'+st.count,st.possible?st.average.toFixed(1)+'%':'—'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});tbody.append(tr);});table.append(tbody);results.append(table);
+      const note=document.createElement('p');note.className='muted';note.textContent='Bảng tạm tính dựa trên kết quả các bài đã giao; chưa tính chuyên cần, rèn luyện, điểm thưởng hoặc vi phạm. Không dùng làm quyết định thi đua chính thức.';results.append(note);
+    }
+    select.addEventListener('change',()=>refresh().catch(e=>{results.textContent=e.message;}));await refresh();
+  }
   async function renderSubmissions() {
     const panel=$('futureModuleContent'); panel.replaceChildren();
     const heading=document.createElement('h3'); heading.textContent='Bài nộp & chấm điểm';
