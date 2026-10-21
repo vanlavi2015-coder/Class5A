@@ -4,6 +4,8 @@ const { randomUUID } = require('node:crypto');
 const fs = require('node:fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const XLSX = require('xlsx');
+const mammoth = require('mammoth');
 const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
@@ -468,6 +470,110 @@ app.post('/api/question-banks', authenticate, requireTeacher, (req, res) => {
     .run(id, req.user.id, name, String(req.body?.subject || '').slice(0,80), String(req.body?.grade || '').slice(0,40));
   audit(req.user.id, 'create', 'question_bank', id);
   res.status(201).json({ questionBank: { id, name } });
+});
+
+
+function normalizeHeader(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/đ/g, 'd').replace(/[^a-z0-9]/g, '');
+}
+function firstValue(row, aliases) {
+  for (const [key, value] of Object.entries(row)) {
+    if (aliases.includes(normalizeHeader(key)) && value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
+  }
+  return '';
+}
+function parseQuestionRows(rows) {
+  const parsed = [];
+  for (const row of rows) {
+    const prompt = firstValue(row, ['cauhoi','question','noidungcauhoi','prompt','content']);
+    if (!prompt) continue;
+    const a = firstValue(row, ['dapana','phuonga','a']);
+    const b = firstValue(row, ['dapanb','phuongb','b']);
+    const c = firstValue(row, ['dapanc','phuongc','c']);
+    const d = firstValue(row, ['dapand','phuongd','d']);
+    const options = [a,b,c,d].filter(Boolean);
+    const answer = firstValue(row, ['dapandung','dapan','correctanswer','answer','key']);
+    const explanation = firstValue(row, ['giaithich','explanation','loigiai']);
+    if (!answer) continue;
+    parsed.push({ prompt: prompt.slice(0,5000), type: options.length >= 2 ? 'abcd' : 'short', options, answer, explanation: explanation.slice(0,3000) });
+  }
+  return parsed;
+}
+async function extractUploadedFile(fileName, base64) {
+  if (typeof base64 !== 'string' || base64.length > 14 * 1024 * 1024) throw new Error('Tệp thiếu dữ liệu hoặc vượt giới hạn 10 MB.');
+  const buffer = Buffer.from(base64, 'base64');
+  const ext = path.extname(String(fileName || '')).toLowerCase();
+  if (['.xlsx','.xls'].includes(ext)) {
+    const workbook = XLSX.read(buffer, { type:'buffer' });
+    const rows = [];
+    for (const sheetName of workbook.SheetNames) rows.push(...XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval:'', raw:false }));
+    return { rows, text: rows.map(row => Object.entries(row).map(([k,v]) => String(k)+': '+String(v)).join(' | ')).join('\n').slice(0,50000) };
+  }
+  if (ext === '.csv') {
+    const workbook = XLSX.read(buffer.toString('utf8'), { type:'string' });
+    const rows = [];
+    for (const sheetName of workbook.SheetNames) rows.push(...XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval:'', raw:false }));
+    return { rows, text: rows.map(row => Object.entries(row).map(([k,v]) => String(k)+': '+String(v)).join(' | ')).join('\n').slice(0,50000) };
+  }
+  if (ext === '.docx') {
+    const result = await mammoth.extractRawText({ buffer });
+    return { rows: [], text: String(result.value || '').slice(0,50000) };
+  }
+  if (['.txt','.md'].includes(ext)) return { rows: [], text: buffer.toString('utf8').slice(0,50000) };
+  throw new Error('Định dạng chưa hỗ trợ. Dùng .xlsx, .xls, .csv, .docx, .txt hoặc .md.');
+}
+
+app.post('/api/question-banks/:bankId/import', authenticate, requireTeacher, async (req, res) => {
+  const bank = db.prepare('SELECT id FROM question_banks WHERE id=? AND owner_user_id=?').get(String(req.params.bankId), req.user.id);
+  if (!bank) return res.status(404).json({ error:'Không tìm thấy ngân hàng câu hỏi.' });
+  try {
+    const extracted = await extractUploadedFile(req.body?.fileName, req.body?.dataBase64);
+    if (!extracted.rows.length) return res.status(400).json({ error:'Tệp đã đọc được nhưng chưa có bảng câu hỏi. Với Word, hãy dùng chức năng AI tạo câu hỏi từ tài liệu.' });
+    const questions = parseQuestionRows(extracted.rows);
+    if (!questions.length) return res.status(400).json({ error:'Không nhận diện được câu hỏi có đáp án. Hãy dùng mẫu Excel: ID, Câu hỏi, Đáp án A, Đáp án B, Đáp án C, Đáp án D, Đáp án đúng.' });
+    const insert = db.prepare('INSERT INTO questions(id,bank_id,question_type,prompt,options_json,answer_json,explanation) VALUES(?,?,?,?,?,?,?)');
+    db.exec('BEGIN IMMEDIATE');
+    for (const q of questions) insert.run(randomUUID(), bank.id, q.type, q.prompt, JSON.stringify(q.options), JSON.stringify(q.answer), q.explanation);
+    db.exec('COMMIT');
+    audit(req.user.id,'import_questions','question_bank',bank.id);
+    return res.json({ ok:true, imported:questions.length, message:'Đã nhập '+questions.length+' câu hỏi. Cô hãy kiểm tra lại đáp án trước khi sử dụng.' });
+  } catch (err) {
+    try { db.exec('ROLLBACK'); } catch {}
+    return res.status(400).json({ error:err.message || 'Không thể đọc tệp.' });
+  }
+});
+
+app.post('/api/question-banks/:bankId/ai-generate', authenticate, requireTeacher, async (req, res) => {
+  const bank = db.prepare('SELECT id FROM question_banks WHERE id=? AND owner_user_id=?').get(String(req.params.bankId), req.user.id);
+  if (!bank) return res.status(404).json({ error:'Không tìm thấy ngân hàng câu hỏi.' });
+  const text = String(req.body?.sourceText || '').trim();
+  const count = Math.max(1, Math.min(30, Number(req.body?.count) || 10));
+  if (text.length < 100) return res.status(400).json({ error:'Tài liệu cần ít nhất 100 ký tự để tạo câu hỏi bám sát nội dung.' });
+  if (!process.env.OPENAI_API_KEY) return res.status(503).json({ error:'Chưa cấu hình OPENAI_API_KEY trên Render. Tính năng AI chưa thể chạy; cô vẫn có thể nhập câu hỏi từ Excel.' });
+  try {
+    const response = await fetch(process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+process.env.OPENAI_API_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        temperature:0.2,
+        response_format:{type:'json_object'},
+        messages:[
+          {role:'system',content:'Bạn là trợ lý biên soạn câu hỏi giáo dục tiểu học bằng tiếng Việt. Chỉ dùng thông tin có trong tài liệu nguồn; không bịa kiến thức ngoài. Trả JSON object có key questions, là mảng câu hỏi trắc nghiệm. Mỗi phần tử có prompt, options là mảng đúng 4 chuỗi phương án, answer là A/B/C/D, explanation. Câu hỏi rõ ràng, một đáp án đúng, tránh mơ hồ và không lặp. Đây là bản nháp để giáo viên duyệt.'},
+          {role:'user',content:'Tạo '+count+' câu hỏi trắc nghiệm theo tài liệu dưới đây. Không thêm nội dung ngoài nguồn. Nếu tài liệu không đủ căn cứ cho đủ số lượng, tạo ít câu hơn thay vì suy đoán.\n\nTÀI LIỆU:\n'+text.slice(0,30000)}
+        ]
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error?.message || 'Dịch vụ AI trả về lỗi.');
+    const content = payload.choices?.[0]?.message?.content || '{}';
+    const parsed = JSON.parse(content);
+    const questions = Array.isArray(parsed.questions) ? parsed.questions.slice(0,count).filter(q => typeof q.prompt==='string' && Array.isArray(q.options) && q.options.length===4 && ['A','B','C','D'].includes(String(q.answer).toUpperCase())) : [];
+    if (!questions.length) throw new Error('AI không trả về câu hỏi đúng cấu trúc. Hãy thử tài liệu rõ hơn.');
+    res.json({ questions:questions.map(q=>({prompt:q.prompt.slice(0,5000),type:'abcd',options:q.options.map(String),answer:String(q.answer).toUpperCase(),explanation:String(q.explanation||'').slice(0,3000)})), requiresTeacherReview:true });
+  } catch (err) {
+    res.status(502).json({ error:err.message || 'Không tạo được câu hỏi từ tài liệu.' });
+  }
 });
 
 app.get('/api/question-banks/:bankId/questions', authenticate, requireTeacher, (req, res) => {
