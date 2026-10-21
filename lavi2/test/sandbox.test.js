@@ -50,10 +50,12 @@ test('demo teachers remain isolated and registration/login works for email and p
     }
     throw new Error('Test server did not start: ' + stderr);
   }
-  async function post(url, body) {
+  async function post(url, body, token) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = 'Bearer ' + token;
     return fetch(base + url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body)
     });
   }
@@ -119,19 +121,19 @@ test('demo teachers remain isolated and registration/login works for email and p
 
     const bankResponse = await post('/api/question-banks', {
       name: 'Ngân hàng Toán demo', subject: 'Toán', grade: '5'
-    });
+    }, teacherCToken);
     assert.equal(bankResponse.status, 201);
     const bank = (await bankResponse.json()).questionBank;
     const questionResponse = await post('/api/question-banks/' + bank.id + '/questions', {
       type: 'abcd', prompt: 'Diện tích hình chữ nhật được tính thế nào?',
       options: ['Dài × rộng', 'Dài + rộng'], answer: 0, explanation: 'Lấy chiều dài nhân chiều rộng.'
-    });
+    }, teacherCToken);
     assert.equal(questionResponse.status, 201);
     const question = (await questionResponse.json()).question;
-    const testSetResponse = await post('/api/test-sets', { name: 'Đề Toán demo', subject: 'Toán', grade: '5' });
+    const testSetResponse = await post('/api/test-sets', { name: 'Đề Toán demo', subject: 'Toán', grade: '5' }, teacherCToken);
     assert.equal(testSetResponse.status, 201);
     const testSet = (await testSetResponse.json()).testSet;
-    assert.equal((await post('/api/test-sets/' + testSet.id + '/questions', { questionId: question.id, points: 2 })).status, 201);
+    assert.equal((await post('/api/test-sets/' + testSet.id + '/questions', { questionId: question.id, points: 2 }, teacherCToken)).status, 201);
 
     const backupResponse = await fetch(base + '/api/backup', {
       headers: { Authorization: 'Bearer ' + teacherCToken }
