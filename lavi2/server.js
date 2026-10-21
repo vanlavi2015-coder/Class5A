@@ -179,7 +179,7 @@ app.post('/api/register', (req, res) => {
   if (!rateLimit('register:' + clientKey(req), 5, 15 * 60 * 1000)) {
     return res.status(429).json({ error: 'Bạn đăng ký quá nhiều lần. Vui lòng thử lại sau 15 phút.' });
   }
-  const displayName = String(req.body?.displayName || '').trim().replace(/\\s+/g, ' ');
+  const displayName = String(req.body?.displayName || '').trim().replace(/\s+/g, ' ');
   const contact = normalizeContact(req.body?.contact);
   const password = String(req.body?.password || '');
   if (displayName.length < 2 || displayName.length > 100) {
@@ -245,8 +245,8 @@ app.get('/api/me', authenticate, (req, res) => {
 });
 
 app.post('/api/classes', authenticate, requireTeacher, (req, res) => {
-  const name = String(req.body?.name || '').trim().replace(/\\s+/g, ' ');
-  const schoolName = String(req.body?.schoolName || '').trim().replace(/\\s+/g, ' ');
+  const name = String(req.body?.name || '').trim().replace(/\s+/g, ' ');
+  const schoolName = String(req.body?.schoolName || '').trim().replace(/\s+/g, ' ');
   if (name.length < 2 || name.length > 80) {
     return res.status(400).json({ error: 'Tên lớp cần từ 2 đến 80 ký tự.' });
   }
