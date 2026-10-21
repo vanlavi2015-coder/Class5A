@@ -371,6 +371,8 @@ body.menu-collapsed .menuToggle{left:14px}
   </div>
   <div class="student-nav">
    <button class="student-nav-btn active" onclick="studentMode()">📚 Bài của em</button>
+   <button class="student-nav-btn" onclick="studentShowGroupTools()">👥 Làm việc nhóm</button>
+   <button class="student-nav-btn" onclick="studentShowTools()">🧰 Công cụ số</button>
    <button class="student-nav-btn" onclick="studentLeaderboard()">🏁 Trò chơi & Xếp hạng</button>
    <button class="student-nav-btn" onclick="studentShowNotice()">🔔 Thông báo</button>
   </div>
@@ -2338,6 +2340,23 @@ function renderStudentHome(){
   '<div class="student-tabs"><button class="student-tab active">📚 Bài của em</button><button class="student-tab" onclick="studentShowNotice()">🔔 Thông báo'+(unread.length?' ('+unread.length+')':'')+'</button></div>'+
   '<div id="studentList" class="student-list">'+(active.length?active.map(a=>{const sub=state.submissions[a.id+'_'+sid];return '<div class="student-assignment"><h3>📝 '+esc(a.subject)+' · '+esc(a.lesson)+'</h3>'+gifBlock(a.gifUrl)+'<div class="student-meta">Tuần '+esc(a.week)+(a.due?' · Hạn '+new Date(a.due).toLocaleString('vi-VN'):'')+'</div><span class="student-status '+(sub?'done':'pending')+'">'+(sub?(sub.score==null?'📝 Đã nộp · Chờ cô chấm':'✅ Đã nộp · '+sub.score+'/100 · +'+sub.stars+' ⭐'):'⏰ Chưa nộp')+'</span><br><button class="student-btn primary" style="margin-top:11px" onclick="openStudentAssignment(\''+a.id+'\')">'+(sub?'Xem bài / làm lại':'Bắt đầu làm')+'</button></div>'}).join(''):'<div class="student-assignment" style="text-align:center;padding:32px">🎉 Hiện chưa có bài tập. Em nghỉ ngơi nhé!</div>')+'</div>';
 }
+function studentShowTools(){
+ const tools=[
+  ['Canva','Thiết kế poster, thiệp và sản phẩm nhóm','https://www.canva.com/'],
+  ['Padlet','Cùng đăng ý tưởng, ảnh và sản phẩm của nhóm','https://padlet.com/'],
+  ['Google Slides','Cùng làm bài trình chiếu','https://slides.google.com/'],
+  ['Wordwall','Trò chơi học tập','https://wordwall.net/'],
+  ['Quizizz','Luyện tập và kiểm tra','https://quizizz.com/'],
+  ['GeoGebra','Mô phỏng Toán học','https://www.geogebra.org/'],
+  ['Kahoot!','Câu hỏi tương tác','https://kahoot.com/'],
+  ['NotebookLM','Đọc và tìm hiểu tài liệu','https://notebooklm.google.com/']
+ ];
+ document.getElementById('studentContent').innerHTML='<div class="student-assignment"><h2>🧰 Bộ công cụ số của em</h2><p class="student-meta">Chọn công cụ theo nhiệm vụ cô giao. Khi làm việc nhóm, hãy dùng cùng một liên kết do cô hoặc nhóm trưởng chia sẻ.</p><div class="grid2">'+tools.map(t=>'<div class="student-q"><b>'+esc(t[0])+'</b><p>'+esc(t[1])+'</p><a class="student-btn primary" style="display:inline-block;text-decoration:none" href="'+t[2]+'" target="_blank" rel="noopener noreferrer">Mở công cụ ↗</a></div>').join('')+'</div><button class="student-btn student-back" style="margin-top:12px" onclick="studentMode()">← Quay lại bài của em</button></div>';
+}
+function studentShowGroupTools(){
+ const sid=LAVI.user.studentId,s=STUDENTS.find(x=>x.id===sid);
+ document.getElementById('studentContent').innerHTML='<div class="student-assignment"><h2>👥 Góc làm việc nhóm</h2><div class="student-meta">Nhóm hiện tại: <b>'+esc(s?.group||'Chưa phân nhóm')+'</b></div><p>Cùng thống nhất nhiệm vụ, phân công người ghi chép, người tìm thông tin, người thiết kế và người trình bày. Nhóm trưởng chia sẻ một liên kết Padlet hoặc Google Slides để các bạn cùng làm.</p><div class="grid2"><div class="student-q"><b>🗒️ Bảng ý tưởng chung</b><p>Đăng câu trả lời, hình ảnh và ý kiến của từng thành viên.</p><a class="student-btn primary" style="display:inline-block;text-decoration:none" href="https://padlet.com/" target="_blank" rel="noopener noreferrer">Mở Padlet ↗</a></div><div class="student-q"><b>🖥️ Sản phẩm nhóm</b><p>Cùng xây dựng bài trình chiếu và chuẩn bị thuyết trình.</p><a class="student-btn primary" style="display:inline-block;text-decoration:none" href="https://slides.google.com/" target="_blank" rel="noopener noreferrer">Mở Google Slides ↗</a></div></div><p class="student-meta">Lưu ý: đây là các công cụ liên kết ngoài; cô/nhóm cần tạo và chia sẻ liên kết cộng tác. Bảng nhóm dùng chung ngay trong LAVI cần bổ sung API riêng ở bước tiếp theo.</p><button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button></div>';
+}
 function studentShowNotice(){
  document.body.classList.add('student-mode');
  document.getElementById('studentApp').style.display='block';
@@ -2381,6 +2400,7 @@ function openStudentAssignment(aid){
    document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">'+title+'</h2><div class="student-meta">'+esc(a.subject)+' · '+esc(a.lesson)+' · '+esc(s.name)+'</div>'+
    (redo?'<div style="margin:10px 0;padding:10px;background:#fff7ed;border-radius:10px">🔀 Lần làm lại sẽ được <b>đảo thứ tự câu hỏi</b>. Nếu bài có cấu hình biến thể số liệu, LAVI sẽ dùng bộ số liệu khác.</div>':'')+
    qsHtml+
+   '<div class="student-q" style="margin-top:12px"><label style="display:block;font-weight:800;margin-bottom:7px">📎 Tệp đính kèm (không bắt buộc)</label><input id="studentSubmissionFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" style="width:100%"><div class="student-meta">Có thể đính kèm ảnh bài làm hoặc tài liệu; tối đa 2 MB mỗi tệp.</div></div>'+
    '<button class="student-btn primary" style="width:100%;padding:13px;margin-top:6px" onclick="submitOnline(\''+a.id+'\','+sid+')">📤 Nộp bài</button></div>';
    return;
  }
@@ -2452,6 +2472,13 @@ async function submitOnline(aid,sid){
    const manual=!!q.manual||/cô chấm|tự luận|tự\s*luận|essay/i.test(String(q.type||""));
    if(!manual&&v){const accepted=Array.isArray(q.acceptedAnswers)&&q.acceptedAnswers.length?q.acceptedAnswers:[q.answer];if(accepted.some(x=>answersEqual(v,x)))correct++;}
   });
+  const fileEl=document.getElementById('studentSubmissionFile');
+  if(fileEl?.files?.[0]){
+   const file=fileEl.files[0];
+   if(file.size>2*1024*1024)throw new Error('Tệp đính kèm vượt quá 2 MB. Hãy chọn tệp nhỏ hơn.');
+   const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=()=>reject(new Error('Không đọc được tệp đính kèm'));reader.readAsDataURL(file);});
+   answers._attachment={name:file.name,type:file.type||'application/octet-stream',size:file.size,dataUrl};
+  }
   const score=correct*30;
   const oldScore=state.submissions[aid+'_'+sid]?.score||0;
   const improved=score-oldScore>=10;
