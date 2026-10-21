@@ -1824,7 +1824,7 @@ function renderDraft(){
  <button class="btn success" style="margin-top:8px" onclick="saveDraftAnswer(${si},${qi})">💾 Lưu đáp án Câu ${qi+1}</button>
  <div id="draftAnswerMsg_${si}_${qi}" class="sub" style="margin-top:5px">✏️ Cô nhập đáp án; LAVI lưu ngay vào bản nháp. Khi bấm <b>📤 Giao bài</b>, đáp án này mới được áp dụng cho học sinh.</div>
  </div>`).join("")}</div>`).join("")}
- <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">💾 Lưu nháp</button></div></div>`
+ <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">📚 Lưu vào ngân hàng / kho câu hỏi</button></div></div>`
 }
 async function publish(){
  if(!draft)return;
@@ -2646,7 +2646,21 @@ function createQuestionImportDraft(){
  const subject=document.getElementById("questionImportSubject").value.trim()||importedQuestionRows.find(q=>q.subject)?.subject||"Câu hỏi từ file";
  const lesson=document.getElementById("questionImportLesson").value.trim()||importedQuestionRows.find(q=>q.lesson)?.lesson||"Ngân hàng nhập từ file";
  const group=document.getElementById("questionImportGroup").value;
- const questions=importedQuestionRows.map((q,i)=>({...q,id:i+1,text:String(q.text||"").trim(),answer:String(q.answer||"").trim(),acceptedAnswers:Array.isArray(q.acceptedAnswers)?q.acceptedAnswers:[],options:q.options?.length?q.options:undefined,manual:!String(q.answer||"").trim()}));
+ const questions=importedQuestionRows.map((q,i)=>{
+  const options=Array.isArray(q.options)?q.options:[];
+  let answer=String(q.answer||"").trim();
+  const letter=answer.match(/^([A-D])(?:[.)\-:]|$)/i);
+  if(options.length&&letter){
+   const idx=letter[1].toUpperCase().charCodeAt(0)-65;
+   if(options[idx])answer=String(options[idx]).replace(/^[A-D][.)\-:]\s*/i,"").trim();
+  }
+  const prompt=String(q.text||"").trim();
+  const text=options.length?prompt+"\n"+options.join("\n"):prompt;
+  const accepted=[...(Array.isArray(q.acceptedAnswers)?q.acceptedAnswers:[])];
+  if(letter)accepted.push(letter[1].toUpperCase());
+  if(answer)accepted.push(answer);
+  return {...q,id:i+1,text,answer,acceptedAnswers:[...new Set(accepted.filter(Boolean))],options:options.length?options:undefined,manual:!answer};
+ });
  draft={id:"a_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),subject,week:"Nhập từ file",topic:lesson,lesson,group,count:questions.length,lessonIds:[lesson],due:"",note:"Nhập từ file "+(document.getElementById("questionImportFile").files[0]?.name||""),gifUrl:"",sets:[{group,questions}],status:"Nháp",createdAt:new Date().toISOString()};
  document.getElementById("draft").innerHTML=renderDraft();
  document.getElementById("draft").scrollIntoView({behavior:"smooth",block:"start"});
