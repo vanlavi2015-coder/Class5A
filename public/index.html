@@ -1826,24 +1826,63 @@ function renderDraft(){
  </div>`).join("")}</div>`).join("")}
  <div class="row"><button class="btn primary" onclick="publish()">📤 Giao bài</button><button class="btn gold" onclick="saveLibrary()">📚 Lưu vào ngân hàng / kho câu hỏi</button></div></div>`
 }
+function validateDraftForPublish(item){
+ const errors=[];
+ if(!item||!Array.isArray(item.sets)||!item.sets.length)errors.push("Chưa có bộ câu hỏi.");
+ const sets=Array.isArray(item?.sets)?item.sets:[];
+ const questions=sets.flatMap(s=>Array.isArray(s.questions)?s.questions:[]);
+ if(!questions.length)errors.push("Bài chưa có câu hỏi nào.");
+ if(questions.some(q=>!String(q?.text||"").trim()))errors.push("Có câu hỏi đang để trống nội dung.");
+ if(questions.length>100)errors.push("Mỗi bài chỉ được giao tối đa 100 câu trong một lần.");
+ if(item?.due){
+  const dueMs=new Date(item.due).getTime();
+  if(!Number.isFinite(dueMs))errors.push("Hạn nộp không hợp lệ.");
+  else if(dueMs<Date.now())errors.push("Hạn nộp đã qua. Hãy chọn thời điểm trong tương lai hoặc bỏ trống hạn nộp.");
+ }
+ return [...new Set(errors)];
+}
 async function publish(){
  if(!draft)return;
- const item={...draft,status:"Đang giao"};
+ const errors=validateDraftForPublish(draft);
+ if(errors.length){alert("Chưa thể giao bài:\n- "+errors.join("\n- "));toast("⚠️ Cần kiểm tra lại bản nháp.");return;}
+ if(state.assignments.some(a=>a.id===draft.id)){alert("Bài này đã được lưu trước đó. Hãy tạo bản nháp mới nếu muốn giao thêm lần nữa.");return;}
+ const item={...draft,status:"Đang giao",publishedAt:new Date().toISOString()};
  state.assignments.unshift(item);
  try{
   await save();
   draft=null;
   document.getElementById("draft").innerHTML="";
   toast(item.group==="Tất cả"?"✅ Đã giao bài chung cho cả lớp":"✅ Đã giao bài theo nhóm trình độ");
+  const target=document.getElementById("publishStatus");
+  if(target)target.textContent="Đã giao bài thành công.";
  }catch(e){
   state.assignments=state.assignments.filter(a=>a.id!==item.id);
   localStorage.setItem("lavi5a_real",JSON.stringify(state));
   renderAll();
   toast("❌ Chưa giao được bài: "+e.message);
-  alert("Chưa giao được bài. "+e.message);
+  alert("Chưa giao được bài. "+e.message+"\nBản nháp vẫn được giữ để cô thử lại.");
  }
 }
-function saveLibrary(){if(!draft)return;draft.status="Kho bài";state.assignments.unshift({...draft});draft=null;document.getElementById("draft").innerHTML="";save();toast("Đã lưu vào kho")}
+async function saveLibrary(){
+ if(!draft)return;
+ const errors=validateDraftForPublish({...draft,due:""});
+ if(errors.length){alert("Chưa thể lưu vào kho:\n- "+errors.join("\n- "));return;}
+ if(state.assignments.some(a=>a.id===draft.id)){alert("Bản nháp này đã có trong kho.");return;}
+ const item={...draft,status:"Kho bài",savedToLibraryAt:new Date().toISOString()};
+ state.assignments.unshift(item);
+ try{
+  await save();
+  draft=null;
+  document.getElementById("draft").innerHTML="";
+  toast("📚 Đã lưu vào kho bài. Cô có thể xem lại trong danh sách bài.");
+ }catch(e){
+  state.assignments=state.assignments.filter(a=>a.id!==item.id);
+  localStorage.setItem("lavi5a_real",JSON.stringify(state));
+  renderAll();
+  toast("❌ Chưa lưu được vào kho: "+e.message);
+  alert("Chưa lưu được vào kho. "+e.message+"\nBản nháp vẫn được giữ để cô thử lại.");
+ }
+}
 function resetManualQuestionForm(){
  ["manualPrompt","manualAnswer","manualAccepted","manualExplanation"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
  const status=document.getElementById("manualQuestionStatus");if(status)status.textContent="";
