@@ -175,6 +175,8 @@
       $('greeting').textContent = 'Xin chào, ' + result.user.displayName;
       $('accountNotice').textContent = result.user.contactVerified ? 'Thông tin liên hệ đã xác minh.' : 'Tài khoản thử nghiệm · Chưa xác minh email/số điện thoại bằng OTP.';
       await loadClasses();
+      await loadBanks();
+      await loadTestSets();
     } catch(e) {
       $('authStatus').textContent = e.message;
     } finally {
@@ -233,6 +235,101 @@
       table.append(thead,tbody);area.append(table);
     } catch(e) {$('studentsArea').textContent=e.message;}
   }
+  let selectedBankId = '';
+  let bankCache = [];
+  let questionCache = [];
+  let testSetCache = [];
+
+  function makeCard(titleText, detailText) {
+    const card = document.createElement('div'); card.className = 'class';
+    const title = document.createElement('h3'); title.textContent = titleText;
+    const detail = document.createElement('p'); detail.className = 'muted'; detail.textContent = detailText;
+    card.append(title, detail); return card;
+  }
+  async function loadBanks() {
+    const data = await api('/api/question-banks');
+    bankCache = data.questionBanks || [];
+    const list = $('bankList'); list.replaceChildren();
+    if (!bankCache.length) {
+      const empty = document.createElement('p'); empty.className='muted'; empty.textContent='Chưa có ngân hàng câu hỏi. Tạo ngân hàng đầu tiên ở trên.';
+      list.append(empty);
+    }
+    bankCache.forEach(bank => {
+      const card = makeCard(bank.name, (bank.subject || 'Chưa chọn môn') + ' · ' + (bank.grade || 'Chưa chọn khối') + ' · ' + bank.questionCount + ' câu hỏi');
+      const open = document.createElement('button'); open.type='button'; open.textContent='Mở ngân hàng / thêm câu hỏi';
+      open.addEventListener('click', () => openBank(bank.id, bank.name));
+      card.append(open); list.append(card);
+    });
+  }
+  async function openBank(id, name) {
+    selectedBankId = id;
+    $('questionEditor').classList.remove('hidden');
+    $('questionEditorTitle').textContent = 'Ngân hàng: ' + name;
+    $('questionStatus').textContent = '';
+    await loadQuestions(id);
+    $('questionEditor').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  async function loadQuestions(bankId) {
+    const data = await api('/api/question-banks/' + encodeURIComponent(bankId) + '/questions');
+    const questions = data.questions || [];
+    questionCache = [...questionCache.filter(q => q.bankId !== bankId), ...questions];
+    const list = $('questionsInBank'); list.replaceChildren();
+    const heading = document.createElement('h4'); heading.textContent='Câu hỏi trong ngân hàng ('+questions.length+')'; list.append(heading);
+    if (!questions.length) { const empty=document.createElement('p'); empty.className='muted'; empty.textContent='Chưa có câu hỏi. Dùng biểu mẫu phía trên để thêm.'; list.append(empty); }
+    questions.forEach((q,i) => {
+      const card=makeCard((i+1)+'. '+q.prompt, 'Loại: '+q.type+' · Đáp án: '+(Array.isArray(q.answer)?q.answer.join(', '):String(q.answer ?? '')));
+      if(q.explanation){const exp=document.createElement('p');exp.className='muted';exp.textContent='Giải thích: '+q.explanation;card.append(exp);}
+      list.append(card);
+    });
+    await loadBanks();
+    await loadTestSets();
+  }
+  $('bankForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button=$('bankForm').querySelector('button');button.disabled=true;$('bankStatus').textContent='Đang tạo ngân hàng...';
+    try {
+      await api('/api/question-banks',{method:'POST',body:JSON.stringify({name:$('bankName').value.trim(),subject:$('bankSubject').value.trim(),grade:$('bankGrade').value.trim()})});
+      $('bankName').value='';$('bankSubject').value='';$('bankGrade').value='';
+      $('bankStatus').textContent='Đã tạo ngân hàng câu hỏi.';await loadBanks();
+    } catch(e){$('bankStatus').textContent=e.message;} finally{button.disabled=false;}
+  });
+  $('questionForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if(!selectedBankId){$('questionStatus').textContent='Hãy mở một ngân hàng câu hỏi trước.';return;}
+    const button=$('questionForm').querySelector('button');button.disabled=true;$('questionStatus').textContent='Đang lưu câu hỏi...';
+    try {
+      const type=$('questionType').value;
+      const options=$('questionOptions').value.split('\n').map(x=>x.trim()).filter(Boolean);
+      let answer=$('questionAnswer').value.trim();
+      if(type==='multiple') answer=answer.split(/[,;、]/).map(x=>x.trim()).filter(Boolean);
+      await api('/api/question-banks/'+encodeURIComponent(selectedBankId)+'/questions',{method:'POST',body:JSON.stringify({
+        type,prompt:$('questionPrompt').value.trim(),options,answer,explanation:$('questionExplanation').value.trim()
+      })});
+      $('questionPrompt').value='';$('questionOptions').value='';$('questionAnswer').value='';$('questionExplanation').value='';
+      $('questionStatus').textContent='Đã lưu câu hỏi.';await loadQuestions(selectedBankId);
+    } catch(e){$('questionStatus').textContent=e.message;} finally{button.disabled=false;}
+  });
+  async function loadTestSets() {
+    const data=await api('/api/test-sets');
+    testSetCache=data.testSets||[];
+    const list=$('testSetList');list.replaceChildren();
+    if(!testSetCache.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Chưa có bộ đề. Tạo bộ đề bằng biểu mẫu phía trên.';list.append(empty);}
+    testSetCache.forEach(test => {
+      const card=makeCard(test.name,(test.subject||'Chưa chọn môn')+' · '+(test.grade||'Chưa chọn khối')+' · '+test.questionCount+' câu hỏi');
+      const selector=document.createElement('select');selector.setAttribute('aria-label','Chọn câu hỏi để thêm vào '+test.name);selector.style.width='100%';selector.style.padding='10px';selector.style.borderRadius='8px';
+      const first=document.createElement('option');first.value='';first.textContent='Chọn câu hỏi từ ngân hàng';selector.append(first);
+      questionCache.forEach(q=>{const option=document.createElement('option');option.value=q.id;option.textContent=q.prompt.slice(0,120);selector.append(option);});
+      const add=document.createElement('button');add.type='button';add.textContent='Thêm câu hỏi đã chọn vào bộ đề';
+      add.addEventListener('click',async()=>{if(!selector.value){$('testSetStatus').textContent='Cô hãy chọn một câu hỏi trước.';return;}add.disabled=true;try{await api('/api/test-sets/'+encodeURIComponent(test.id)+'/questions',{method:'POST',body:JSON.stringify({questionId:selector.value,points:1})});$('testSetStatus').textContent='Đã thêm câu hỏi vào bộ đề.';await loadTestSets();}catch(e){$('testSetStatus').textContent=e.message;}finally{add.disabled=false;}});
+      card.append(selector,add);list.append(card);
+    });
+  }
+  $('testSetForm').addEventListener('submit',async event=>{
+    event.preventDefault();const button=$('testSetForm').querySelector('button');button.disabled=true;$('testSetStatus').textContent='Đang tạo bộ đề...';
+    try{await api('/api/test-sets',{method:'POST',body:JSON.stringify({name:$('testSetName').value.trim(),subject:$('testSetSubject').value.trim(),grade:$('testSetGrade').value.trim()})});$('testSetName').value='';$('testSetSubject').value='';$('testSetGrade').value='';$('testSetStatus').textContent='Đã tạo bộ đề.';await loadTestSets();}
+    catch(e){$('testSetStatus').textContent=e.message;}finally{button.disabled=false;}
+  });
+
   $('backupBtn').addEventListener('click', async () => {
     $('backupStatus').textContent = 'Đang tạo bản sao lưu...';
     try {
@@ -269,6 +366,8 @@
       if (!response.ok) throw new Error(result.error || 'Không thể khôi phục tệp.');
       $('backupStatus').textContent = result.message || 'Khôi phục hoàn tất.';
       await loadClasses();
+      await loadBanks();
+      await loadTestSets();
     } catch (e) { $('backupStatus').textContent = e instanceof SyntaxError ? 'Tệp JSON không hợp lệ.' : e.message; }
     finally { $('restoreBtn').disabled = false; }
   });
