@@ -190,13 +190,10 @@
             </section>
             <section id="futureView" class="lavi-view">
               <div class="view-heading"><div><h2 id="futureViewTitle">Mô-đun đang phát triển</h2><p id="futureViewSubtitle">Khung giao diện được chuẩn bị theo cấu trúc LAVI hiện tại.</p></div><span class="view-chip">🧩 LAVI 2.0</span></div>
-              <div class="lavi-panel">
+              <div class="lavi-panel" id="futureModuleContent">
                 <h3 id="futureModuleName">Chức năng đang được hoàn thiện</h3>
                 <p id="futureModuleDescription">Mục này đã có trong thanh điều hướng để thống nhất cấu trúc giao diện. Chức năng thực tế sẽ được xây dựng và kiểm thử trước khi mở sử dụng.</p>
-                <div class="class">
-                  <strong>Trạng thái: Chưa kết nối chức năng</strong>
-                  <p class="muted">Không có dữ liệu giả vờ hoặc nút thao tác chưa hoạt động. Khi mô-đun được triển khai, mục này sẽ được thay bằng chức năng thật.</p>
-                </div>
+                <div class="class"><strong>Trạng thái: Chưa kết nối chức năng</strong><p class="muted">Không có dữ liệu giả vờ hoặc nút thao tác chưa hoạt động. Khi mô-đun được triển khai, mục này sẽ được thay bằng chức năng thật.</p></div>
                 <button type="button" class="secondary" data-go-view="classesView">← Quay lại tổng quan</button>
               </div>
             </section>
@@ -268,9 +265,17 @@
     if (viewId === 'futureView') {
       const label = moduleName || 'Mô-đun đang phát triển';
       $('futureViewTitle').textContent = label;
-      $('futureModuleName').textContent = label;
       $('futureViewSubtitle').textContent = 'Khung giao diện theo cấu trúc LAVI hiện tại · Bản thử nghiệm LAVI 2.0';
-      $('futureModuleDescription').textContent = 'Mục “' + label + '” đã được đưa vào cấu trúc điều hướng. Chức năng và dữ liệu thật chưa được kết nối; mục này sẽ chỉ mở sử dụng sau khi được phát triển và kiểm thử.';
+      if (label === 'Bài đang giao') {
+        renderAssignments().catch(e => { $('futureModuleContent').textContent = e.message; });
+      } else {
+        $('futureModuleContent').replaceChildren();
+        const heading=document.createElement('h3');heading.textContent=label;
+        const description=document.createElement('p');description.className='muted';description.textContent='Mục này đã có trong cấu trúc điều hướng. Chức năng thực tế sẽ được bổ sung sau khi hoàn thiện và kiểm thử.';
+        const status=document.createElement('div');status.className='class';status.textContent='Trạng thái: Chưa kết nối chức năng.';
+        const back=document.createElement('button');back.type='button';back.className='secondary';back.textContent='← Quay lại tổng quan';back.addEventListener('click',()=>activateView('classesView'));
+        $('futureModuleContent').append(heading,description,status,back);
+      }
     }
     document.querySelector('.lavi-sidebar')?.classList.remove('open');
     const target = document.getElementById(viewId);
@@ -369,12 +374,42 @@
     try {
       const data=await api('/api/classes/'+encodeURIComponent(id)+'/students');
       const area=$('studentsArea');area.replaceChildren();
-      const heading=document.createElement('h3');heading.textContent='Danh sách mẫu: '+name;area.append(heading);
+      const heading=document.createElement('h3');heading.textContent='Danh sách học sinh: '+name;area.append(heading);
+      const form=document.createElement('form');form.className='class';
+      const formTitle=document.createElement('h4');formTitle.textContent='Thêm học sinh';form.append(formTitle);
+      const codeLabel=document.createElement('label');codeLabel.textContent='Mã học sinh';codeLabel.htmlFor='newStudentCode';
+      const codeInput=document.createElement('input');codeInput.id='newStudentCode';codeInput.required=true;codeInput.maxLength=40;codeInput.placeholder='Ví dụ: 5A01';
+      const nameLabel=document.createElement('label');nameLabel.textContent='Họ và tên học sinh';nameLabel.htmlFor='newStudentName';
+      const nameInput=document.createElement('input');nameInput.id='newStudentName';nameInput.required=true;nameInput.maxLength=120;nameInput.placeholder='Nhập họ và tên';
+      const submit=document.createElement('button');submit.type='submit';submit.textContent='+ Thêm học sinh';
+      const status=document.createElement('div');status.className='status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+      form.append(codeLabel,codeInput,nameLabel,nameInput,submit,status);
+      form.addEventListener('submit',async event=>{
+        event.preventDefault();submit.disabled=true;status.textContent='Đang lưu học sinh...';
+        try{
+          await api('/api/classes/'+encodeURIComponent(id)+'/students',{method:'POST',body:JSON.stringify({code:codeInput.value,displayName:nameInput.value})});
+          await loadStudents(id,name);await loadClasses();
+        }catch(e){status.textContent=e.message;}finally{submit.disabled=false;}
+      });
+      area.append(form);
       const table=document.createElement('table');
-      const thead=document.createElement('thead');thead.innerHTML='<tr><th>Mã demo</th><th>Tên giả lập</th><th>Mức mẫu</th></tr>';
+      const thead=document.createElement('thead');thead.innerHTML='<tr><th>Mã HS</th><th>Họ và tên</th><th>Đánh giá</th><th>Thao tác</th></tr>';
       const tbody=document.createElement('tbody');
-      data.students.forEach(s=>{const tr=document.createElement('tr');[s.code,s.displayName,s.level].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});tbody.append(tr);});
+      data.students.forEach(student=>{
+        const tr=document.createElement('tr');
+        [student.code,student.displayName,student.level].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.append(td);});
+        const actionCell=document.createElement('td');
+        const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Xóa';
+        remove.addEventListener('click',async()=>{
+          if(!confirm('Xóa học sinh '+student.displayName+' khỏi lớp này? Dữ liệu điểm liên quan của học sinh có thể bị xóa theo.'))return;
+          remove.disabled=true;
+          try{await api('/api/classes/'+encodeURIComponent(id)+'/students/'+encodeURIComponent(student.id),{method:'DELETE'});await loadStudents(id,name);await loadClasses();}
+          catch(e){status.textContent=e.message;remove.disabled=false;}
+        });
+        actionCell.append(remove);tr.append(actionCell);tbody.append(tr);
+      });
       table.append(thead,tbody);area.append(table);
+      const total=document.createElement('p');total.className='muted';total.textContent='Tổng số học sinh: '+data.students.length;area.append(total);
     } catch(e) {$('studentsArea').textContent=e.message;}
   }
   let selectedBankId = '';
@@ -544,6 +579,47 @@
     try{await api('/api/test-sets',{method:'POST',body:JSON.stringify({name:$('testSetName').value.trim(),subject:$('testSetSubject').value.trim(),grade:$('testSetGrade').value.trim()})});$('testSetName').value='';$('testSetSubject').value='';$('testSetGrade').value='';$('testSetStatus').textContent='Đã tạo bộ đề.';await loadTestSets();}
     catch(e){$('testSetStatus').textContent=e.message;}finally{button.disabled=false;}
   });
+
+  async function renderAssignments() {
+    const panel=$('futureModuleContent');
+    panel.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent='Tạo bài giao cho lớp';
+    const description=document.createElement('p');description.className='muted';description.textContent='Tạo bản ghi giao bài gắn với lớp và bộ đề của chính tài khoản giáo viên. Phần nộp bài và chấm điểm sẽ được phát triển ở bước tiếp theo.';
+    panel.append(heading,description);
+    const [classData,testData,assignmentData]=await Promise.all([api('/api/classes'),api('/api/test-sets'),api('/api/assignments')]);
+    const form=document.createElement('form');form.className='class';
+    function addField(labelText,id,control){const label=document.createElement('label');label.textContent=labelText;label.htmlFor=id;control.id=id;form.append(label,control);return control;}
+    const titleInput=addField('Tên bài giao','assignmentTitle',document.createElement('input'));titleInput.required=true;titleInput.maxLength=160;titleInput.placeholder='Ví dụ: Ôn tập Toán tuần 1';
+    const classSelect=addField('Lớp nhận bài','assignmentClass',document.createElement('select'));classSelect.required=true;
+    const classPlaceholder=document.createElement('option');classPlaceholder.value='';classPlaceholder.textContent='-- Chọn lớp --';classSelect.append(classPlaceholder);
+    classData.classes.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name+' · '+c.studentCount+' học sinh';classSelect.append(o);});
+    const testSelect=addField('Bộ đề (không bắt buộc)','assignmentTestSet',document.createElement('select'));
+    const noTest=document.createElement('option');noTest.value='';noTest.textContent='Chưa gắn bộ đề';testSelect.append(noTest);
+    testData.testSets.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name+' · '+t.questionCount+' câu';testSelect.append(o);});
+    const dueInput=addField('Hạn nộp (không bắt buộc)','assignmentDueAt',document.createElement('input'));dueInput.type='datetime-local';
+    const submit=document.createElement('button');submit.type='submit';submit.textContent='+ Tạo bài giao';
+    const status=document.createElement('div');status.className='status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    form.append(submit,status);
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();submit.disabled=true;status.textContent='Đang tạo bài giao...';
+      try{
+        await api('/api/assignments',{method:'POST',body:JSON.stringify({title:titleInput.value,classId:classSelect.value,testSetId:testSelect.value,dueAt:dueInput.value ? new Date(dueInput.value).toISOString() : null})});
+        await renderAssignments();
+      }catch(e){status.textContent=e.message;}finally{submit.disabled=false;}
+    });
+    panel.append(form);
+    const listHeading=document.createElement('h3');listHeading.textContent='Danh sách bài đã giao';panel.append(listHeading);
+    if(!assignmentData.assignments.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='Chưa có bài giao nào.';panel.append(empty);}
+    assignmentData.assignments.forEach(a=>{
+      const card=document.createElement('div');card.className='class';
+      const title=document.createElement('h4');title.textContent=a.title;
+      const detail=document.createElement('p');detail.className='muted';detail.textContent='Lớp: '+a.className+' · Bộ đề: '+(a.testSetName||'Chưa gắn bộ đề');
+      const due=document.createElement('p');due.className='muted';due.textContent=a.dueAt?'Hạn nộp: '+new Date(a.dueAt).toLocaleString('vi-VN'):'Chưa đặt hạn nộp';
+      const progress=document.createElement('p');progress.className='muted';progress.textContent='Bản ghi điểm: '+a.gradedCount+' · Chưa có chức năng học sinh nộp bài trong bản thử nghiệm này.';
+      card.append(title,detail,due,progress);panel.append(card);
+    });
+    const back=document.createElement('button');back.type='button';back.className='secondary';back.textContent='← Quay lại tổng quan';back.addEventListener('click',()=>activateView('classesView'));panel.append(back);
+  }
 
   $('backupBtn').addEventListener('click', async () => {
     $('backupStatus').textContent = 'Đang tạo bản sao lưu...';
