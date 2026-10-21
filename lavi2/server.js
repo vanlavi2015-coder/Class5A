@@ -691,6 +691,74 @@ app.get('/api/classes/:classId/students', authenticate, requireTeacher, (req, re
   res.json({ class: klass, students });
 });
 
+app.post('/api/classes/:classId/students', authenticate, requireTeacher, (req, res) => {
+  const klass = db.prepare('SELECT id FROM classes WHERE id=? AND owner_user_id=?')
+    .get(String(req.params.classId), req.user.id);
+  if (!klass) return res.status(404).json({ error: 'Không tìm thấy lớp hoặc bạn không có quyền truy cập.' });
+  const code = String(req.body?.code || '').trim().replace(/\\s+/g, '').slice(0,40);
+  const displayName = String(req.body?.displayName || '').trim().replace(/\\s+/g, ' ');
+  if (code.length < 1) return res.status(400).json({ error: 'Vui lòng nhập mã học sinh.' });
+  if (displayName.length < 2 || displayName.length > 120) return res.status(400).json({ error: 'Tên học sinh cần từ 2 đến 120 ký tự.' });
+  const duplicate = db.prepare('SELECT id FROM students WHERE class_id=? AND student_code=?').get(klass.id, code);
+  if (duplicate) return res.status(409).json({ error: 'Mã học sinh đã tồn tại trong lớp này.' });
+  const id = randomUUID();
+  try {
+    db.prepare('INSERT INTO students(id,class_id,student_code,display_name,demo_level) VALUES(?,?,?,?,?)')
+      .run(id, klass.id, code, displayName, 'Chưa đánh giá');
+    audit(req.user.id, 'create', 'student', id);
+    res.status(201).json({ student: { id, code, displayName, level: 'Chưa đánh giá' } });
+  } catch (err) {
+    if (err && err.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'Mã học sinh đã tồn tại trong lớp này.' });
+    throw err;
+  }
+});
+
+app.delete('/api/classes/:classId/students/:studentId', authenticate, requireTeacher, (req, res) => {
+  const student = db.prepare(`
+    SELECT s.id FROM students s JOIN classes c ON c.id=s.class_id
+    WHERE s.id=? AND c.id=? AND c.owner_user_id=?
+  `).get(String(req.params.studentId), String(req.params.classId), req.user.id);
+  if (!student) return res.status(404).json({ error: 'Không tìm thấy học sinh trong lớp thuộc tài khoản của thầy cô.' });
+  db.prepare('DELETE FROM students WHERE id=?').run(student.id);
+  audit(req.user.id, 'delete', 'student', student.id);
+  res.json({ ok: true });
+});
+
+app.get('/api/assignments', authenticate, requireTeacher, (req, res) => {
+  const assignments = db.prepare(`
+    SELECT a.id,a.class_id AS classId,c.name AS className,a.test_set_id AS testSetId,
+      t.name AS testSetName,a.title,a.due_at AS dueAt,a.created_at AS createdAt,
+      (SELECT COUNT(*) FROM scores sc WHERE sc.assignment_id=a.id) AS gradedCount
+    FROM assignments a
+    JOIN classes c ON c.id=a.class_id AND c.owner_user_id=a.owner_user_id
+    LEFT JOIN test_sets t ON t.id=a.test_set_id
+    WHERE a.owner_user_id=?
+    ORDER BY a.created_at DESC
+  `).all(req.user.id);
+  res.json({ assignments });
+});
+
+app.post('/api/assignments', authenticate, requireTeacher, (req, res) => {
+  const classId = String(req.body?.classId || '');
+  const title = String(req.body?.title || '').trim().replace(/\\s+/g, ' ');
+  const testSetId = String(req.body?.testSetId || '').trim() || null;
+  const dueAt = String(req.body?.dueAt || '').trim() || null;
+  if (title.length < 2 || title.length > 160) return res.status(400).json({ error: 'Tên bài giao cần từ 2 đến 160 ký tự.' });
+  const klass = db.prepare('SELECT id,name FROM classes WHERE id=? AND owner_user_id=?').get(classId, req.user.id);
+  if (!klass) return res.status(404).json({ error: 'Không tìm thấy lớp thuộc tài khoản của thầy cô.' });
+  let testSet = null;
+  if (testSetId) {
+    testSet = db.prepare('SELECT id,name FROM test_sets WHERE id=? AND owner_user_id=?').get(testSetId, req.user.id);
+    if (!testSet) return res.status(404).json({ error: 'Không tìm thấy bộ đề thuộc tài khoản của thầy cô.' });
+  }
+  if (dueAt && Number.isNaN(Date.parse(dueAt))) return res.status(400).json({ error: 'Hạn nộp chưa đúng định dạng ngày giờ.' });
+  const id = randomUUID();
+  db.prepare('INSERT INTO assignments(id,owner_user_id,class_id,test_set_id,title,due_at) VALUES(?,?,?,?,?,?)')
+    .run(id, req.user.id, klass.id, testSet?.id || null, title, dueAt);
+  audit(req.user.id, 'create', 'assignment', id);
+  res.status(201).json({ assignment: { id, classId: klass.id, className: klass.name, testSetId: testSet?.id || null, testSetName: testSet?.name || null, title, dueAt } });
+});
+
 app.use('/api', (_req, res) => res.status(404).json({ error: 'API không tồn tại trong bản thử nghiệm.' }));
 app.use((err, _req, res, _next) => {
   console.error('LAVI2 request error:', err.message);
