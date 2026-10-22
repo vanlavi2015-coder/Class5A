@@ -1,26 +1,39 @@
 # LAVI 2.0 — Production Readiness Gate
 
-This branch is a preparation branch based on `lavi-2.0-sandbox`. It does **not** switch or deploy the existing LAVI 5A service.
+This is a preparation branch based on the isolated LAVI 2.0 sandbox. It does **not** switch or deploy the existing LAVI 5A service.
 
-## Current verified limitations
+## Current implementation status
 
-- The application identifies itself as a sandbox and intentionally exits if `NODE_ENV=production` while `LAVI_DEMO_MODE` is not `true`.
-- The README says contact details are not verified and OTP is not implemented.
-- The available demo accounts and synthetic student data must never be exposed as production accounts.
-- Core production features (full question bank/import, assignment workflows, games, parent accounts, student digital portfolio) are not complete in this MVP.
-- A persistent disk is configured in the sandbox blueprint, but a production service must have its own disk, environment variables, secret, and backup policy.
+Implemented in the preparation branch:
+- Teacher registration/login with normalized email or Vietnamese phone number, password hashing and basic rate limits.
+- Teacher-owned classes/students with server-side ownership checks.
+- Question banks, Excel/Word import support, test sets, assignments, submissions, automatic grading and teacher manual grading.
+- Point transaction ledger with reason, class totals, student history and progress feedback APIs/UI.
+- JSON backup/restore with duplicate-restore protection; local SQLite snapshots and a backup-status endpoint.
+- Automated tests for core flows, authorization boundaries, scoring, backup/restore and point/progress behavior. A GitHub Actions workflow was added; its successful execution still needs to be verified.
+
+## Release blockers
+
+- Email/phone ownership is not verified: OTP delivery and verification are not implemented.
+- Password reset, account recovery and admin recovery are incomplete.
+- Demo accounts and synthetic seeding must be impossible in production.
+- Need full authorization tests for every class-owned resource and abuse controls; review CSRF/CORS, session expiry and audit coverage.
+- Need a separately tested external backup and restore drill. Same-disk SQLite snapshots are not disaster recovery.
+- Need acceptance testing for imports, multi-answer/short-answer grading, mobile workflows, point ledger, progress feedback, exports and data deletion.
+- Game modules, parent accounts and student digital-skills portfolio are not fully accepted.
 
 ## Required before public launch
 
-1. Implement and test verified email/phone signup (OTP through a selected provider), password reset, account recovery, abuse/rate-limit controls, and admin account recovery.
-2. Add a production mode that refuses demo credentials and synthetic seeding; keep the sandbox's demo mode isolated.
-3. Verify authorization boundaries for every API and every class-owned resource, including cross-teacher access tests.
-4. Add tested backup/restore, retention, export/delete procedures, and verify that restore works on a fresh database. Do not store production secrets in GitHub.
-5. Add production dependencies and workflows for the required feature set: question bank and Excel/Word import, assignments/submissions/scoring, point ledger, student progress feedback, and digital-skills portfolio.
-6. Run automated tests and a manual acceptance checklist on a separate staging service with synthetic data.
-7. Create a **new** Render service for LAVI 2.0 with root directory `lavi2`, branch `lavi-2.0-production-prep` (or a later approved release branch), Node 22, `npm install`, `npm start`, health check `/api/health`, a unique `LAVI_JWT_SECRET` (32+ characters), `LAVI_DEMO_MODE=false`, and a new persistent disk mounted at `/var/data`. Do not reuse the LAVI 5A service, disk, JWT secret, or production data.
-8. Do not direct real users to the service until all gates pass and the owner explicitly approves the release.
+1. Select an email/SMS provider and implement OTP with expiry, single use, rate limits and verified-contact status.
+2. Implement secure password reset and account recovery without revealing whether an account exists.
+3. Add an explicit production mode that refuses demo credentials and synthetic seeding.
+4. Run CI and resolve all failures; execute manual acceptance tests on a separate staging service using synthetic data.
+5. Create a separate Render production service with its own Persistent Disk, environment variables and secrets. Never reuse LAVI 5A storage or credentials.
+6. Verify the actual database path is /var/data/lavi2-sandbox.sqlite (or the documented production filename) and prove data survives restart/deploy.
+7. Run and document backup/restore on a fresh test database; add an encrypted off-service copy with retention and access controls.
+8. Complete privacy, retention, export/delete and school-account administration procedures.
+9. Only after these gates pass, schedule a production release. Do not merge/deploy this preparation branch to the LAVI 5A service.
 
-## Release decision
+## Rollout rule
 
-**Not approved for production yet.** This is a deliberate safety gate, not a claim that deployment has occurred. The current sandbox guard remains unchanged. The existing LAVI 5A production service is not modified by this branch.
+LAVI 5A remains the stable live system. LAVI 2.0 must remain isolated until all blockers are closed and a separate production service is verified.
