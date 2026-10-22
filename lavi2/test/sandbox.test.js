@@ -22,7 +22,7 @@ test('sandbox UI and API support teacher registration with email or phone', () =
   assert.match(html, /data-view="questionsView"/);
   assert.match(html, /data-view="testsView"/);
   assert.match(html, /data-view="backupView"/);
-  for (const moduleName of ['Bài đang giao', 'Bài nộp & chấm điểm', 'Danh sách học sinh', 'Sao thưởng & khen thưởng', 'Trò chơi kiến thức', 'Trò chơi & xếp hạng', 'Lịch lớp học', 'Thống kê học tập', 'Xếp loại tháng', 'Trợ lý VnEdu', 'Tài khoản giáo viên']) {
+  for (const moduleName of ['Bài đang giao', 'Bài nộp & chấm điểm', 'Danh sách học sinh', 'Sao & Khen', 'Trò chơi kiến thức', 'Trò chơi & xếp hạng', 'Lịch lớp học', 'Thống kê học tập', 'Xếp loại tháng', 'Trợ lý VnEdu', 'Tài khoản giáo viên']) {
     assert.ok(html.includes(moduleName), 'Missing legacy navigation module: ' + moduleName);
   }
   assert.match(html, /id="futureView"/);
@@ -33,7 +33,7 @@ test('sandbox UI and API support teacher registration with email or phone', () =
   assert.match(html, /Chọn bài đã giao để xem kết quả đã lưu/);
   assert.match(html, /Làm mới kết quả/);
   assert.match(html, /Tải mẫu Excel câu hỏi LAVI/);
-  assert.match(html, /Cột “Đáp án đúng” ghi A, B, C hoặc D/);
+  assert.match(html, /Nhập A, B, C hoặc D/);
   assert.match(server, /manual-grade/);
   assert.match(server, /answerLetter/);
   assert.match(html, /mobileMenuBtn/);
@@ -171,6 +171,46 @@ test('demo teachers remain isolated and registration/login works for email and p
       headers: { Authorization: 'Bearer ' + teacherCToken }
     })).json();
     assert.equal(rosterAfterCreate.students.length, 1);
+
+    const addPoints = await post('/api/classes/' + createdClass.id + '/students/' + student.id + '/points', {
+      points: 3, reason: 'Hoàn thành nhiệm vụ thử nghiệm'
+    }, teacherCToken);
+    assert.equal(addPoints.status, 201);
+    assert.equal((await addPoints.json()).totalPoints, 3);
+    const subtractPoints = await post('/api/classes/' + createdClass.id + '/students/' + student.id + '/points', {
+      points: -1, reason: 'Điều chỉnh thử nghiệm'
+    }, teacherCToken);
+    assert.equal(subtractPoints.status, 201);
+    assert.equal((await subtractPoints.json()).totalPoints, 2);
+    const invalidZeroPoints = await post('/api/classes/' + createdClass.id + '/students/' + student.id + '/points', {
+      points: 0, reason: 'Điểm không hợp lệ'
+    }, teacherCToken);
+    assert.equal(invalidZeroPoints.status, 400);
+    const foreignPoints = await post('/api/classes/demo-class-a/students/demo-a-01/points', {
+      points: 5, reason: 'Không được sửa lớp của giáo viên khác'
+    }, teacherCToken);
+    assert.equal(foreignPoints.status, 404);
+    const pointsHistoryResponse = await fetch(base + '/api/classes/' + createdClass.id + '/students/' + student.id + '/points', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    });
+    assert.equal(pointsHistoryResponse.status, 200);
+    const pointsHistory = await pointsHistoryResponse.json();
+    assert.equal(pointsHistory.totalPoints, 2);
+    assert.equal(pointsHistory.history.length, 2);
+    assert.deepEqual(new Set(pointsHistory.history.map(x => x.points)), new Set([-1, 3]));
+    const classPointsResponse = await fetch(base + '/api/classes/' + createdClass.id + '/points', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    });
+    assert.equal(classPointsResponse.status, 200);
+    assert.equal((await classPointsResponse.json()).students[0].totalPoints, 2);
+    const progressResponse = await fetch(base + '/api/classes/' + createdClass.id + '/progress', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    });
+    assert.equal(progressResponse.status, 200);
+    const progressBeforeSubmission = await progressResponse.json();
+    assert.equal(progressBeforeSubmission.students[0].rewardPoints, 2);
+    assert.match(progressBeforeSubmission.students[0].feedback, /hoàn thành bài tập đầu tiên/i);
+
     const otherTeacherRoster = await fetch(base + '/api/classes/' + createdClass.id + '/students', {
       headers: { Authorization: 'Bearer ' + tokenA }
     });
@@ -216,6 +256,12 @@ test('demo teachers remain isolated and registration/login works for email and p
     assert.equal(manuallyGraded.score, 1.5);
     assert.equal(manuallyGraded.maxScore, 2);
     assert.equal(manuallyGraded.details[question.id].teacherReviewed, true);
+    const progressAfterGrading = await (await fetch(base + '/api/classes/' + createdClass.id + '/progress', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    })).json();
+    assert.equal(progressAfterGrading.students[0].percent, 75);
+    assert.equal(progressAfterGrading.students[0].rewardPoints, 2);
+    assert.match(progressAfterGrading.students[0].feedback, /Tiến bộ tốt/i);
     const invalidManualGrade = await post('/api/assignments/' + assignment.id + '/submissions/' + student.id + '/manual-grade', {
       details: { [question.id]: { earned: 3, note: 'Điểm vượt mức' } }
     }, teacherCToken);

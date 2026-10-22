@@ -215,7 +215,7 @@
           <div class="lavi-menu-label">HỌC SINH & ĐỘNG LỰC</div>
           <nav class="lavi-nav" aria-label="Học sinh và động lực">
             <button type="button" data-view="futureView" data-module="Danh sách học sinh"><span>👩‍🎓</span><b>Học sinh</b></button>
-            <button type="button" data-view="futureView" data-module="Sao thưởng & khen thưởng"><span>⭐</span><b>Sao & Khen</b></button>
+            <button type="button" data-view="pointsView"><span>⭐</span><b>Sao & Khen</b></button>
             <button type="button" data-view="futureView" data-module="Trò chơi kiến thức"><span>🎮</span><b>Trò chơi kiến thức</b></button>
             <button type="button" data-view="futureView" data-module="Trò chơi & xếp hạng"><span>🏆</span><b>Trò chơi & Xếp hạng</b></button>
           </nav>
@@ -273,7 +273,7 @@
             <p class="muted">Dùng Excel (.xlsx/.xls) hoặc CSV theo mẫu để nhập trực tiếp vào ngân hàng. Với Word hoặc tài liệu dài, dùng mục 2 để AI đọc tài liệu và tạo bản nháp.</p>
             <label for="questionImportType">Dạng câu hỏi trong tệp mẫu</label>
             <select id="questionImportType"><option value="abcd">Trắc nghiệm A/B/C/D</option><option value="true_false">Đúng / Sai</option><option value="fill_blank">Điền khuyết</option><option value="short">Trả lời ngắn</option><option value="multiple">Chọn nhiều đáp án</option><option value="matching">Nối cặp</option><option value="ordering">Sắp xếp</option></select>
-            <p><a id="questionTemplateLink" href="/api/question-template.xlsx?type=abcd" download>Tải mẫu Excel theo dạng câu hỏi đã chọn (.xlsx)</a></p>
+            <p><a id="questionTemplateLink" href="/api/question-template.xlsx?type=abcd" download>Tải mẫu Excel câu hỏi LAVI theo dạng câu hỏi đã chọn (.xlsx)</a></p>
             <label for="questionImportFile">Chọn tệp Excel/CSV</label><input id="questionImportFile" type="file" accept=".xlsx,.xls,.csv">
             <button id="importQuestionsBtn" type="button">Nhập câu hỏi vào ngân hàng đang mở</button>
             <div class="status" id="importStatus" role="status" aria-live="polite"></div>
@@ -329,6 +329,24 @@
                 <div class="class"><strong>Trạng thái: Chưa kết nối chức năng</strong><p class="muted">Không có dữ liệu giả vờ hoặc nút thao tác chưa hoạt động. Khi mô-đun được triển khai, mục này sẽ được thay bằng chức năng thật.</p></div>
                 <button type="button" class="secondary" data-go-view="classesView">← Quay lại tổng quan</button>
               </div>
+            </section>
+            <section id="pointsView" class="lavi-view">
+              <div class="view-heading"><div><h2>⭐ Sao thưởng & lịch sử điểm</h2><p>Cộng/trừ điểm có lý do, xem tổng điểm và lịch sử giao dịch của học sinh.</p></div><span class="view-chip">📒 Sổ điểm</span></div>
+              <div class="lavi-panel">
+                <div class="form-grid">
+                  <label>Lớp học<select id="pointsClassSelect"><option value="">Đang tải lớp...</option></select></label>
+                  <label>Học sinh<select id="pointsStudentSelect"><option value="">Chọn lớp trước</option></select></label>
+                </div>
+                <div class="form-grid">
+                  <label>Điểm cộng/trừ <small>(ví dụ: 5 hoặc -2)</small><input id="pointsAmount" type="number" min="-1000" max="1000" step="1" placeholder="Nhập số điểm"></label>
+                  <label>Lý do<input id="pointsReason" type="text" maxlength="300" placeholder="Ví dụ: Tích cực giúp đỡ bạn"></label>
+                </div>
+                <button id="pointsSaveBtn" type="button">Lưu giao dịch điểm</button>
+                <div class="status" id="pointsStatus" role="status" aria-live="polite"></div>
+              </div>
+              <div class="lavi-panel"><h3>Tổng điểm trong lớp</h3><div id="pointsClassSummary" class="class-list"><p class="muted">Chọn lớp để xem tổng điểm.</p></div></div>
+              <div class="lavi-panel"><h3>Lịch sử điểm học sinh</h3><div id="pointsHistory"><p class="muted">Chọn học sinh để xem lịch sử.</p></div></div>
+              <div class="lavi-panel"><h3>Theo dõi tiến bộ</h3><div id="pointsProgress"><p class="muted">Chọn lớp để xem kết quả học tập.</p></div></div>
             </section>
             <section id="backupView" class="lavi-view">
               <div class="view-heading"><div><h2>Sao lưu & khôi phục</h2><p>Bảo vệ dữ liệu trong không gian riêng của giáo viên.</p></div><span class="view-chip">🛡️ An toàn dữ liệu</span></div>
@@ -424,10 +442,74 @@
     $('authSubtitle').textContent = loginRole === 'student' ? 'Đăng nhập vào không gian học tập LAVI bằng tài khoản học sinh.' : (registering ? 'Dùng Gmail hoặc số điện thoại của thầy cô và tạo mật khẩu.' : 'Đăng nhập bằng Gmail/số điện thoại đã đăng ký.');
     $('contact').placeholder = loginRole === 'student' ? 'Tên đăng nhập học sinh' : 'ten@gmail.com hoặc 09xxxxxxxx';
   }
+  async function renderPointLedger() {
+    const classSelect=$('pointsClassSelect'), studentSelect=$('pointsStudentSelect');
+    const status=$('pointsStatus');
+    const setStatus=(message,isError=false)=>{status.textContent=message;status.classList.toggle('error',isError);};
+    const option=(value,label)=>{const el=document.createElement('option');el.value=value;el.textContent=label;return el;};
+    const selectedClass=classSelect.value, selectedStudent=studentSelect.value;
+    const data=await api('/api/classes');
+    classSelect.replaceChildren(option('','-- Chọn lớp --'),...(data.classes||[]).map(c=>option(c.id,c.name+' ('+c.studentCount+' HS)')));
+    if(selectedClass && [...classSelect.options].some(o=>o.value===selectedClass)) classSelect.value=selectedClass;
+    async function refreshClass() {
+      const classId=classSelect.value;
+      studentSelect.replaceChildren(option('','-- Chọn học sinh --'));
+      $('pointsClassSummary').replaceChildren();
+      $('pointsProgress').replaceChildren();
+      $('pointsHistory').replaceChildren();
+      if(!classId){$('pointsClassSummary').textContent='Chọn lớp để xem tổng điểm.';return;}
+      const [ledger,progress]=await Promise.all([api('/api/classes/'+encodeURIComponent(classId)+'/points'),api('/api/classes/'+encodeURIComponent(classId)+'/progress')]);
+      for(const s of ledger.students||[]) studentSelect.append(option(s.studentId,s.code+' – '+s.displayName));
+      if(selectedStudent && [...studentSelect.options].some(o=>o.value===selectedStudent)) studentSelect.value=selectedStudent;
+      const table=document.createElement('table');table.className='data-table';
+      const head=document.createElement('tr');['Mã HS','Họ và tên','Tổng điểm','Số giao dịch'].forEach(t=>{const th=document.createElement('th');th.textContent=t;head.append(th);});
+      const thead=document.createElement('thead');thead.append(head);table.append(thead);
+      const body=document.createElement('tbody');
+      for(const s of ledger.students||[]){const tr=document.createElement('tr');[s.code,s.displayName,String(s.totalPoints),String(s.transactionCount)].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});body.append(tr);}
+      table.append(body);$('pointsClassSummary').append(table);
+      const ptable=document.createElement('table');ptable.className='data-table';
+      const ph=document.createElement('tr');['Học sinh','Bài có điểm','Tỷ lệ đúng','Điểm thưởng','Nhận xét gợi ý'].forEach(t=>{const th=document.createElement('th');th.textContent=t;ph.append(th);});
+      const phead=document.createElement('thead');phead.append(ph);ptable.append(phead);const pb=document.createElement('tbody');
+      for(const s of progress.students||[]){const tr=document.createElement('tr');[s.displayName,String(s.completedAssignments),s.percent===null?'Chưa có dữ liệu':s.percent+'%',String(s.rewardPoints),s.feedback].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});pb.append(tr);}
+      ptable.append(pb);$('pointsProgress').append(ptable);
+      if(!studentSelect.value) $('pointsHistory').textContent='Chọn học sinh để xem lịch sử.';
+      else await refreshHistory();
+    }
+    async function refreshHistory(){
+      const classId=classSelect.value,studentId=studentSelect.value;
+      const box=$('pointsHistory');box.replaceChildren();
+      if(!classId||!studentId){box.textContent='Chọn học sinh để xem lịch sử.';return;}
+      const data=await api('/api/classes/'+encodeURIComponent(classId)+'/students/'+encodeURIComponent(studentId)+'/points');
+      const total=document.createElement('p');total.textContent='Tổng điểm hiện tại: '+data.totalPoints;box.append(total);
+      if(!(data.history||[]).length){const p=document.createElement('p');p.className='muted';p.textContent='Chưa có giao dịch điểm.';box.append(p);return;}
+      const table=document.createElement('table');table.className='data-table';const head=document.createElement('tr');
+      ['Thời gian','Điểm','Lý do'].forEach(t=>{const th=document.createElement('th');th.textContent=t;head.append(th);});
+      const thead=document.createElement('thead');thead.append(head);table.append(thead);const body=document.createElement('tbody');
+      for(const item of data.history){const tr=document.createElement('tr');[new Date(item.createdAt+'Z').toLocaleString('vi-VN'),(item.points>0?'+':'')+item.points,item.reason].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});body.append(tr);}
+      table.append(body);box.append(table);
+    }
+    classSelect.onchange=()=>refreshClass().catch(e=>setStatus(e.message,true));
+    studentSelect.onchange=()=>refreshHistory().catch(e=>setStatus(e.message,true));
+    $('pointsSaveBtn').onclick=async()=>{
+      try{
+        const classId=classSelect.value,studentId=studentSelect.value;
+        const points=Number($('pointsAmount').value),reason=$('pointsReason').value.trim();
+        if(!classId||!studentId)throw new Error('Vui lòng chọn lớp và học sinh.');
+        if(!Number.isInteger(points)||points===0||points < -1000||points > 1000)throw new Error('Điểm phải là số nguyên khác 0, từ -1000 đến 1000.');
+        if(reason.length<2)throw new Error('Vui lòng nhập lý do cộng/trừ điểm.');
+        await api('/api/classes/'+encodeURIComponent(classId)+'/students/'+encodeURIComponent(studentId)+'/points',{method:'POST',body:JSON.stringify({points,reason})});
+        $('pointsAmount').value='';$('pointsReason').value='';
+        setStatus('Đã lưu giao dịch điểm và giữ nguyên lịch sử.');
+        await refreshClass();await refreshHistory();
+      }catch(e){setStatus(e.message,true);}
+    };
+    await refreshClass();
+  }
   function activateView(viewId, moduleName='') {
     document.querySelectorAll('.lavi-view').forEach(view => view.classList.toggle('active', view.id === viewId));
     document.querySelectorAll('.lavi-nav [data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === viewId && (!moduleName || button.dataset.module === moduleName || button.textContent.includes(moduleName))));
     document.querySelector('.lavi-sidebar')?.classList.remove('open');
+    if (viewId === 'pointsView') { renderPointLedger().catch(e => { $('pointsStatus').textContent=e.message; $('pointsStatus').classList.add('error'); }); }
     if (viewId === 'futureView') {
       const label = moduleName || 'Mô-đun đang phát triển';
       $('futureViewTitle').textContent = label;
