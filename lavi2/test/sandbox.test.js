@@ -33,7 +33,7 @@ test('sandbox UI and API support teacher registration with email or phone', () =
   assert.match(html, /Chọn bài đã giao để xem kết quả đã lưu/);
   assert.match(html, /Làm mới kết quả/);
   assert.match(html, /Tải mẫu Excel câu hỏi LAVI/);
-  assert.match(html, /Cột “Đáp án đúng” ghi A, B, C hoặc D/);
+  assert.match(html, /Nhập A, B, C hoặc D/);
   assert.match(server, /manual-grade/);
   assert.match(server, /answerLetter/);
   assert.match(html, /mobileMenuBtn/);
