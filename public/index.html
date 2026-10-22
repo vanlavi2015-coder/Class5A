@@ -2094,9 +2094,9 @@ async function saveAssignmentAnswerOne(aid,group,qi,si){
  try{if(!LAVI.token)throw new Error('Chưa đăng nhập tài khoản giáo viên'); const r=await fetch('/api/teacher/answer',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({assignmentId:aid,group,questionIndex:qi,answer,acceptedAnswers:accepted.split(';').map(x=>x.trim()).filter(Boolean)})}); const j=await r.json().catch(()=>({})); if(!r.ok)throw new Error(j.error||'Không lưu được đáp án'); await loadOnlineState(); editAssignmentAnswers(aid); const sel=document.getElementById('answerEditSet'); if(sel)sel.value=String(si); renderAnswerEditSet(aid,si); toast('✅ Đã lưu đáp án Câu '+(qi+1)+' và chấm lại '+Number(j.updatedSubmissions||0)+' bài.');}catch(e){toast('❌ '+e.message)}
 }
 function questionDisplayParts(q){
- const raw=String(q?.text||"").replace(/^\\s*Câu\\s*\\d+\\s*[.:\\-]?\\s*/i,"").trim();
- const stored=Array.isArray(q?.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\\-:]\\s*/i,"").trim()):[];
- const inline=raw.match(/^(.*?)(?:\\s+A[.)]\\s*)(.*?)(?:\\s+B[.)]\\s*)(.*?)(?:\\s+C[.)]\\s*)(.*?)(?:\\s+D[.)]\\s*)(.*)$/i);
+ const raw=String(q?.text||"").replace(/^\s*Câu\s*\d+\s*[.:\-]?\s*/i,"").trim();
+ const stored=Array.isArray(q?.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\-:]\s*/i,"").trim()):[];
+ const inline=raw.match(/^(.*?)(?:\s+A[.)]\s*)(.*?)(?:\s+B[.)]\s*)(.*?)(?:\s+C[.)]\s*)(.*?)(?:\s+D[.)]\s*)(.*)$/i);
  if(inline){
   const parsed=[inline[2],inline[3],inline[4],inline[5]].map(x=>x.trim());
   const prompt=inline[1].trim().replace(/[?;,:]$/,"?").trim();
