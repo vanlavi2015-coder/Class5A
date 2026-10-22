@@ -2402,11 +2402,14 @@ function openStudentAssignment(aid){
    window.LAVI_CURRENT_ORDER={aid,order:display.map(x=>x.i)};
    const qsHtml=display.map((item,di)=>{
      const q=item.q, originalIndex=item.i;
+     const parts=questionDisplayParts(q);
+     const prompt=String(parts.text||"").replace(/\\s*Chọn đáp án đúng:.*$/,"").trim();
      if(q.type==="Trắc nghiệm 4 đáp án"&&Array.isArray(q.options)){
-       return '<div class="student-q"><b>Câu '+(di+1)+'.</b> '+esc(String(q.text||"").replace(/^\s*Câu\s*\d+\s*[\.:\-]?\s*/i,"").replace(/\s*Chọn đáp án đúng:.*$/,""))+
-       '<div class="mc-options">'+q.options.map((op,oi)=>{const letter=["A","B","C","D"][oi];return '<label class="mc-option"><input type="radio" name="ans'+originalIndex+'" value="'+letter+'"><span class="mc-letter">'+letter+'.</span><span class="mc-text">'+esc(op)+'</span></label>';}).join('')+'</div><div class="mc-hint">Chọn một đáp án đúng nhất.</div></div>';
+       const options=(parts.options.length===4?parts.options:q.options).map(op=>String(op).replace(/^[A-D][.)\\-:]\\s*/i,"").trim());
+       return '<div class="student-q"><b>Câu '+(di+1)+'.</b> '+esc(prompt)+
+       '<div class="mc-options">'+options.map((op,oi)=>{const letter=["A","B","C","D"][oi];return '<label class="mc-option"><input type="radio" name="ans'+originalIndex+'" value="'+letter+'"><span class="mc-letter">'+letter+'.</span><span class="mc-text">'+esc(op)+'</span></label>';}).join('')+'</div><div class="mc-hint">Chọn một đáp án đúng nhất.</div></div>';
      }
-     return '<div class="student-q"><b>Câu '+(di+1)+'.</b> '+esc(String(q.text||"").replace(/^\s*Câu\s*\d+\s*[\.:\-]?\s*/i,""))+'<input id="ans'+originalIndex+'" class="student-answer" placeholder="Nhập câu trả lời của em..."></div>';
+     return '<div class="student-q"><b>Câu '+(di+1)+'.</b> '+esc(prompt)+'<input id="ans'+originalIndex+'" class="student-answer" placeholder="Nhập câu trả lời của em..."></div>';
    }).join('');
    const title=redo?'🔄 Làm lại bài — Lần '+(attempts+1)+'/3':'📝 Bài tập';
    document.getElementById('studentContent').innerHTML='<button class="student-btn student-back" onclick="studentMode()">← Quay lại bài của em</button><div class="student-assignment"><h2 style="margin:0 0 4px">'+title+'</h2><div class="student-meta">'+esc(a.subject)+' · '+esc(a.lesson)+' · '+esc(s.name)+'</div>'+
