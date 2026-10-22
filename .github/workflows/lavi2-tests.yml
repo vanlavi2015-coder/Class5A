@@ -1,0 +1,27 @@
+name: LAVI 2.0 tests
+
+on:
+  push:
+    branches:
+      - lavi-2.0-production-prep
+      - lavi-2.0-sandbox
+  pull_request:
+    paths:
+      - "lavi2/**"
+      - ".github/workflows/lavi2-tests.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lavi2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: lavi2/package-lock.json
+      - run: npm install
+      - run: npm test
