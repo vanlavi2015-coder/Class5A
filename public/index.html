@@ -2093,8 +2093,20 @@ async function saveAssignmentAnswerOne(aid,group,qi,si){
  if(!answer)return toast('Cô hãy nhập đáp án chuẩn.');
  try{if(!LAVI.token)throw new Error('Chưa đăng nhập tài khoản giáo viên'); const r=await fetch('/api/teacher/answer',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+LAVI.token},body:JSON.stringify({assignmentId:aid,group,questionIndex:qi,answer,acceptedAnswers:accepted.split(';').map(x=>x.trim()).filter(Boolean)})}); const j=await r.json().catch(()=>({})); if(!r.ok)throw new Error(j.error||'Không lưu được đáp án'); await loadOnlineState(); editAssignmentAnswers(aid); const sel=document.getElementById('answerEditSet'); if(sel)sel.value=String(si); renderAnswerEditSet(aid,si); toast('✅ Đã lưu đáp án Câu '+(qi+1)+' và chấm lại '+Number(j.updatedSubmissions||0)+' bài.');}catch(e){toast('❌ '+e.message)}
 }
+function questionDisplayParts(q){
+ const raw=String(q?.text||"").replace(/^\\s*Câu\\s*\\d+\\s*[.:\\-]?\\s*/i,"").trim();
+ const stored=Array.isArray(q?.options)?q.options.map(x=>String(x).replace(/^[A-D][.)\\-:]\\s*/i,"").trim()):[];
+ const inline=raw.match(/^(.*?)(?:\\s+A[.)]\\s*)(.*?)(?:\\s+B[.)]\\s*)(.*?)(?:\\s+C[.)]\\s*)(.*?)(?:\\s+D[.)]\\s*)(.*)$/i);
+ if(inline){
+  const parsed=[inline[2],inline[3],inline[4],inline[5]].map(x=>x.trim());
+  const prompt=inline[1].trim().replace(/[?;,:]$/,"?").trim();
+  return {text:prompt,options:stored.length===4?stored:parsed};
+ }
+ return {text:raw,options:stored};
+}
 function viewAssignment(id){
- const a=state.assignments.find(x=>x.id===id);document.getElementById("modalBox").innerHTML=`<h2>${esc(a.subject)} – ${esc(a.lesson)}</h2>${gifBlock(a.gifUrl)}${a.sets.map(s=>`<div class="assignment"><h3>${s.group}</h3>${s.questions.map(q=>`<div class="question"><b>${esc(q.text)}</b><div class="sub">${esc(q.answer)}</div></div>`).join("")}</div>`).join("")}<button class="btn" onclick="closeModal()">Đóng</button>`;document.getElementById("modal").classList.add("show")
+ const a=state.assignments.find(x=>x.id===id);if(!a)return;
+ document.getElementById("modalBox").innerHTML=`<h2>${esc(a.subject)} – ${esc(a.lesson)}</h2>${gifBlock(a.gifUrl)}${a.sets.map(s=>`<div class="assignment"><h3>${esc(s.group)}</h3>${s.questions.map((q,i)=>{const p=questionDisplayParts(q);const ans=String(q.answer??"").trim();const answer=/^[A-D]$/i.test(ans)&&p.options.length===4?p.options[["A","B","C","D"].indexOf(ans.toUpperCase())]:ans;return `<div class="question"><b>Câu ${i+1}. ${esc(p.text)}</b>${p.options.length?'<div class="mc-options" style="grid-template-columns:1fr;margin-top:8px">'+p.options.map((op,oi)=>'<div class="mc-option" style="cursor:default"><span class="mc-letter">'+["A","B","C","D"][oi]+'.</span><span class="mc-text">'+esc(op)+'</span></div>').join("")+'</div>':''}<div class="sub" style="margin-top:8px"><b>Đáp án đúng:</b> ${esc(answer)}</div></div>`}).join("")}</div>`).join("")}<button class="btn" onclick="closeModal()">Đóng</button>`;document.getElementById("modal").classList.add("show")
 }
 function remind(id){const a=state.assignments.find(x=>x.id===id);let pending=0;a.sets.forEach(s=>pending+=studentsForGroup(s.group).filter(st=>!state.submissions[id+"_"+st.id]).length);toast(`Đã tạo lời nhắc cho ${pending} học sinh chưa nộp`)}
 function removeAssignment(id){if(confirm("Xóa bài giao này?")){state.assignments=state.assignments.filter(a=>a.id!==id);save()}}
