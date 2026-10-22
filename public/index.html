@@ -1766,7 +1766,7 @@ function generate(){
    const base=Math.floor(count/lessons.length),extra=count%lessons.length;
    const all=[],seen=new Set();
    const normQ=v=>String(v||"").toLowerCase().normalize("NFD")
-     .replace(/[\\u0300-\\u036f]/g,"").replace(/^\\s*câu\\s*\\d+\\s*[\\.:\\-]?\\s*/i,"").replace(/\\s+/g," ").trim();
+     .replace(/[\\u0300-\\u036f]/g,"").replace(/^\\s*câu\\s*\\d+\\s*[\\.:\-]?\\s*/i,"").replace(/\\s+/g," ").trim();
    const addUnique=q=>{
     if(!q)return false;
     const key=normQ(q.text);
@@ -2405,7 +2405,7 @@ function openStudentAssignment(aid){
      const parts=questionDisplayParts(q);
      const prompt=String(parts.text||"").replace(/\\s*Chọn đáp án đúng:.*$/,"").trim();
      if(q.type==="Trắc nghiệm 4 đáp án"&&Array.isArray(q.options)){
-       const options=(parts.options.length===4?parts.options:q.options).map(op=>String(op).replace(/^[A-D][.)\\-:]\\s*/i,"").trim());
+       const options=(parts.options.length===4?parts.options:q.options).map(op=>String(op).replace(/^[A-D][.)\-:]\\s*/i,"").trim());
        return '<div class="student-q"><b>Câu '+(di+1)+'.</b> '+esc(prompt)+
        '<div class="mc-options">'+options.map((op,oi)=>{const letter=["A","B","C","D"][oi];return '<label class="mc-option"><input type="radio" name="ans'+originalIndex+'" value="'+letter+'"><span class="mc-letter">'+letter+'.</span><span class="mc-text">'+esc(op)+'</span></label>';}).join('')+'</div><div class="mc-hint">Chọn một đáp án đúng nhất.</div></div>';
      }
