@@ -910,6 +910,86 @@ app.post('/api/assignments/:assignmentId/submissions/:studentId/manual-grade', a
   res.json({ ok: true, score, maxScore, percent: maxScore ? Math.round(score / maxScore * 1000) / 10 : 0, needsTeacherReview: needsReview, details });
 });
 
+
+// Sổ điểm thưởng dạng giao dịch: chỉ thêm bản ghi, không ghi đè lịch sử.
+app.get('/api/classes/:classId/points', authenticate, requireTeacher, (req, res) => {
+  const klass = db.prepare('SELECT id,name FROM classes WHERE id=? AND owner_user_id=?')
+    .get(String(req.params.classId), req.user.id);
+  if (!klass) return res.status(404).json({ error: 'Không tìm thấy lớp thuộc tài khoản của thầy cô.' });
+  const rows = db.prepare(`
+    SELECT s.id AS studentId,s.student_code AS code,s.display_name AS displayName,
+      COALESCE(SUM(pt.points),0) AS totalPoints,
+      COUNT(pt.id) AS transactionCount
+    FROM students s LEFT JOIN point_transactions pt ON pt.student_id=s.id AND pt.class_id=s.class_id
+    WHERE s.class_id=? GROUP BY s.id ORDER BY s.student_code
+  `).all(klass.id);
+  res.json({ class: klass, students: rows });
+});
+
+app.get('/api/classes/:classId/students/:studentId/points', authenticate, requireTeacher, (req, res) => {
+  const student = db.prepare(`
+    SELECT s.id,s.student_code AS code,s.display_name AS displayName,c.id AS classId,c.name AS className
+    FROM students s JOIN classes c ON c.id=s.class_id
+    WHERE s.id=? AND c.id=? AND c.owner_user_id=?
+  `).get(String(req.params.studentId), String(req.params.classId), req.user.id);
+  if (!student) return res.status(404).json({ error: 'Không tìm thấy học sinh trong lớp thuộc tài khoản của thầy cô.' });
+  const history = db.prepare(`
+    SELECT id,points,reason,created_at AS createdAt
+    FROM point_transactions WHERE student_id=? AND class_id=? AND owner_user_id=?
+    ORDER BY created_at DESC,id DESC LIMIT 500
+  `).all(student.id, student.classId, req.user.id);
+  const total = db.prepare('SELECT COALESCE(SUM(points),0) AS total FROM point_transactions WHERE student_id=? AND class_id=? AND owner_user_id=?')
+    .get(student.id, student.classId, req.user.id).total;
+  res.json({ student, totalPoints: total, history });
+});
+
+app.post('/api/classes/:classId/students/:studentId/points', authenticate, requireTeacher, (req, res) => {
+  const student = db.prepare(`
+    SELECT s.id,s.class_id AS classId,c.owner_user_id AS ownerUserId
+    FROM students s JOIN classes c ON c.id=s.class_id
+    WHERE s.id=? AND c.id=? AND c.owner_user_id=?
+  `).get(String(req.params.studentId), String(req.params.classId), req.user.id);
+  if (!student) return res.status(404).json({ error: 'Không tìm thấy học sinh trong lớp thuộc tài khoản của thầy cô.' });
+  const points = Number(req.body?.points);
+  const reason = String(req.body?.reason || '').trim().replace(/\\s+/g, ' ');
+  if (!Number.isInteger(points) || points === 0 || points < -1000 || points > 1000) {
+    return res.status(400).json({ error: 'Điểm thưởng/phạt phải là số nguyên khác 0, từ -1000 đến 1000.' });
+  }
+  if (reason.length < 2 || reason.length > 300) return res.status(400).json({ error: 'Lý do cần từ 2 đến 300 ký tự.' });
+  const id = randomUUID();
+  db.prepare('INSERT INTO point_transactions(id,owner_user_id,class_id,student_id,points,reason) VALUES(?,?,?,?,?,?)')
+    .run(id, req.user.id, student.classId, student.id, points, reason);
+  audit(req.user.id, 'record_points', 'student', student.id);
+  const total = db.prepare('SELECT COALESCE(SUM(points),0) AS total FROM point_transactions WHERE student_id=? AND class_id=? AND owner_user_id=?')
+    .get(student.id, student.classId, req.user.id).total;
+  res.status(201).json({ ok: true, transaction: { id, studentId: student.id, points, reason }, totalPoints: total });
+});
+
+app.get('/api/classes/:classId/progress', authenticate, requireTeacher, (req, res) => {
+  const klass = db.prepare('SELECT id,name FROM classes WHERE id=? AND owner_user_id=?')
+    .get(String(req.params.classId), req.user.id);
+  if (!klass) return res.status(404).json({ error: 'Không tìm thấy lớp thuộc tài khoản của thầy cô.' });
+  const rows = db.prepare(`
+    SELECT s.id AS studentId,s.student_code AS code,s.display_name AS displayName,
+      COUNT(sc.id) AS completedAssignments,
+      COALESCE(SUM(sc.score),0) AS earnedPoints,
+      COALESCE(SUM(sc.max_score),0) AS possiblePoints,
+      CASE WHEN SUM(sc.max_score)>0 THEN ROUND(100.0*SUM(sc.score)/SUM(sc.max_score),1) ELSE NULL END AS percent,
+      COALESCE((SELECT SUM(pt.points) FROM point_transactions pt WHERE pt.student_id=s.id AND pt.class_id=s.class_id AND pt.owner_user_id=?),0) AS rewardPoints
+    FROM students s LEFT JOIN assignments a ON a.class_id=s.class_id AND a.owner_user_id=?
+      LEFT JOIN scores sc ON sc.assignment_id=a.id AND sc.student_id=s.id
+    WHERE s.class_id=? GROUP BY s.id ORDER BY s.student_code
+  `).all(req.user.id, req.user.id, klass.id);
+  res.json({ class: klass, students: rows.map(s => ({
+    ...s,
+    feedback: s.percent === null ? 'Hãy hoàn thành bài tập đầu tiên để theo dõi tiến bộ.' :
+      s.percent >= 90 ? 'Xuất sắc! Hãy tiếp tục phát huy và giúp đỡ bạn bè.' :
+      s.percent >= 75 ? 'Tiến bộ tốt! Tiếp tục luyện tập để đạt kết quả cao hơn.' :
+      s.percent >= 50 ? 'Em đang tiến bộ. Hãy ôn lại câu sai và thử lại.' :
+      'Em hãy cùng thầy cô ôn từng phần nhỏ; cố gắng mỗi ngày một chút.'
+  })) });
+});
+
 app.use('/api', (_req, res) => res.status(404).json({ error: 'API không tồn tại trong bản thử nghiệm.' }));
 app.use((err, _req, res, _next) => {
   console.error('LAVI2 request error:', err.message);
