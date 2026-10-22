@@ -33,5 +33,15 @@ LAVI 2.0 có API xuất dữ liệu `GET /api/backup` và khôi phục `POST /ap
 - Chưa được tuyên bố “sao lưu bền vững đã xác minh” cho đến khi Render có disk riêng, health check đạt và đã thử khởi động lại cùng khôi phục.
 - Bản LAVI 2.0 vẫn đang ở nhánh chuẩn bị sản xuất; không đưa dữ liệu học sinh thật vào trước khi vượt qua các cổng bảo mật và kiểm thử.
 
+## 6. Snapshot SQLite tự động trên máy chủ (mới bổ sung trong nhánh chuẩn bị)
+
+Khi tiến trình Node chạy liên tục, LAVI 2.0 tạo snapshot SQLite đầu tiên khoảng một phút sau khi khởi động, sau đó mỗi 24 giờ. Snapshot dùng `VACUUM INTO` để tạo tệp cơ sở dữ liệu nhất quán, giữ tối đa 14 bản gần nhất trong thư mục `backups` bên trong `LAVI_DATA_DIR`.
+
+- API trạng thái: `GET /api/backup/status` (cần đăng nhập giáo viên).
+- Trạng thái trả về thư mục lưu, thời điểm snapshot gần nhất, kích thước tệp và lỗi gần nhất.
+- Nếu `LAVI_DATA_DIR` không trỏ tới `/var/data`, API sẽ báo `persistentDiskConfigured: false`.
+- Đây là snapshot cùng ổ đĩa, không phải bản sao ngoài hệ thống. Nếu ổ đĩa bị mất hoặc bị xóa, các snapshot này cũng có thể mất.
+- Snapshot đầu tiên chỉ chạy khi tiến trình máy chủ thực sự khởi động; việc mã nguồn có chức năng này không chứng minh Render đã gắn Persistent Disk hoặc lịch sao lưu đã chạy thành công.
+
 ## 5. Khuyến nghị vận hành
 Trước khi dùng thật, cần thêm bản sao lưu tự động định kỳ tới kho riêng được mã hóa, theo dõi kết quả sao lưu và thử khôi phục định kỳ. Không lưu token hoặc khóa mã hóa trong mã nguồn.
