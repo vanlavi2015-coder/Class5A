@@ -182,6 +182,14 @@ test('demo teachers remain isolated and registration/login works for email and p
     }, teacherCToken);
     assert.equal(subtractPoints.status, 201);
     assert.equal((await subtractPoints.json()).totalPoints, 2);
+    const invalidZeroPoints = await post('/api/classes/' + createdClass.id + '/students/' + student.id + '/points', {
+      points: 0, reason: 'Điểm không hợp lệ'
+    }, teacherCToken);
+    assert.equal(invalidZeroPoints.status, 400);
+    const foreignPoints = await post('/api/classes/demo-class-a/students/demo-a-01/points', {
+      points: 5, reason: 'Không được sửa lớp của giáo viên khác'
+    }, teacherCToken);
+    assert.equal(foreignPoints.status, 404);
     const pointsHistoryResponse = await fetch(base + '/api/classes/' + createdClass.id + '/students/' + student.id + '/points', {
       headers: { Authorization: 'Bearer ' + teacherCToken }
     });
@@ -248,6 +256,12 @@ test('demo teachers remain isolated and registration/login works for email and p
     assert.equal(manuallyGraded.score, 1.5);
     assert.equal(manuallyGraded.maxScore, 2);
     assert.equal(manuallyGraded.details[question.id].teacherReviewed, true);
+    const progressAfterGrading = await (await fetch(base + '/api/classes/' + createdClass.id + '/progress', {
+      headers: { Authorization: 'Bearer ' + teacherCToken }
+    })).json();
+    assert.equal(progressAfterGrading.students[0].percent, 75);
+    assert.equal(progressAfterGrading.students[0].rewardPoints, 2);
+    assert.match(progressAfterGrading.students[0].feedback, /Tiến bộ tốt/i);
     const invalidManualGrade = await post('/api/assignments/' + assignment.id + '/submissions/' + student.id + '/manual-grade', {
       details: { [question.id]: { earned: 3, note: 'Điểm vượt mức' } }
     }, teacherCToken);
