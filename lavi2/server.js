@@ -996,7 +996,61 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Đã xảy ra lỗi máy chủ.' });
 });
 
+// Snapshot SQLite tự động hằng ngày trên dataDir. Cần Persistent Disk để snapshot tồn tại qua deploy.
+const backupDir = path.join(dataDir, 'backups');
+const backupIntervalMs = 24 * 60 * 60 * 1000;
+let lastAutoBackup = null;
+let lastAutoBackupError = null;
+let autoBackupRunning = false;
+function createLocalSnapshot() {
+  if (autoBackupRunning) return { skipped: true, reason: 'backup already running' };
+  autoBackupRunning = true;
+  try {
+    fs.mkdirSync(backupDir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const destination = path.join(backupDir, 'lavi2-' + stamp + '.sqlite');
+    db.exec("PRAGMA wal_checkpoint(FULL)");
+    db.exec("VACUUM INTO '" + destination.replace(/'/g, "''") + "'");
+    const stat = fs.statSync(destination);
+    if (!stat.size) throw new Error('Tệp snapshot rỗng');
+    // Retain the newest 14 snapshots.
+    const files = fs.readdirSync(backupDir)
+      .filter(name => /^lavi2-.*\.sqlite$/.test(name))
+      .map(name => ({ name, time: fs.statSync(path.join(backupDir, name)).mtimeMs }))
+      .sort((a,b) => b.time-a.time);
+    for (const old of files.slice(14)) fs.unlinkSync(path.join(backupDir, old.name));
+    lastAutoBackup = { at: new Date().toISOString(), file: path.basename(destination), bytes: stat.size };
+    lastAutoBackupError = null;
+    console.log('LAVI2 local snapshot created:', lastAutoBackup.file, stat.size, 'bytes');
+    return lastAutoBackup;
+  } catch (err) {
+    lastAutoBackupError = String(err.message || err);
+    console.error('LAVI2 local snapshot failed:', lastAutoBackupError);
+    throw err;
+  } finally {
+    autoBackupRunning = false;
+  }
+}
+app.get('/api/backup/status', authenticate, requireTeacher, (req, res) => {
+  res.json({
+    storageDirectory: dataDir,
+    localSnapshotDirectory: backupDir,
+    persistentDiskConfigured: dataDir === '/var/data' || dataDir.startsWith('/var/data/'),
+    automaticLocalSnapshots: true,
+    schedule: '24 giờ một lần; lần đầu sau khi máy chủ khởi động',
+    retention: 14,
+    lastAutoBackup,
+    lastAutoBackupError,
+    note: 'Snapshot trên cùng ổ đĩa không thay thế bản sao lưu ngoài hệ thống.'
+  });
+});
+
 if (require.main === module) {
   app.listen(PORT, () => console.log(`LAVI 2.0 sandbox listening on ${PORT}; demoMode=${DEMO_MODE}`));
+  const timer = setInterval(() => { try { createLocalSnapshot(); } catch {} }, backupIntervalMs);
+  timer.unref();
+  // Delay first snapshot briefly so startup/migrations can finish.
+  const first = setTimeout(() => { try { createLocalSnapshot(); } catch {} }, 60 * 1000);
+  first.unref();
 }
 module.exports = { app, db };
