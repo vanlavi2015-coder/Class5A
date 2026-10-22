@@ -69,6 +69,15 @@ Tên dịch vụ, URL và cấu hình Render chỉ được xác nhận sau khi 
 - Để kiểm thử phân quyền demo, dùng `teacher1` hoặc `teacher2` với mật khẩu `Demo1234!`.
 - Không nhập email/số điện thoại cá nhân thật trên website thử nghiệm cho tới khi có xác minh OTP và chính sách bảo mật hoàn chỉnh.
 
+## Các API đã bổ sung trong nhánh chuẩn bị sản xuất
+
+- `GET /api/classes/:classId/points`: tổng điểm thưởng theo học sinh trong lớp.
+- `GET /api/classes/:classId/students/:studentId/points`: tổng điểm và tối đa 500 giao dịch gần nhất.
+- `POST /api/classes/:classId/students/:studentId/points`: thêm giao dịch cộng/trừ điểm có lý do; điểm là số nguyên khác 0 trong khoảng -1000 đến 1000.
+- `GET /api/classes/:classId/progress`: tổng hợp kết quả đã lưu và gợi ý phản hồi khích lệ theo tỷ lệ hoàn thành.
+
+Các API này yêu cầu đăng nhập giáo viên, kiểm tra quyền sở hữu lớp ở máy chủ và ghi nhật ký kiểm toán. Đây mới là API nền; giao diện giáo viên cần được nối với API và phải kiểm thử end-to-end trước khi dùng thực tế.
+
 ## Giới hạn và bước kế tiếp
 
 Đây là MVP để xác minh phân vùng dữ liệu; chưa phải hệ thống sẵn sàng dùng trong trường học. Trước khi mở rộng cần bổ sung kiểm thử tự động về phân quyền chéo lớp, giới hạn đăng nhập, CSRF/CORS phù hợp, quy trình reset mật khẩu, quản trị tài khoản, kiểm thử migration và backup/restore. Sau đó mới xây kho câu hỏi, nhập Excel/Word, chấm điểm, game, lịch sử điểm bất biến và sáu nhóm năng lực số.
