@@ -22,7 +22,7 @@ test('sandbox UI and API support teacher registration with email or phone', () =
   assert.match(html, /data-view="questionsView"/);
   assert.match(html, /data-view="testsView"/);
   assert.match(html, /data-view="backupView"/);
-  for (const moduleName of ['Bài đang giao', 'Bài nộp & chấm điểm', 'Danh sách học sinh', 'Sao thưởng & khen thưởng', 'Trò chơi kiến thức', 'Trò chơi & xếp hạng', 'Lịch lớp học', 'Thống kê học tập', 'Xếp loại tháng', 'Trợ lý VnEdu', 'Tài khoản giáo viên']) {
+  for (const moduleName of ['Bài đang giao', 'Bài nộp & chấm điểm', 'Danh sách học sinh', 'Sao & Khen', 'Trò chơi kiến thức', 'Trò chơi & xếp hạng', 'Lịch lớp học', 'Thống kê học tập', 'Xếp loại tháng', 'Trợ lý VnEdu', 'Tài khoản giáo viên']) {
     assert.ok(html.includes(moduleName), 'Missing legacy navigation module: ' + moduleName);
   }
   assert.match(html, /id="futureView"/);
